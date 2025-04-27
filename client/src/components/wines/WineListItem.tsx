@@ -3,7 +3,7 @@ import { Wine } from "@shared/schema";
 import WineGlassIcon from "./WineGlassIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "../forms/AddWineForm";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
 import { Camera } from "lucide-react";
 
 interface WineListItemProps {
@@ -47,7 +47,16 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           <div className="mt-4 text-sm space-y-2">
             <div className="flex items-center">
               <div className="w-40 flex-shrink-0 text-gray-700 font-medium">Drinking Window</div>
-              <div className="ml-2 w-20 h-1 bg-burgundy-600 rounded-full"></div>
+              <div className="ml-2 flex items-center">
+                <span className="text-burgundy-700 font-medium">
+                  {wine.drinkingStatus === "drink_now" 
+                    ? "Drink Now" 
+                    : wine.drinkingStatus === "drink_later" 
+                      ? "Drink Later" 
+                      : parseDrinkingWindow(wine.drinkingWindowStart, wine.drinkingWindowEnd)}
+                </span>
+                <div className="ml-2 w-20 h-1 bg-burgundy-600 rounded-full"></div>
+              </div>
             </div>
             <div className="flex items-center">
               <div className="w-40 flex-shrink-0 text-gray-700 font-medium">
