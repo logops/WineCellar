@@ -24,9 +24,13 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           <div className="flex flex-col md:flex-row justify-between">
             <div>
               <h3 className="font-semibold text-burgundy-700">
-                {wine.vintage && <span className="font-spectral">{wine.vintage}</span>} {wine.producer} {wine.name}
+                {wine.producer} {wine.vintage && <span className="font-spectral">{wine.vintage}</span>} {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard}</span>} {wine.name}
               </h3>
-              <p className="text-gray-600 text-sm font-medium">{wine.region}</p>
+              <p className="text-gray-600 text-sm font-medium">
+                {wine.grapeVarieties && <span className="mr-1">{wine.grapeVarieties}</span>}
+                {wine.region && <span>{wine.region}</span>}
+                {wine.subregion && <span className="text-gray-500 ml-1">({wine.subregion})</span>}
+              </p>
               {wine.rating && <p className="text-xs text-gray-500 mt-1">Rating: CT{wine.rating}</p>}
             </div>
             <div className="mt-2 md:mt-0 flex">

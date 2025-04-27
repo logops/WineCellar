@@ -20,6 +20,7 @@ export const wines = pgTable("wines", {
   name: text("name").notNull(),
   producer: text("producer").notNull(),
   vintage: integer("vintage").notNull(),
+  vineyard: text("vineyard"),
   type: text("type").notNull(), // red, white, rose, sparkling, dessert, fortified
   region: text("region"),
   subregion: text("subregion"),

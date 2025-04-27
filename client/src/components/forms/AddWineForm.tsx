@@ -62,6 +62,7 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
     name: wine?.name || "",
     producer: wine?.producer || "",
     vintage: wine?.vintage || undefined,
+    vineyard: wine?.vineyard || "",
     type: wine?.type || "red",
     region: wine?.region || "",
     subregion: wine?.subregion || "",
@@ -209,6 +210,24 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                 
                 <FormField
                   control={form.control}
+                  name="vineyard"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vineyard</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. V Madrone Vineyard" 
+                          {...field} 
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
@@ -240,7 +259,11 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Region</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Napa Valley, Bordeaux" {...field} />
+                        <Input 
+                          placeholder="e.g. Napa Valley, Bordeaux" 
+                          {...field} 
+                          value={field.value || ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -254,7 +277,11 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Sub-region</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. St. Helena, Pauillac" {...field} />
+                        <Input 
+                          placeholder="e.g. St. Helena, Pauillac" 
+                          {...field} 
+                          value={field.value || ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -268,7 +295,11 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Grape Varieties</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Cabernet Sauvignon, Merlot" {...field} />
+                        <Input 
+                          placeholder="e.g. Cabernet Sauvignon, Merlot" 
+                          {...field} 
+                          value={field.value || ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -513,6 +544,7 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                         placeholder="Add your tasting notes or other information about this wine..." 
                         className="h-24"
                         {...field} 
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
