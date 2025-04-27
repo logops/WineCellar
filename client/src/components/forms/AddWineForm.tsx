@@ -163,20 +163,6 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Wine Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Cabernet Sauvignon" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
                   name="producer"
                   render={({ field }) => (
                     <FormItem>
@@ -312,7 +298,10 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Bottle Size</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || "750ml"} // Ensure it always has a value
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a bottle size" />
@@ -415,6 +404,24 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                           />
                         </PopoverContent>
                       </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Wine Name</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. Cabernet Sauvignon" 
+                          {...field} 
+                          value={field.value || ""}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

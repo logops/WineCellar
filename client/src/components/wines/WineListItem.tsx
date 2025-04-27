@@ -62,6 +62,12 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               <div className="w-40 flex-shrink-0 font-medium">Storage Location</div>
               <div className="ml-2">Cellar ({wine.quantity})</div>
             </div>
+            {wine.notes && (
+              <div className="pt-2 mt-2 border-t border-cream-200">
+                <div className="text-gray-700 font-medium mb-1">Notes</div>
+                <div className="text-gray-600 italic">{wine.notes}</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
