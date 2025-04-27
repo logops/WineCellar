@@ -42,6 +42,9 @@ const formSchema = insertWineSchema.extend({
   purchasePrice: z.coerce.number().min(0).optional(),
   currentValue: z.coerce.number().min(0).optional(),
   quantity: z.coerce.number().min(1).default(1),
+  // Add year fields for custom drinking window
+  drinkingWindowStartYear: z.coerce.number().min(new Date().getFullYear()).max(new Date().getFullYear() + 50).optional(),
+  drinkingWindowEndYear: z.coerce.number().min(new Date().getFullYear()).max(new Date().getFullYear() + 50).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,6 +66,15 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
   const suggestions = useAutocompleteSuggestions();
 
   // Convert dates from strings to Date objects if needed
+  // Extract year from date for drinking window if available
+  const drinkingWindowStartYear = wine?.drinkingWindowStart 
+    ? new Date(wine.drinkingWindowStart).getFullYear() 
+    : undefined;
+  
+  const drinkingWindowEndYear = wine?.drinkingWindowEnd 
+    ? new Date(wine.drinkingWindowEnd).getFullYear() 
+    : undefined;
+
   const defaultValues: Partial<FormValues> = {
     name: wine?.name || "",
     producer: wine?.producer || "",
@@ -78,6 +90,8 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
     currentValue: wine?.currentValue || undefined,
     purchaseLocation: wine?.purchaseLocation || "",
     notes: wine?.notes || "",
+    drinkingWindowStartYear,
+    drinkingWindowEndYear,
   };
 
   const form = useForm<FormValues>({
@@ -102,13 +116,20 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
         drinkingWindowStart = new Date(currentYear + 3, 0, 1);
         drinkingWindowEnd = new Date(currentYear + 10, 11, 31);
       } else if (drinkingWindowType === "custom") {
-        drinkingWindowStart = form.getValues("drinkingWindowStart");
-        drinkingWindowEnd = form.getValues("drinkingWindowEnd");
+        // Convert year values to Date objects (Jan 1 of start year, Dec 31 of end year)
+        const startYear = form.getValues("drinkingWindowStartYear");
+        const endYear = form.getValues("drinkingWindowEndYear");
+        
+        drinkingWindowStart = startYear ? new Date(startYear, 0, 1) : null; // Jan 1st of start year
+        drinkingWindowEnd = endYear ? new Date(endYear, 11, 31) : null; // Dec 31st of end year
       }
 
-      // Convert Date objects to ISO strings for API compatibility
+      // Remove the year fields from final submission data, convert dates to ISO strings
+      const { drinkingWindowStartYear, drinkingWindowEndYear, ...otherValues } = values;
+      
+      // Prepare final wine data for submission
       const wineData = {
-        ...values,
+        ...otherValues,
         purchaseDate: values.purchaseDate ? new Date(values.purchaseDate).toISOString() : null,
         drinkingStatus: drinkingWindowType,
         drinkingWindowStart: drinkingWindowStart ? new Date(drinkingWindowStart).toISOString() : null,
@@ -478,38 +499,21 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="drinkingWindowStart"
+                    name="drinkingWindowStartYear"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Start Drinking From</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(new Date(field.value), "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+                      <FormItem>
+                        <FormLabel>Start Drinking From (Year)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min={new Date().getFullYear()} 
+                            max={new Date().getFullYear() + 50}
+                            placeholder={new Date().getFullYear().toString()} 
+                            {...field} 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || "")}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -517,38 +521,21 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                   
                   <FormField
                     control={form.control}
-                    name="drinkingWindowEnd"
+                    name="drinkingWindowEndYear"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Drink By</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(new Date(field.value), "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+                      <FormItem>
+                        <FormLabel>Drink By (Year)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min={new Date().getFullYear()} 
+                            max={new Date().getFullYear() + 50}
+                            placeholder={(new Date().getFullYear() + 5).toString()} 
+                            {...field} 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || "")}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
