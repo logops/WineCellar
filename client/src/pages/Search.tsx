@@ -187,7 +187,15 @@ export default function Search() {
     const values = wines.map(wine => wine[key])
       .filter(value => value !== undefined && value !== null && value !== '');
     
-    return [...new Set(values)];
+    // Instead of using Set directly, we'll manually handle the uniqueness
+    const uniqueValues: any[] = [];
+    values.forEach(value => {
+      if (!uniqueValues.includes(value)) {
+        uniqueValues.push(value);
+      }
+    });
+    
+    return uniqueValues;
   };
 
   const uniqueTypes = getUniqueValues('type') as string[];

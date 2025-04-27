@@ -303,13 +303,13 @@ export default function SearchFilters({
                       placeholder="1000"
                       min="0"
                       onChange={(e) => {
-                        const minPrice = filters.priceRange ? 
-                          filters.priceRange[0] : 0;
+                        const minPrice = selectedFilters.priceRange ? 
+                          selectedFilters.priceRange[0] : 0;
                         const maxPrice = parseFloat(e.target.value) || 1000;
                         
                         onRangeFilterChange && onRangeFilterChange(
                           'priceRange', 
-                          [minPrice, maxPrice]
+                          [minPrice, maxPrice] as [number, number]
                         );
                       }}
                     />
@@ -384,15 +384,32 @@ export default function SearchFilters({
         )}
         
         <div className="flex justify-end mt-6 pt-4 border-t border-cream-200">
-          <Button variant="outline" className="mr-2" onClick={() => {
-            // Add function to clear all filters
-          }}>
+          <Button 
+            variant="outline" 
+            className="mr-2" 
+            onClick={() => {
+              // Clear all filters and trigger search
+              onFilterChange('type', '', false);
+              onFilterChange('region', '', false);
+              onFilterChange('vintage', 0, false);
+              onFilterChange('drinkingWindow', '', false);
+              if (onRangeFilterChange) {
+                onRangeFilterChange('priceRange', [0, 1000] as [number, number]);
+                const today = new Date();
+                const pastDate = new Date(2000, 0, 1);
+                onRangeFilterChange('purchaseDateRange', [pastDate, today] as [Date, Date]);
+              }
+            }}
+          >
             Clear Filters
           </Button>
-          <Button className="bg-burgundy-600 hover:bg-burgundy-700" onClick={() => {
-            setIsOpen(false);
-            // Add function to apply filters
-          }}>
+          <Button 
+            className="bg-burgundy-600 hover:bg-burgundy-700" 
+            onClick={() => {
+              setIsOpen(false);
+              // The filters are already applied as they're changed
+            }}
+          >
             Apply Filters
           </Button>
         </div>
