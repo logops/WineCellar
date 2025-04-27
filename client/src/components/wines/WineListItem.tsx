@@ -15,47 +15,48 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
   const [showEditModal, setShowEditModal] = useState(false);
 
   return (
-    <div className="border rounded-md p-4 hover:bg-cream-50">
+    <div className="border border-cream-300 rounded-xl p-5 shadow-sm hover:shadow-md hover:bg-cream-50 transition-all duration-200">
       <div className="flex">
-        <div className="w-8 flex-shrink-0 mr-3">
+        <div className="w-10 flex-shrink-0 mr-4">
           <WineGlassIcon type={wine.type} />
         </div>
         <div className="flex-grow">
           <div className="flex flex-col md:flex-row justify-between">
             <div>
-              <h3 className="font-medium text-burgundy-700">
-                {wine.vintage} {wine.producer} {wine.name}
+              <h3 className="font-semibold text-burgundy-700">
+                {wine.vintage && <span className="font-spectral">{wine.vintage}</span>} {wine.producer} {wine.name}
               </h3>
-              <p className="text-gray-600 text-sm">{wine.region}</p>
-              <p className="text-xs text-gray-500">CT{wine.rating}</p>
+              <p className="text-gray-600 text-sm font-medium">{wine.region}</p>
+              {wine.rating && <p className="text-xs text-gray-500 mt-1">Rating: CT{wine.rating}</p>}
             </div>
             <div className="mt-2 md:mt-0 flex">
               <button 
-                className="flex items-center text-burgundy-600 text-xs mr-3"
+                className="flex items-center text-burgundy-600 text-xs rounded-full hover:bg-burgundy-100 p-2 transition-colors"
                 onClick={() => setShowEditModal(true)}
                 aria-label="Edit wine"
               >
-                <Camera className="h-4 w-4 mr-1" />
+                <Camera className="h-4 w-4" />
               </button>
             </div>
           </div>
           
-          <div className="mt-3 text-sm">
-            <div className="flex items-center mb-1">
-              <div className="w-32 flex-shrink-0">Show Drinking Window</div>
-              <div className="ml-3 w-6 h-1 bg-burgundy-600 rounded-full"></div>
+          <div className="mt-4 text-sm space-y-2">
+            <div className="flex items-center">
+              <div className="w-40 flex-shrink-0 text-gray-700 font-medium">Drinking Window</div>
+              <div className="ml-2 w-20 h-1 bg-burgundy-600 rounded-full"></div>
             </div>
-            <div className="flex items-center mb-1">
-              <div className="w-32 flex-shrink-0">{wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''} ({wine.bottleSize})</div>
-              <div className="ml-3">—</div>
+            <div className="flex items-center">
+              <div className="w-40 flex-shrink-0 text-gray-700 font-medium">
+                {wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''} ({wine.bottleSize})
+              </div>
               <div className="ml-2 flex items-center">
-                <span className="text-gray-700">V</span>
-                <span className="ml-1 text-burgundy-700 font-medium">{formatPrice(wine.currentValue)}</span>
+                <span className="text-gray-700">Value:</span>
+                <span className="ml-1 text-burgundy-700 font-semibold">{formatPrice(wine.currentValue)}</span>
               </div>
             </div>
             <div className="flex items-center text-gray-600">
-              <div className="w-32 flex-shrink-0">Cellar</div>
-              <div className="ml-3">({wine.quantity})</div>
+              <div className="w-40 flex-shrink-0 font-medium">Storage Location</div>
+              <div className="ml-2">Cellar ({wine.quantity})</div>
             </div>
           </div>
         </div>
