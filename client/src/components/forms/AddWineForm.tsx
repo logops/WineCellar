@@ -259,7 +259,7 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                         <Autocomplete 
                           placeholder="e.g. Napa Valley, Bordeaux" 
                           suggestions={suggestions.regions}
-                          value={field.value}
+                          value={field.value || ""}
                           onValueChange={field.onChange}
                         />
                       </FormControl>
@@ -278,7 +278,7 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                         <Autocomplete 
                           placeholder="e.g. St. Helena, Pauillac" 
                           suggestions={suggestions.subregions}
-                          value={field.value}
+                          value={field.value || ""}
                           onValueChange={field.onChange}
                         />
                       </FormControl>
@@ -294,10 +294,11 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Grape Varieties</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Autocomplete 
                           placeholder="e.g. Cabernet Sauvignon, Merlot" 
-                          {...field} 
+                          suggestions={suggestions.grapeVarieties}
                           value={field.value || ""}
+                          onValueChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
