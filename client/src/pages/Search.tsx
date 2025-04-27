@@ -69,8 +69,32 @@ export default function Search() {
       // Filter by drinking window
       const matchesDrinkingWindow = filters.drinkingWindow.length === 0 || 
         (wine.drinkingStatus && filters.drinkingWindow.includes(wine.drinkingStatus));
+
+      // Filter by purchase location
+      const matchesPurchaseLocation = !filters.purchaseLocation?.length || 
+        (wine.purchaseLocation && filters.purchaseLocation.includes(wine.purchaseLocation));
+
+      // Filter by price range
+      const matchesPriceRange = !filters.priceRange || 
+        (wine.currentValue !== null && 
+         wine.currentValue !== undefined && 
+         wine.currentValue >= filters.priceRange[0] && 
+         wine.currentValue <= filters.priceRange[1]);
+
+      // Filter by purchase date range
+      const matchesPurchaseDateRange = !filters.purchaseDateRange || 
+        (wine.purchaseDate && 
+         new Date(wine.purchaseDate) >= filters.purchaseDateRange[0] && 
+         new Date(wine.purchaseDate) <= filters.purchaseDateRange[1]);
       
-      return matchesQuery && matchesType && matchesRegion && matchesVintage && matchesDrinkingWindow;
+      return matchesQuery && 
+             matchesType && 
+             matchesRegion && 
+             matchesVintage && 
+             matchesDrinkingWindow && 
+             matchesPurchaseLocation && 
+             matchesPriceRange && 
+             matchesPurchaseDateRange;
     });
     
     // Sort results
@@ -203,6 +227,7 @@ export default function Search() {
             regions={uniqueRegions}
             vintages={uniqueVintages}
             onFilterChange={handleFilterChange}
+            onRangeFilterChange={handleRangeFilterChange}
             selectedFilters={filters}
           />
         </div>

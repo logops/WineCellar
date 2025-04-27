@@ -26,9 +26,10 @@ interface SearchFiltersProps {
     drinkingWindow: string[];
     purchaseLocation?: string[];
     priceRange?: [number, number];
+    purchaseDateRange?: [Date, Date];
   };
   onFilterChange: (filterType: string, value: string | number, isSelected: boolean) => void;
-  onRangeFilterChange?: (filterType: string, value: [number, number]) => void;
+  onRangeFilterChange?: (filterType: "priceRange" | "purchaseDateRange", value: [number, number] | [Date, Date]) => void;
 }
 
 export default function SearchFilters({
@@ -36,7 +37,8 @@ export default function SearchFilters({
   regions,
   vintages,
   selectedFilters,
-  onFilterChange
+  onFilterChange,
+  onRangeFilterChange
 }: SearchFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -227,7 +229,19 @@ export default function SearchFilters({
                     <input
                       type="date"
                       className="flex-1 ml-2 outline-none text-sm"
-                      onChange={() => {/* Add function to handle date range filter */}}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const fromDate = new Date(e.target.value);
+                          const toDate = selectedFilters.purchaseDateRange ? 
+                            selectedFilters.purchaseDateRange[1] : 
+                            new Date();
+                          
+                          onRangeFilterChange && onRangeFilterChange(
+                            'purchaseDateRange', 
+                            [fromDate, toDate] as [Date, Date]
+                          );
+                        }
+                      }}
                     />
                   </div>
                   <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
@@ -235,7 +249,19 @@ export default function SearchFilters({
                     <input
                       type="date"
                       className="flex-1 ml-2 outline-none text-sm"
-                      onChange={() => {/* Add function to handle date range filter */}}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const fromDate = selectedFilters.purchaseDateRange ? 
+                            selectedFilters.purchaseDateRange[0] : 
+                            new Date(2000, 0, 1);
+                          const toDate = new Date(e.target.value);
+                          
+                          onRangeFilterChange && onRangeFilterChange(
+                            'purchaseDateRange', 
+                            [fromDate, toDate] as [Date, Date]
+                          );
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -257,7 +283,16 @@ export default function SearchFilters({
                       className="flex-1 ml-2 outline-none text-sm"
                       placeholder="0"
                       min="0"
-                      onChange={() => {/* Add function to handle price range filter */}}
+                      onChange={(e) => {
+                        const minPrice = parseFloat(e.target.value) || 0;
+                        const maxPrice = selectedFilters.priceRange ? 
+                          selectedFilters.priceRange[1] : 1000;
+                        
+                        onRangeFilterChange && onRangeFilterChange(
+                          'priceRange', 
+                          [minPrice, maxPrice] as [number, number]
+                        );
+                      }}
                     />
                   </div>
                   <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
@@ -267,7 +302,16 @@ export default function SearchFilters({
                       className="flex-1 ml-2 outline-none text-sm"
                       placeholder="1000"
                       min="0"
-                      onChange={() => {/* Add function to handle price range filter */}}
+                      onChange={(e) => {
+                        const minPrice = filters.priceRange ? 
+                          filters.priceRange[0] : 0;
+                        const maxPrice = parseFloat(e.target.value) || 1000;
+                        
+                        onRangeFilterChange && onRangeFilterChange(
+                          'priceRange', 
+                          [minPrice, maxPrice]
+                        );
+                      }}
                     />
                   </div>
                 </div>
