@@ -130,7 +130,8 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
       // Prepare final wine data for submission
       const wineData = {
         ...otherValues,
-        purchaseDate: values.purchaseDate ? new Date(values.purchaseDate).toISOString() : null,
+        // Purchase date should already be an ISO string from the date picker
+        purchaseDate: values.purchaseDate || null, 
         drinkingStatus: drinkingWindowType,
         drinkingWindowStart: drinkingWindowStart ? new Date(drinkingWindowStart).toISOString() : null,
         drinkingWindowEnd: drinkingWindowEnd ? new Date(drinkingWindowEnd).toISOString() : null,
@@ -433,7 +434,10 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                           <Calendar
                             mode="single"
                             selected={field.value ? new Date(field.value) : undefined}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                              // Ensure we properly handle the date value
+                              field.onChange(date ? date.toISOString() : undefined);
+                            }}
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01")
                             }
