@@ -276,12 +276,12 @@ export default function SearchFilters({
                 Price Range
               </h3>
               <div className="space-y-2">
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
-                    <span className="text-gray-500 text-sm">Min:</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2">
+                    <span className="text-gray-500 text-sm w-10">Min:</span>
                     <input
                       type="number"
-                      className="flex-1 ml-2 outline-none text-sm"
+                      className="w-full outline-none text-sm"
                       placeholder="0"
                       min="0"
                       onChange={(e) => {
@@ -296,11 +296,11 @@ export default function SearchFilters({
                       }}
                     />
                   </div>
-                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
-                    <span className="text-gray-500 text-sm">Max:</span>
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2">
+                    <span className="text-gray-500 text-sm w-10">Max:</span>
                     <input
                       type="number"
-                      className="flex-1 ml-2 outline-none text-sm"
+                      className="w-full outline-none text-sm"
                       placeholder="1000"
                       min="0"
                       onChange={(e) => {
