@@ -7,6 +7,7 @@ import { CalendarIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAutocompleteSuggestions } from "@/lib/autocompleteService";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -34,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Wine, insertWineSchema } from "@shared/schema";
+import { Autocomplete } from "@/components/ui/autocomplete";
 
 const formSchema = insertWineSchema.extend({
   vintage: z.coerce.number().min(1900).max(new Date().getFullYear() + 10).optional(),
@@ -56,6 +58,9 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
   const [drinkingWindowType, setDrinkingWindowType] = useState(
     wine?.drinkingStatus || "drink_later"
   );
+  
+  // Get autocomplete suggestions
+  const suggestions = useAutocompleteSuggestions();
 
   // Convert dates from strings to Date objects if needed
   const defaultValues: Partial<FormValues> = {
@@ -168,7 +173,12 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Producer</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Château Margaux" {...field} />
+                        <Autocomplete 
+                          placeholder="e.g. Château Margaux" 
+                          suggestions={suggestions.producers}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -201,10 +211,11 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Vineyard</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Autocomplete 
                           placeholder="e.g. V Madrone Vineyard" 
-                          {...field} 
+                          suggestions={suggestions.vineyards}
                           value={field.value || ""}
+                          onValueChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
@@ -245,10 +256,11 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Region</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Autocomplete 
                           placeholder="e.g. Napa Valley, Bordeaux" 
-                          {...field} 
-                          value={field.value || ""}
+                          suggestions={suggestions.regions}
+                          value={field.value}
+                          onValueChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
@@ -263,10 +275,11 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                     <FormItem>
                       <FormLabel>Sub-region</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Autocomplete 
                           placeholder="e.g. St. Helena, Pauillac" 
-                          {...field} 
-                          value={field.value || ""}
+                          suggestions={suggestions.subregions}
+                          value={field.value}
+                          onValueChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
