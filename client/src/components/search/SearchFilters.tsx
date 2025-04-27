@@ -224,12 +224,12 @@ export default function SearchFilters({
                 Purchase Date Range
               </h3>
               <div className="space-y-2">
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
-                    <span className="text-gray-500 text-sm">From:</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2">
+                    <span className="text-gray-500 text-sm w-12">From:</span>
                     <input
                       type="date"
-                      className="flex-1 ml-2 outline-none text-sm"
+                      className="w-full outline-none text-sm"
                       onChange={(e) => {
                         if (e.target.value) {
                           const fromDate = new Date(e.target.value);
@@ -245,11 +245,11 @@ export default function SearchFilters({
                       }}
                     />
                   </div>
-                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
-                    <span className="text-gray-500 text-sm">To:</span>
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2">
+                    <span className="text-gray-500 text-sm w-12">To:</span>
                     <input
                       type="date"
-                      className="flex-1 ml-2 outline-none text-sm"
+                      className="w-full outline-none text-sm"
                       onChange={(e) => {
                         if (e.target.value) {
                           const fromDate = selectedFilters.purchaseDateRange ? 
@@ -361,17 +361,17 @@ export default function SearchFilters({
                 Drinking Date Range
               </h3>
               <div className="space-y-2">
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
-                    <span className="text-gray-500 text-sm">From:</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2">
+                    <span className="text-gray-500 text-sm w-12">From:</span>
                     <input
                       type="date"
-                      className="flex-1 ml-2 outline-none text-sm"
+                      className="w-full outline-none text-sm"
                       onChange={(e) => {
                         if (e.target.value) {
                           const fromDate = new Date(e.target.value);
-                          const toDate = selectedFilters.purchaseDateRange ? 
-                            selectedFilters.purchaseDateRange[1] : 
+                          const toDate = selectedFilters.drinkingWindowRange ? 
+                            selectedFilters.drinkingWindowRange[1] : 
                             new Date();
                           
                           onRangeFilterChange && onRangeFilterChange(
@@ -382,11 +382,11 @@ export default function SearchFilters({
                       }}
                     />
                   </div>
-                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
-                    <span className="text-gray-500 text-sm">To:</span>
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2">
+                    <span className="text-gray-500 text-sm w-12">To:</span>
                     <input
                       type="date"
-                      className="flex-1 ml-2 outline-none text-sm"
+                      className="w-full outline-none text-sm"
                       onChange={(e) => {
                         if (e.target.value) {
                           const fromDate = selectedFilters.drinkingWindowRange ? 
