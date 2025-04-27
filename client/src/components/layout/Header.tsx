@@ -27,6 +27,7 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
         <div className="hidden md:flex items-center space-x-4">
           <Link href="/" className="text-cream-100 hover:text-white">Dashboard</Link>
           <Link href="/collection" className="text-cream-100 hover:text-white">My Collection</Link>
+          <Link href="/notes" className="text-cream-100 hover:text-white">My Notes</Link>
           <Link href="/reports" className="text-cream-100 hover:text-white">Reports</Link>
           <div className="relative">
             <button className="flex items-center focus:outline-none">

@@ -11,6 +11,7 @@ import Collection from "@/pages/Collection";
 import Search from "@/pages/Search";
 import Reports from "@/pages/Reports";
 import WishList from "@/pages/WishList";
+import Notes from "@/pages/Notes";
 import { useState } from "react";
 import MobileMenu from "@/components/layout/MobileMenu";
 
@@ -35,6 +36,7 @@ function App() {
               <Route path="/search" component={Search} />
               <Route path="/reports" component={Reports} />
               <Route path="/wishlist" component={WishList} />
+              <Route path="/notes" component={Notes} />
               <Route component={NotFound} />
             </Switch>
           </main>
