@@ -24,7 +24,10 @@ export default function Search() {
     type: [] as string[],
     region: [] as string[],
     vintage: [] as number[],
-    drinkingWindow: [] as string[]
+    drinkingWindow: [] as string[],
+    purchaseLocation: [] as string[],
+    priceRange: undefined as [number, number] | undefined,
+    purchaseDateRange: undefined as [Date, Date] | undefined
   });
 
   const { data: wines, isLoading } = useQuery<Wine[]>({ 
@@ -92,31 +95,63 @@ export default function Search() {
       case 'value-desc':
         sortedResults.sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0));
         break;
+      case 'purchase-date-asc':
+        sortedResults.sort((a, b) => {
+          if (!a.purchaseDate) return 1;
+          if (!b.purchaseDate) return -1;
+          return new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime();
+        });
+        break;
+      case 'purchase-date-desc':
+        sortedResults.sort((a, b) => {
+          if (!a.purchaseDate) return 1;
+          if (!b.purchaseDate) return -1;
+          return new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime();
+        });
+        break;
     }
     
     setSearchResults(sortedResults);
   };
 
-  const handleFilterChange = (filterType: keyof typeof filters, value: string | number, isSelected: boolean) => {
+  const handleFilterChange = (filterType: string, value: string | number, isSelected: boolean) => {
     setFilters(prev => {
       const newFilters = { ...prev };
       
-      if (isSelected) {
-        // Add to filter
-        if (typeof value === 'string') {
-          newFilters[filterType] = [...prev[filterType] as string[], value as string];
+      // Handle array type filters (type, region, vintage, drinkingWindow, purchaseLocation)
+      if (['type', 'region', 'vintage', 'drinkingWindow', 'purchaseLocation'].includes(filterType)) {
+        if (isSelected) {
+          // Add to filter
+          if (filterType === 'vintage') {
+            newFilters.vintage = [...prev.vintage, value as number];
+          } else if (filterType === 'type' || filterType === 'region' || filterType === 'drinkingWindow' || filterType === 'purchaseLocation') {
+            const key = filterType as 'type' | 'region' | 'drinkingWindow' | 'purchaseLocation';
+            newFilters[key] = [...prev[key], value as string];
+          }
         } else {
-          newFilters[filterType] = [...prev[filterType] as number[], value as number];
-        }
-      } else {
-        // Remove from filter
-        if (typeof value === 'string') {
-          newFilters[filterType] = (prev[filterType] as string[]).filter(item => item !== value);
-        } else {
-          newFilters[filterType] = (prev[filterType] as number[]).filter(item => item !== value);
+          // Remove from filter
+          if (filterType === 'vintage') {
+            newFilters.vintage = prev.vintage.filter(item => item !== value);
+          } else if (filterType === 'type' || filterType === 'region' || filterType === 'drinkingWindow' || filterType === 'purchaseLocation') {
+            const key = filterType as 'type' | 'region' | 'drinkingWindow' | 'purchaseLocation';
+            newFilters[key] = prev[key].filter(item => item !== value);
+          }
         }
       }
       
+      return newFilters;
+    });
+  };
+  
+  // Function to handle range filter changes (price range, date range)
+  const handleRangeFilterChange = (filterType: 'priceRange' | 'purchaseDateRange', value: [number, number] | [Date, Date]) => {
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      if (filterType === 'priceRange') {
+        newFilters.priceRange = value as [number, number];
+      } else if (filterType === 'purchaseDateRange') {
+        newFilters.purchaseDateRange = value as [Date, Date];
+      }
       return newFilters;
     });
   };
@@ -193,6 +228,8 @@ export default function Search() {
                     <SelectItem value="vintage-desc">Vintage: Newest First</SelectItem>
                     <SelectItem value="value-desc">Value: High to Low</SelectItem>
                     <SelectItem value="value-asc">Value: Low to High</SelectItem>
+                    <SelectItem value="purchase-date-asc">Purchase Date: Oldest First</SelectItem>
+                    <SelectItem value="purchase-date-desc">Purchase Date: Newest First</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -219,7 +256,10 @@ export default function Search() {
                     type: [],
                     region: [],
                     vintage: [],
-                    drinkingWindow: []
+                    drinkingWindow: [],
+                    purchaseLocation: [],
+                    priceRange: undefined,
+                    purchaseDateRange: undefined
                   });
                 }} variant="outline" className="mt-4">
                   Clear Filters

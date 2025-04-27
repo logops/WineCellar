@@ -6,7 +6,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ChevronDown, 
+  ChevronUp, 
+  Filter,
+  SlidersHorizontal
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface SearchFiltersProps {
   types: string[];
@@ -17,8 +24,11 @@ interface SearchFiltersProps {
     region: string[];
     vintage: number[];
     drinkingWindow: string[];
+    purchaseLocation?: string[];
+    priceRange?: [number, number];
   };
   onFilterChange: (filterType: string, value: string | number, isSelected: boolean) => void;
+  onRangeFilterChange?: (filterType: string, value: [number, number]) => void;
 }
 
 export default function SearchFilters({
@@ -54,118 +64,293 @@ export default function SearchFilters({
   // Sort vintages in descending order
   const sortedVintages = [...vintages].sort((a, b) => b - a);
 
+  // Count total active filters
+  const activeFilterCount = 
+    selectedFilters.type.length + 
+    selectedFilters.region.length + 
+    selectedFilters.vintage.length + 
+    selectedFilters.drinkingWindow.length + 
+    (selectedFilters.purchaseLocation?.length || 0);
+
+  const [activeTab, setActiveTab] = useState("all");
+  
   return (
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="border rounded-md overflow-hidden"
+      className="border border-cream-200 rounded-xl shadow-sm overflow-hidden"
     >
       <CollapsibleTrigger asChild>
         <Button 
           variant="ghost" 
-          className="w-full flex justify-between items-center p-4 h-auto"
+          className="w-full flex justify-between items-center p-5 h-auto"
         >
-          <span className="font-medium">Advanced Filters</span>
-          {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-burgundy-600" />
+            <span className="font-medium text-burgundy-700">Advanced Filters</span>
+            {activeFilterCount > 0 && (
+              <Badge variant="outline" className="bg-burgundy-100 text-burgundy-800 hover:bg-burgundy-100">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </div>
+          {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="p-4 border-t">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Wine Type Filter */}
-          <div>
-            <h3 className="font-semibold mb-2 text-burgundy-700">Wine Type</h3>
-            <div className="space-y-2">
-              {types.map(type => (
-                <div key={type} className="flex items-center">
-                  <Checkbox 
-                    id={`type-${type}`}
-                    checked={selectedFilters.type.includes(type)}
-                    onCheckedChange={(checked) => {
-                      onFilterChange('type', type, checked === true);
-                    }}
-                  />
-                  <label 
-                    htmlFor={`type-${type}`}
-                    className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {getWineTypeName(type)}
-                  </label>
-                </div>
-              ))}
+      <CollapsibleContent className="p-5 border-t border-cream-200">
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-5">
+          <TabsList className="bg-cream-100 p-1">
+            <TabsTrigger value="all" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              All Filters
+            </TabsTrigger>
+            <TabsTrigger value="characteristics" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Characteristics
+            </TabsTrigger>
+            <TabsTrigger value="purchase" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Purchase Info
+            </TabsTrigger>
+            <TabsTrigger value="drinking" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Drinking Window
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        {(activeTab === "all" || activeTab === "characteristics") && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {/* Wine Type Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Wine Type
+                {selectedFilters.type.length > 0 && (
+                  <Badge variant="outline" className="ml-auto">{selectedFilters.type.length}</Badge>
+                )}
+              </h3>
+              <div className="space-y-2">
+                {types.map(type => (
+                  <div key={type} className="flex items-center">
+                    <Checkbox 
+                      id={`type-${type}`}
+                      checked={selectedFilters.type.includes(type)}
+                      onCheckedChange={(checked) => {
+                        onFilterChange('type', type, checked === true);
+                      }}
+                      className="text-burgundy-600 border-cream-300"
+                    />
+                    <label 
+                      htmlFor={`type-${type}`}
+                      className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {getWineTypeName(type)}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Region Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Region
+                {selectedFilters.region.length > 0 && (
+                  <Badge variant="outline" className="ml-auto">{selectedFilters.region.length}</Badge>
+                )}
+              </h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                {regions.map(region => (
+                  <div key={region} className="flex items-center">
+                    <Checkbox 
+                      id={`region-${region}`}
+                      checked={selectedFilters.region.includes(region)}
+                      onCheckedChange={(checked) => {
+                        onFilterChange('region', region, checked === true);
+                      }}
+                      className="text-burgundy-600 border-cream-300"
+                    />
+                    <label 
+                      htmlFor={`region-${region}`}
+                      className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {region}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Vintage Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Vintage
+                {selectedFilters.vintage.length > 0 && (
+                  <Badge variant="outline" className="ml-auto">{selectedFilters.vintage.length}</Badge>
+                )}
+              </h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                {sortedVintages.map(vintage => (
+                  <div key={vintage} className="flex items-center">
+                    <Checkbox 
+                      id={`vintage-${vintage}`}
+                      checked={selectedFilters.vintage.includes(vintage)}
+                      onCheckedChange={(checked) => {
+                        onFilterChange('vintage', vintage, checked === true);
+                      }}
+                      className="text-burgundy-600 border-cream-300"
+                    />
+                    <label 
+                      htmlFor={`vintage-${vintage}`}
+                      className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {vintage}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          
-          {/* Region Filter */}
-          <div>
-            <h3 className="font-semibold mb-2 text-burgundy-700">Region</h3>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {regions.map(region => (
-                <div key={region} className="flex items-center">
-                  <Checkbox 
-                    id={`region-${region}`}
-                    checked={selectedFilters.region.includes(region)}
-                    onCheckedChange={(checked) => {
-                      onFilterChange('region', region, checked === true);
-                    }}
-                  />
-                  <label 
-                    htmlFor={`region-${region}`}
-                    className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {region}
-                  </label>
+        )}
+        
+        {(activeTab === "all" || activeTab === "purchase") && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Purchase Date Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Purchase Date Range
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
+                    <span className="text-gray-500 text-sm">From:</span>
+                    <input
+                      type="date"
+                      className="flex-1 ml-2 outline-none text-sm"
+                      onChange={() => {/* Add function to handle date range filter */}}
+                    />
+                  </div>
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
+                    <span className="text-gray-500 text-sm">To:</span>
+                    <input
+                      type="date"
+                      className="flex-1 ml-2 outline-none text-sm"
+                      onChange={() => {/* Add function to handle date range filter */}}
+                    />
+                  </div>
                 </div>
-              ))}
+              </div>
+            </div>
+            
+            {/* Price Range Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Price Range
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
+                    <span className="text-gray-500 text-sm">Min:</span>
+                    <input
+                      type="number"
+                      className="flex-1 ml-2 outline-none text-sm"
+                      placeholder="0"
+                      min="0"
+                      onChange={() => {/* Add function to handle price range filter */}}
+                    />
+                  </div>
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
+                    <span className="text-gray-500 text-sm">Max:</span>
+                    <input
+                      type="number"
+                      className="flex-1 ml-2 outline-none text-sm"
+                      placeholder="1000"
+                      min="0"
+                      onChange={() => {/* Add function to handle price range filter */}}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          
-          {/* Vintage Filter */}
-          <div>
-            <h3 className="font-semibold mb-2 text-burgundy-700">Vintage</h3>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {sortedVintages.map(vintage => (
-                <div key={vintage} className="flex items-center">
-                  <Checkbox 
-                    id={`vintage-${vintage}`}
-                    checked={selectedFilters.vintage.includes(vintage)}
-                    onCheckedChange={(checked) => {
-                      onFilterChange('vintage', vintage, checked === true);
-                    }}
-                  />
-                  <label 
-                    htmlFor={`vintage-${vintage}`}
-                    className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {vintage}
-                  </label>
+        )}
+        
+        {(activeTab === "all" || activeTab === "drinking") && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Drinking Window Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Drinking Window
+                {selectedFilters.drinkingWindow.length > 0 && (
+                  <Badge variant="outline" className="ml-auto">{selectedFilters.drinkingWindow.length}</Badge>
+                )}
+              </h3>
+              <div className="space-y-2">
+                {['drink_now', 'drink_later', 'custom'].map(status => (
+                  <div key={status} className="flex items-center">
+                    <Checkbox 
+                      id={`status-${status}`}
+                      checked={selectedFilters.drinkingWindow.includes(status)}
+                      onCheckedChange={(checked) => {
+                        onFilterChange('drinkingWindow', status, checked === true);
+                      }}
+                      className="text-burgundy-600 border-cream-300"
+                    />
+                    <label 
+                      htmlFor={`status-${status}`}
+                      className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {getDrinkingWindowName(status)}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Custom Date Range Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Drinking Date Range
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
+                    <span className="text-gray-500 text-sm">From:</span>
+                    <input
+                      type="date"
+                      className="flex-1 ml-2 outline-none text-sm"
+                      onChange={() => {/* Add function to handle drinking window filter */}}
+                    />
+                  </div>
+                  <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
+                    <span className="text-gray-500 text-sm">To:</span>
+                    <input
+                      type="date"
+                      className="flex-1 ml-2 outline-none text-sm"
+                      onChange={() => {/* Add function to handle drinking window filter */}}
+                    />
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-          
-          {/* Drinking Window Filter */}
-          <div>
-            <h3 className="font-semibold mb-2 text-burgundy-700">Drinking Window</h3>
-            <div className="space-y-2">
-              {['drink_now', 'drink_later', 'custom'].map(status => (
-                <div key={status} className="flex items-center">
-                  <Checkbox 
-                    id={`status-${status}`}
-                    checked={selectedFilters.drinkingWindow.includes(status)}
-                    onCheckedChange={(checked) => {
-                      onFilterChange('drinkingWindow', status, checked === true);
-                    }}
-                  />
-                  <label 
-                    htmlFor={`status-${status}`}
-                    className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {getDrinkingWindowName(status)}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
+        )}
+        
+        <div className="flex justify-end mt-6 pt-4 border-t border-cream-200">
+          <Button variant="outline" className="mr-2" onClick={() => {
+            // Add function to clear all filters
+          }}>
+            Clear Filters
+          </Button>
+          <Button className="bg-burgundy-600 hover:bg-burgundy-700" onClick={() => {
+            setIsOpen(false);
+            // Add function to apply filters
+          }}>
+            Apply Filters
+          </Button>
         </div>
       </CollapsibleContent>
     </Collapsible>
