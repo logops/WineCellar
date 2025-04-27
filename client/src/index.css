@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 43 48% 95%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 345 57% 35%;
+  --primary-foreground: 355 100% 97%;
+  --secondary: 43 45% 94%;
+  --secondary-foreground: 24 9.8% 10%;
+  --accent: 43 60% 85%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.5rem;
+
+  /* Custom colors for wine app */
+  --burgundy-50: 350 100% 98%;
+  --burgundy-100: 350 90% 95%;
+  --burgundy-200: 348 83% 85%;
+  --burgundy-300: 348 69% 79%;
+  --burgundy-400: 347 70% 64%;
+  --burgundy-500: 347 63% 50%;
+  --burgundy-600: 345 57% 35%;
+  --burgundy-700: 345 56% 22%;
+  --burgundy-800: 343 53% 15%;
+  --burgundy-900: 343 53% 10%;
+
+  --cream-50: 43 100% 99%;
+  --cream-100: 43 45% 98%;
+  --cream-200: 43 70% 96%;
+  --cream-300: 42 70% 92%;
+  --cream-400: 43 70% 85%;
+  --cream-500: 47 75% 80%;
+  --cream-600: 43 67% 55%;
+  --cream-700: 43 66% 33%;
+  --cream-800: 43 67% 24%;
+  --cream-900: 43 67% 16%;
+
+  --gold: 46 66% 52%;
+  --gold-light: 46 76% 85%;
+
+  /* Wine glass colors */
+  --wine-red: 345 57% 35%;
+  --wine-white: 45 70% 76%;
+  --wine-rose: 350 65% 72%;
+  --wine-sparkling: 46 76% 85%;
+}
+
+.dark {
+  --background: 20 14.3% 4.1%;
+  --foreground: 60 9.1% 97.8%;
+  --muted: 12 6.5% 15.1%;
+  --muted-foreground: 24 5.4% 63.9%;
+  --popover: 20 14.3% 4.1%;
+  --popover-foreground: 60 9.1% 97.8%;
+  --card: 20 14.3% 4.1%;
+  --card-foreground: 60 9.1% 97.8%;
+  --border: 12 6.5% 15.1%;
+  --input: 12 6.5% 15.1%;
+  --primary: 346 63% 50%;
+  --primary-foreground: 355 100% 97%;
+  --secondary: 12 6.5% 15.1%;
+  --secondary-foreground: 60 9.1% 97.8%;
+  --accent: 12 6.5% 15.1%;
+  --accent-foreground: 60 9.1% 97.8%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 24 5.7% 82.9%;
+
+  /* Custom colors for wine app in dark mode */
+  --burgundy-50: 350 100% 98%;
+  --burgundy-100: 350 90% 95%;
+  --burgundy-200: 348 83% 85%;
+  --burgundy-300: 348 69% 79%;
+  --burgundy-400: 347 70% 64%;
+  --burgundy-500: 347 63% 50%;
+  --burgundy-600: 345 57% 35%;
+  --burgundy-700: 345 56% 22%;
+  --burgundy-800: 343 53% 15%;
+  --burgundy-900: 343 53% 10%;
+
+  --cream-50: 43 100% 99%;
+  --cream-100: 43 30% 95%;
+  --cream-200: 43 70% 96%;
+  --cream-300: 42 70% 92%;
+  --cream-400: 43 70% 85%;
+  --cream-500: 47 75% 80%;
+  --cream-600: 43 67% 55%;
+  --cream-700: 43 66% 33%;
+  --cream-800: 43 67% 24%;
+  --cream-900: 43 67% 16%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-cream-100 text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-montserrat;
+  }
+}
+
+@layer utilities {
+  .font-montserrat {
+    font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .font-lato {
+    font-family: "Lato", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Wine glass colors */
+  .wine-glass-red {
+    color: hsl(var(--burgundy-600));
+  }
+
+  .wine-glass-white {
+    color: hsl(var(--cream-500));
+  }
+
+  .wine-glass-rose {
+    color: hsl(var(--wine-rose));
+  }
+
+  .wine-glass-sparkling {
+    color: hsl(var(--gold-light));
+  }
+}
