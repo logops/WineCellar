@@ -106,11 +106,13 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
         drinkingWindowEnd = form.getValues("drinkingWindowEnd");
       }
 
+      // Convert Date objects to ISO strings for API compatibility
       const wineData = {
         ...values,
+        purchaseDate: values.purchaseDate ? new Date(values.purchaseDate).toISOString() : null,
         drinkingStatus: drinkingWindowType,
-        drinkingWindowStart,
-        drinkingWindowEnd,
+        drinkingWindowStart: drinkingWindowStart ? new Date(drinkingWindowStart).toISOString() : null,
+        drinkingWindowEnd: drinkingWindowEnd ? new Date(drinkingWindowEnd).toISOString() : null,
       };
 
       if (wine?.id) {
