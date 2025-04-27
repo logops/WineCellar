@@ -27,7 +27,8 @@ export default function Search() {
     drinkingWindow: [] as string[],
     purchaseLocation: [] as string[],
     priceRange: undefined as [number, number] | undefined,
-    purchaseDateRange: undefined as [Date, Date] | undefined
+    purchaseDateRange: undefined as [Date, Date] | undefined,
+    drinkingWindowRange: undefined as [Date, Date] | undefined
   });
 
   const { data: wines, isLoading } = useQuery<Wine[]>({ 
@@ -87,6 +88,12 @@ export default function Search() {
          new Date(wine.purchaseDate) >= filters.purchaseDateRange[0] && 
          new Date(wine.purchaseDate) <= filters.purchaseDateRange[1]);
       
+      // Filter by drinking window date range
+      const matchesDrinkingWindowRange = !filters.drinkingWindowRange || 
+        (wine.drinkingWindowStart && wine.drinkingWindowEnd && 
+         new Date(wine.drinkingWindowStart) <= filters.drinkingWindowRange[1] && 
+         new Date(wine.drinkingWindowEnd) >= filters.drinkingWindowRange[0]);
+      
       return matchesQuery && 
              matchesType && 
              matchesRegion && 
@@ -94,7 +101,8 @@ export default function Search() {
              matchesDrinkingWindow && 
              matchesPurchaseLocation && 
              matchesPriceRange && 
-             matchesPurchaseDateRange;
+             matchesPurchaseDateRange &&
+             matchesDrinkingWindowRange;
     });
     
     // Sort results
@@ -167,14 +175,19 @@ export default function Search() {
     });
   };
   
-  // Function to handle range filter changes (price range, date range)
-  const handleRangeFilterChange = (filterType: 'priceRange' | 'purchaseDateRange', value: [number, number] | [Date, Date]) => {
+  // Function to handle range filter changes (price range, date ranges)
+  const handleRangeFilterChange = (
+    filterType: 'priceRange' | 'purchaseDateRange' | 'drinkingWindowRange', 
+    value: [number, number] | [Date, Date]
+  ) => {
     setFilters(prev => {
       const newFilters = { ...prev };
       if (filterType === 'priceRange') {
         newFilters.priceRange = value as [number, number];
       } else if (filterType === 'purchaseDateRange') {
         newFilters.purchaseDateRange = value as [Date, Date];
+      } else if (filterType === 'drinkingWindowRange') {
+        newFilters.drinkingWindowRange = value as [Date, Date];
       }
       return newFilters;
     });
@@ -286,13 +299,14 @@ export default function Search() {
                 <Button onClick={() => {
                   setSearchQuery('');
                   setFilters({
-                    type: [],
-                    region: [],
-                    vintage: [],
-                    drinkingWindow: [],
-                    purchaseLocation: [],
+                    type: [] as string[],
+                    region: [] as string[],
+                    vintage: [] as number[],
+                    drinkingWindow: [] as string[],
+                    purchaseLocation: [] as string[],
                     priceRange: undefined,
-                    purchaseDateRange: undefined
+                    purchaseDateRange: undefined,
+                    drinkingWindowRange: undefined
                   });
                 }} variant="outline" className="mt-4">
                   Clear Filters

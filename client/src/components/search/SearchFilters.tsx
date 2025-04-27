@@ -27,9 +27,10 @@ interface SearchFiltersProps {
     purchaseLocation?: string[];
     priceRange?: [number, number];
     purchaseDateRange?: [Date, Date];
+    drinkingWindowRange?: [Date, Date];
   };
   onFilterChange: (filterType: string, value: string | number, isSelected: boolean) => void;
-  onRangeFilterChange?: (filterType: "priceRange" | "purchaseDateRange", value: [number, number] | [Date, Date]) => void;
+  onRangeFilterChange?: (filterType: "priceRange" | "purchaseDateRange" | "drinkingWindowRange", value: [number, number] | [Date, Date]) => void;
 }
 
 export default function SearchFilters({
@@ -366,7 +367,19 @@ export default function SearchFilters({
                     <input
                       type="date"
                       className="flex-1 ml-2 outline-none text-sm"
-                      onChange={() => {/* Add function to handle drinking window filter */}}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const fromDate = new Date(e.target.value);
+                          const toDate = selectedFilters.purchaseDateRange ? 
+                            selectedFilters.purchaseDateRange[1] : 
+                            new Date();
+                          
+                          onRangeFilterChange && onRangeFilterChange(
+                            'drinkingWindowRange', 
+                            [fromDate, toDate] as [Date, Date]
+                          );
+                        }
+                      }}
                     />
                   </div>
                   <div className="flex items-center bg-white rounded-md border border-cream-300 p-2 w-full">
@@ -374,7 +387,19 @@ export default function SearchFilters({
                     <input
                       type="date"
                       className="flex-1 ml-2 outline-none text-sm"
-                      onChange={() => {/* Add function to handle drinking window filter */}}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const fromDate = selectedFilters.drinkingWindowRange ? 
+                            selectedFilters.drinkingWindowRange[0] : 
+                            new Date(2000, 0, 1);
+                          const toDate = new Date(e.target.value);
+                          
+                          onRangeFilterChange && onRangeFilterChange(
+                            'drinkingWindowRange', 
+                            [fromDate, toDate] as [Date, Date]
+                          );
+                        }
+                      }}
                     />
                   </div>
                 </div>
