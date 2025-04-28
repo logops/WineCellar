@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -65,6 +65,7 @@ interface AddWineFormProps {
   wine?: Wine;
   onSuccess?: () => void;
   hideCloseButton?: boolean;
+  onFormChange?: (isDirty: boolean) => void;
 }
 
 export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }: AddWineFormProps) {
@@ -741,21 +742,7 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
                   </Button>
                 )}
                 
-                {hideCloseButton ? null : (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => {
-                      if (form.formState.isDirty) {
-                        setShowConfirmDialog(true);
-                      } else if (onSuccess) {
-                        onSuccess();
-                      }
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                )}
+                {/* Cancel button removed in favor of click-outside to close */}
                 
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : wine ? "Update Wine" : "Add to Cellar"}

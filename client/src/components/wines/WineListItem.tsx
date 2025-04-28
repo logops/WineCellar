@@ -4,7 +4,17 @@ import WineGlassIcon from "./WineGlassIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
-import { Edit, X } from "lucide-react";
+import { Edit } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel
+} from "@/components/ui/alert-dialog";
 
 interface WineListItemProps {
   wine: Wine;
@@ -13,6 +23,8 @@ interface WineListItemProps {
 
 export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
 
   const handleCardClick = () => {
     setShowEditModal(true);
@@ -91,14 +103,29 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         onOpenChange={(open) => {
           // This handles clicking outside to close
           if (!open) {
-            setShowEditModal(false);
+            // Check for unsaved changes before closing
+            if (formDirty) {
+              setShowConfirmDialog(true);
+            } else {
+              // No unsaved changes, close immediately
+              setShowEditModal(false);
+            }
           }
         }}
       >
         <DialogContent 
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          // Check for unsaved changes before closing on outside click
+          onInteractOutside={(e) => {
+            e.preventDefault(); // Prevent immediate closing
+            if (formDirty) {
+              setShowConfirmDialog(true);
+            } else {
+              // No unsaved changes, close immediately
+              setShowEditModal(false);
+            }
+          }}
         >
-          
           <DialogHeader>
             <DialogTitle>
               Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}{wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
@@ -114,10 +141,44 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                 setShowEditModal(false);
                 if (onUpdate) onUpdate();
               }}
+              hideCloseButton={true}
             />
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Confirmation Dialog for Unsaved Changes */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes that will be lost if you close this form.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600 mb-2">Choose an option:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Continue editing to save your changes</li>
+              <li>Discard changes to exit without saving</li>
+            </ul>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>
+              Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowConfirmDialog(false);
+                setShowEditModal(false);
+              }}
+              className="bg-gray-600 hover:bg-gray-700"
+            >
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
