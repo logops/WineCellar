@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { TableCells, LayoutGrid } from "lucide-react";
+import { Table2, LayoutGrid } from "lucide-react";
 
 const sortWines = (wines: Wine[], sortBy: string): Wine[] => {
   const sortedWines = [...wines];
@@ -37,10 +37,21 @@ export default function WineList() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'card' | 'spreadsheet'>('card');
   const itemsPerPage = 10;
 
   const { data: wines, isLoading, refetch } = useQuery<Wine[]>({ 
     queryKey: ['/api/wines'],
+  });
+  
+  // Mutation for updating wines in spreadsheet view
+  const updateWineMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: Partial<Wine> }) => {
+      return apiRequest('PATCH', `/api/wines/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+    },
   });
 
   if (isLoading) {
@@ -84,7 +95,7 @@ export default function WineList() {
   const sortedWines = sortWines(filteredWines, sortBy);
   
   // Calculate total bottles
-  const totalBottles = sortedWines.reduce((sum, wine) => sum + wine.quantity, 0);
+  const totalBottles = sortedWines.reduce((sum, wine) => sum + (wine.quantity || 0), 0);
   
   // Pagination
   const totalPages = Math.ceil(sortedWines.length / itemsPerPage);
@@ -103,19 +114,55 @@ export default function WineList() {
         onSearchClick={() => setSearchVisible(true)}
       />
       
-      <div className="text-xs text-gray-500 mb-2">
-        <span className="mr-4">Key: V - Value</span>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-600">
+          {viewMode === 'card' && (
+            <>{(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, sortedWines.length)} of {sortedWines.length}</>
+          )}
+        </div>
+        
+        <div className="flex rounded-md overflow-hidden border border-cream-200">
+          <Button
+            variant={viewMode === 'card' ? 'default' : 'outline'}
+            size="sm"
+            className={`rounded-none ${viewMode === 'card' ? 'bg-burgundy-600 hover:bg-burgundy-700' : ''}`}
+            onClick={() => setViewMode('card')}
+          >
+            <LayoutGrid size={16} className="mr-1" />
+            <span className="text-xs">Card View</span>
+          </Button>
+          <Button
+            variant={viewMode === 'spreadsheet' ? 'default' : 'outline'}
+            size="sm"
+            className={`rounded-none ${viewMode === 'spreadsheet' ? 'bg-burgundy-600 hover:bg-burgundy-700' : ''}`}
+            onClick={() => setViewMode('spreadsheet')}
+          >
+            <Table2 size={16} className="mr-1" />
+            <span className="text-xs">Table View</span>
+          </Button>
+        </div>
       </div>
       
-      <div className="text-sm text-gray-600 mb-4">
-        {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, sortedWines.length)} of {sortedWines.length}
-      </div>
-      
-      <div className="space-y-3">
-        {currentWines.map((wine) => (
-          <WineListItem key={wine.id} wine={wine} onUpdate={() => refetch()} />
-        ))}
-      </div>
+      {viewMode === 'card' ? (
+        <>
+          <div className="text-xs text-gray-500 mb-2">
+            <span className="mr-4">Key: V - Value</span>
+          </div>
+          
+          <div className="space-y-3">
+            {currentWines.map((wine) => (
+              <WineListItem key={wine.id} wine={wine} onUpdate={() => refetch()} />
+            ))}
+          </div>
+        </>
+      ) : (
+        <SpreadsheetView 
+          wines={sortedWines} 
+          onWineUpdate={(id, data) => {
+            updateWineMutation.mutate({ id, data });
+          }}
+        />
+      )}
       
       {/* Pagination */}
       {totalPages > 1 && (

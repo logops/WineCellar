@@ -215,7 +215,8 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
     { key: 'purchaseDate' as keyof Wine, label: 'Purchase Date' },
     { key: 'purchasePrice' as keyof Wine, label: 'Purchase Price' },
     { key: 'currentValue' as keyof Wine, label: 'Current Value' },
-    { key: 'drinkingWindow' as keyof Wine, label: 'Drinking Window' },
+    // Special non-field column for drinking window display
+    { key: 'drinkingStatus' as keyof Wine, label: 'Drinking Window' },
     { key: 'quantity' as keyof Wine, label: 'Quantity' },
     { key: 'notes' as keyof Wine, label: 'Notes' },
   ];
@@ -252,7 +253,7 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
         return wine.notes ? 
           (wine.notes.length > 50 ? `${wine.notes.substring(0, 50)}...` : wine.notes) : 
           '-';
-      case 'drinkingWindow':
+      case 'drinkingStatus':
         if (wine.drinkingWindowStart && wine.drinkingWindowEnd) {
           const start = typeof wine.drinkingWindowStart === 'string' 
             ? wine.drinkingWindowStart 
