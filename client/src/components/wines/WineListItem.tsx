@@ -40,6 +40,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
 
   // Function to handle closing the edit dialog
   const handleCloseEdit = () => {
+    console.log("Close button clicked, form dirty:", formDirty);
     if (formDirty) {
       setShowConfirmDialog(true);
     } else {
@@ -49,9 +50,16 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
 
   // Function to handle the discard changes action
   const handleDiscardChanges = () => {
+    console.log("Discard changes clicked");
+    setFormDirty(false); // Reset dirty state
     setShowConfirmDialog(false);
     setShowEditModal(false);
-    if (onUpdate) onUpdate();
+    
+    // Trigger any updates needed
+    if (onUpdate) {
+      console.log("Calling onUpdate");
+      onUpdate();
+    }
   };
 
   return (
@@ -170,7 +178,13 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       {/* Confirmation Dialog for Unsaved Changes */}
       <AlertDialog 
         open={showConfirmDialog} 
-        onOpenChange={setShowConfirmDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            // Handle dialog closing through X button or escape key
+            // Don't close main dialog, just the confirmation
+            setShowConfirmDialog(false);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -187,15 +201,17 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
             </ul>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>
+            <AlertDialogCancel 
+              onClick={() => setShowConfirmDialog(false)}
+            >
               Continue Editing
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <Button 
               onClick={handleDiscardChanges}
-              className="bg-gray-600 hover:bg-gray-700"
+              className="bg-gray-600 hover:bg-gray-700 text-white"
             >
               Discard Changes
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
