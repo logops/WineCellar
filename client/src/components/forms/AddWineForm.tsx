@@ -117,10 +117,13 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
   });
   
   // Track when form becomes dirty (modified)
-  const formState = form.formState;
   useEffect(() => {
-    setFormDirty(formState.isDirty);
-  }, [formState.isDirty]);
+    const subscription = form.watch(() => {
+      setFormDirty(true);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   // Function to handle consumption or removal of wine
   async function handleDrinkWine() {

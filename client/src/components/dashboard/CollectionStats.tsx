@@ -8,17 +8,32 @@ interface CollectionStat {
   href: string;
 }
 
+interface StatsData {
+  inCellar: number;
+  totalWines: number;
+  consumed: number;
+  purchased: number;
+}
+
 export default function CollectionStats() {
-  const { data: stats, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<StatsData>({
     queryKey: ['/api/statistics'],
   });
+  
+  // Define a safe stats object with defaults
+  const stats: StatsData = data || { 
+    inCellar: 0, 
+    totalWines: 0, 
+    consumed: 0, 
+    purchased: 0 
+  };
 
-  const collectionStats: CollectionStat[] = stats ? [
+  const collectionStats: CollectionStat[] = [
     { label: 'In My Cellar', count: stats.inCellar, href: '/collection' },
     { label: 'Pending Delivery', count: 0, href: '/collection' },
     { label: 'Consumed', count: stats.consumed, href: '/collection' },
     { label: 'Purchased', count: stats.purchased, href: '/collection' },
-  ] : [];
+  ];
   
   if (isLoading) {
     return (
