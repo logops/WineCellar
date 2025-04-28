@@ -36,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Wine, insertWineSchema } from "@shared/schema";
 import { Autocomplete } from "@/components/ui/autocomplete";
+import StorageLocationField from "./StorageLocationField";
 
 const formSchema = insertWineSchema.extend({
   vintage: z.coerce.number().min(1900).max(new Date().getFullYear() + 10).optional(),
@@ -92,6 +93,8 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
     notes: wine?.notes || "",
     drinkingWindowStartYear,
     drinkingWindowEndYear,
+    storageLocation: wine?.storageLocation || "Main Cellar",
+    binNumber: wine?.binNumber || "",
   };
 
   const form = useForm<FormValues>({
@@ -546,6 +549,9 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                   />
                 </div>
               )}
+              
+              {/* Storage Location Section */}
+              <StorageLocationField form={form} />
               
               <FormField
                 control={form.control}
