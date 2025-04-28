@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -8,8 +8,20 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+
+  // Middleware to check if user is authenticated
+  const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    next();
+  };
+
   // Error handler function
   const handleZodError = (err: unknown, res: Response) => {
     if (err instanceof ZodError) {
@@ -25,9 +37,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Wine routes
-  app.get('/api/wines', async (req: Request, res: Response) => {
+  app.get('/api/wines', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const wines = await storage.getWines();
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      const wines = await storage.getWinesByUserId(req.user.id);
       res.json(wines);
     } catch (err) {
       res.status(500).json({ message: 'Failed to fetch wines' });

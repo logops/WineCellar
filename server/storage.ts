@@ -40,7 +40,7 @@ export interface IStorage {
   deleteWishlistItem(id: number): Promise<boolean>;
   
   // Session store for authentication
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
 // Memory storage implementation
@@ -53,6 +53,7 @@ export class MemStorage implements IStorage {
   private wineId: number;
   private consumptionId: number;
   private wishlistId: number;
+  sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -63,6 +64,12 @@ export class MemStorage implements IStorage {
     this.wineId = 1;
     this.consumptionId = 1;
     this.wishlistId = 1;
+    
+    // Create a memory session store
+    const MemoryStore = require('memorystore')(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
     
     // Add some sample data
     this.initializeData();
@@ -89,6 +96,10 @@ export class MemStorage implements IStorage {
   // Wine operations
   async getWines(): Promise<Wine[]> {
     return Array.from(this.wines.values());
+  }
+  
+  async getWinesByUserId(userId: number): Promise<Wine[]> {
+    return Array.from(this.wines.values()).filter(wine => wine.userId === userId);
   }
 
   async getWine(id: number): Promise<Wine | undefined> {
@@ -122,6 +133,10 @@ export class MemStorage implements IStorage {
   async getConsumptions(): Promise<Consumption[]> {
     return Array.from(this.consumptions.values());
   }
+  
+  async getConsumptionsByUserId(userId: number): Promise<Consumption[]> {
+    return Array.from(this.consumptions.values()).filter(consumption => consumption.userId === userId);
+  }
 
   async getConsumption(id: number): Promise<Consumption | undefined> {
     return this.consumptions.get(id);
@@ -146,6 +161,10 @@ export class MemStorage implements IStorage {
   // Wishlist operations
   async getWishlistItems(): Promise<Wishlist[]> {
     return Array.from(this.wishlistItems.values());
+  }
+  
+  async getWishlistItemsByUserId(userId: number): Promise<Wishlist[]> {
+    return Array.from(this.wishlistItems.values()).filter(item => item.userId === userId);
   }
 
   async getWishlistItem(id: number): Promise<Wishlist | undefined> {
