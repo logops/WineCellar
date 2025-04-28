@@ -289,32 +289,87 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
 
   // Export to CSV function
   const exportToCSV = () => {
-    // Get visible columns
-    const visibleColumns = Object.entries(columnVisibility)
-      .filter(([_, isVisible]) => isVisible)
-      .map(([column]) => column);
+    // Define standard spreadsheet columns (following screenshot order)
+    const standardColumns = [
+      { key: 'type', label: 'Category' },
+      { key: 'quantity', label: 'Qty' },
+      { key: 'vintage', label: 'Vintage' },
+      { key: 'producer', label: 'Winery' },
+      { key: 'name', label: 'Wine (Name)' },
+      { key: 'grapeVarieties', label: 'Varietal(s)' },
+      { key: 'country', label: 'Country' },
+      { key: 'state', label: 'State' },
+      { key: 'region', label: 'Region' },
+      { key: 'subregion', label: 'Sub App' },
+      { key: 'vineyard', label: 'Vineyard/Cru' },
+      { key: 'drinkingStatus', label: 'Drinking Window' },
+      { key: 'currentValue', label: 'Value' },
+      { key: 'purchasePrice', label: 'Purchase Price' },
+      { key: 'notes', label: 'Notes' },
+    ];
     
-    // Create CSV header
-    const header = visibleColumns.map(col => `"${col}"`).join(',');
+    // Get column headers
+    const headers = standardColumns.map(col => `"${col.label}"`).join(',');
     
-    // Create CSV rows
-    const rows = sortedWines.map(wine => {
-      return visibleColumns.map(col => {
-        const value = wine[col as keyof Wine];
-        // Handle special formatting for dates and prices
-        if (col === 'purchaseDate' && value) {
-          return `"${formatDate(value as string)}"`;
-        }
-        if ((col === 'purchasePrice' || col === 'currentValue') && value !== null) {
-          return `"${formatPrice(value as number)}"`;
-        }
-        // Handle other fields
-        return `"${value || ''}"`;
-      }).join(',');
-    }).join('\\n');
+    // Group wines by type
+    const winesByType: Record<string, Wine[]> = {};
     
-    // Combine header and rows
-    const csv = `${header}\\n${rows}`;
+    sortedWines.forEach(wine => {
+      const type = wine.type || 'Uncategorized';
+      if (!winesByType[type]) {
+        winesByType[type] = [];
+      }
+      winesByType[type].push(wine);
+    });
+    
+    // Create CSV rows, grouped by type
+    let csvRows: string[] = [];
+    
+    Object.keys(winesByType).forEach(type => {
+      const winesOfType = winesByType[type];
+      
+      winesOfType.forEach((wine: Wine) => {
+        const row = standardColumns.map(col => {
+          const key = col.key as keyof Wine;
+          let value = wine[key];
+          
+          // Special case for 'name' - use first varietal if name is missing
+          if (key === 'name' && !value && wine.grapeVarieties) {
+            value = wine.grapeVarieties.split(',')[0].trim();
+          }
+          
+          // Special case for drinking window
+          if (key === 'drinkingStatus') {
+            if (wine.drinkingWindowStart && wine.drinkingWindowEnd) {
+              const start = new Date(wine.drinkingWindowStart).getFullYear();
+              const end = new Date(wine.drinkingWindowEnd).getFullYear();
+              return `"${start} - ${end}"`;
+            } else if (wine.drinkingStatus) {
+              return `"${wine.drinkingStatus === 'drink_now' ? 'Drink Now' : 'Drink Later'}"`;
+            }
+            return `""`;
+          }
+          
+          // Format dates
+          if (key === 'purchaseDate' && value) {
+            return `"${formatDate(value as string)}"`;
+          }
+          
+          // Format prices
+          if ((key === 'purchasePrice' || key === 'currentValue') && value !== null) {
+            return `"${formatPrice(value as number)}"`;
+          }
+          
+          // Default handling
+          return `"${value || ''}"`;
+        }).join(',');
+        
+        csvRows.push(row);
+      });
+    });
+    
+    // Combine headers and rows
+    const csv = `${headers}\\n${csvRows.join('\\n')}`;
     
     // Create download link
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
