@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Wine } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,12 +16,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { formatDate, formatPrice } from '@/lib/utils';
@@ -30,21 +24,9 @@ import {
   Settings, 
   ArrowDownAZ, 
   ArrowUpZA, 
-  Filter, 
-  X,
-  FilterX,
-  LucideIcon,
-  Check,
-  ChevronDown
+  Filter,
+  FilterX
 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
 interface SpreadsheetViewProps {
@@ -476,193 +458,123 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
     }
   };
 
-  // Column header with filtering
+  // Column header with simple filtering
   const renderColumnHeader = (column: {key: keyof Wine, label: string}) => {
     const columnKey = column.key;
-    const filterValue = filters[columnKey];
     const isFiltered = hasFilter(columnKey);
     
     return (
       <TableHead 
         key={columnKey}
-        className="px-0 py-2"
+        className={getHeaderClass(columnKey)}
       >
-        <div className="flex flex-col space-y-1">
-          {/* Column Header Label and Sort Controls */}
-          <div
-            className={`flex items-center justify-between px-4 py-1 cursor-pointer ${
-              sortConfig.key === columnKey ? "text-burgundy-800 font-semibold" : ""
-            }`}
+        <div className="flex items-center gap-1">
+          <span 
+            className="cursor-pointer" 
             onClick={() => requestSort(columnKey)}
           >
-            <div className="flex items-center gap-1 truncate">
-              <span>{column.label}</span>
-              {sortConfig.key === columnKey && (
-                <span>
-                  {sortConfig.direction === 'ascending' ? 
-                    <ArrowDownAZ className="w-4 h-4" /> : 
-                    <ArrowUpZA className="w-4 h-4" />}
-                </span>
-              )}
-              {isFiltered && (
-                <Badge variant="outline" className="h-5 bg-burgundy-50 text-burgundy-800 ml-1">
-                  <Filter className="w-3 h-3 mr-1" />
-                  <span className="text-xs">Filtered</span>
-                </Badge>
-              )}
-            </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 text-gray-500 hover:text-burgundy-700"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Filter {column.label}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                
-                {/* Sort Options */}
-                <DropdownMenuGroup>
-                  <DropdownMenuItem 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      requestSort(columnKey);
-                      setSortConfig({key: columnKey, direction: 'ascending'});
+            {column.label}
+            {getSortIndicator(columnKey)}
+          </span>
+          
+          {isFiltered && (
+            <Badge variant="outline" className="h-5 bg-burgundy-50 text-burgundy-800 ml-1">
+              <Filter className="w-3 h-3 mr-1" />
+            </Badge>
+          )}
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 text-gray-500 hover:text-burgundy-700"
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem 
+                onClick={() => setSortConfig({key: columnKey, direction: 'ascending'})}
+              >
+                <ArrowDownAZ className="w-4 h-4 mr-2" />
+                <span>Sort A to Z</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                onClick={() => setSortConfig({key: columnKey, direction: 'descending'})}
+              >
+                <ArrowUpZA className="w-4 h-4 mr-2" />
+                <span>Sort Z to A</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Text search filter for text columns */}
+              {['producer', 'name', 'vineyard', 'region', 'subregion', 'type', 'grapeVarieties'].includes(String(columnKey)) && (
+                <div className="p-2">
+                  <Input
+                    placeholder={`Filter by ${column.label}...`}
+                    value={filterInputs[String(columnKey)] || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFilterInputs(prev => ({...prev, [columnKey]: value}));
+                      if (value.trim()) {
+                        addTextFilter(columnKey, value);
+                      } else {
+                        removeFilter(columnKey);
+                      }
                     }}
-                  >
-                    <ArrowDownAZ className="w-4 h-4 mr-2" />
-                    <span>Sort A to Z</span>
-                    {sortConfig.key === columnKey && sortConfig.direction === 'ascending' && (
-                      <Check className="w-4 h-4 ml-auto" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      requestSort(columnKey);
-                      setSortConfig({key: columnKey, direction: 'descending'});
-                    }}
-                  >
-                    <ArrowUpZA className="w-4 h-4 mr-2" />
-                    <span>Sort Z to A</span>
-                    {sortConfig.key === columnKey && sortConfig.direction === 'descending' && (
-                      <Check className="w-4 h-4 ml-auto" />
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Filter Options */}
-                <DropdownMenuGroup>
-                  {/* Text search filter for text columns */}
-                  {['producer', 'name', 'vineyard', 'region', 'subregion', 'type', 'grapeVarieties', 'notes'].includes(String(columnKey)) && (
-                    <div className="p-2">
+                    className="h-8 text-sm"
+                  />
+                </div>
+              )}
+              
+              {/* Number range filter for numeric columns */}
+              {['vintage', 'purchasePrice', 'currentValue', 'quantity'].includes(String(columnKey)) && (
+                <div className="p-2 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
                       <Input
-                        placeholder={`Filter ${column.label}...`}
-                        value={filterInputs[String(columnKey)] || ''}
+                        type="number"
+                        placeholder="Min"
+                        value={(filters[columnKey] as NumberRangeFilter)?.min ?? ''}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          setFilterInputs(prev => ({...prev, [columnKey]: value}));
-                          if (value.trim()) {
-                            addTextFilter(columnKey, value);
-                          } else {
-                            removeFilter(columnKey);
-                          }
+                          const min = e.target.value ? Number(e.target.value) : null;
+                          const max = (filters[columnKey] as NumberRangeFilter)?.max ?? null;
+                          addNumberRangeFilter(columnKey, min, max);
                         }}
                         className="h-8 text-sm"
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
-                  )}
-                  
-                  {/* Number range filter for numeric columns */}
-                  {['vintage', 'purchasePrice', 'currentValue', 'quantity'].includes(String(columnKey)) && (
-                    <div className="p-2 space-y-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor={`${columnKey}-min`} className="text-xs">Min</Label>
-                          <Input
-                            id={`${columnKey}-min`}
-                            type="number"
-                            placeholder="Min"
-                            value={(filters[columnKey] as NumberRangeFilter)?.min ?? ''}
-                            onChange={(e) => {
-                              const min = e.target.value ? Number(e.target.value) : null;
-                              const max = (filters[columnKey] as NumberRangeFilter)?.max ?? null;
-                              addNumberRangeFilter(columnKey, min, max);
-                            }}
-                            className="h-8 text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`${columnKey}-max`} className="text-xs">Max</Label>
-                          <Input
-                            id={`${columnKey}-max`}
-                            type="number"
-                            placeholder="Max"
-                            value={(filters[columnKey] as NumberRangeFilter)?.max ?? ''}
-                            onChange={(e) => {
-                              const max = e.target.value ? Number(e.target.value) : null;
-                              const min = (filters[columnKey] as NumberRangeFilter)?.min ?? null;
-                              addNumberRangeFilter(columnKey, min, max);
-                            }}
-                            className="h-8 text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      </div>
+                    <div>
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={(filters[columnKey] as NumberRangeFilter)?.max ?? ''}
+                        onChange={(e) => {
+                          const max = e.target.value ? Number(e.target.value) : null;
+                          const min = (filters[columnKey] as NumberRangeFilter)?.min ?? null;
+                          addNumberRangeFilter(columnKey, min, max);
+                        }}
+                        className="h-8 text-sm"
+                      />
                     </div>
-                  )}
-                  
-                  {/* Value selection filter */}
-                  {columnKey !== 'notes' && (
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <span>Filter by values</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
-                          {getUniqueValues(columnKey).map((value) => (
-                            <DropdownMenuCheckboxItem
-                              key={value}
-                              checked={(filters[columnKey] as ChoiceFilter)?.selected?.includes(value) || false}
-                              onCheckedChange={(checked) => {
-                                addChoiceFilter(columnKey, value, checked);
-                              }}
-                            >
-                              {value}
-                            </DropdownMenuCheckboxItem>
-                          ))}
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
-                  )}
-                  
-                  {/* Clear filter option */}
-                  {isFiltered && (
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFilter(columnKey);
-                      }}
-                      className="text-red-600"
-                    >
-                      <FilterX className="w-4 h-4 mr-2" />
-                      <span>Clear filter</span>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                  </div>
+                </div>
+              )}
+              
+              {isFiltered && (
+                <DropdownMenuItem
+                  onClick={() => removeFilter(columnKey)}
+                  className="text-red-600"
+                >
+                  <FilterX className="w-4 h-4 mr-2" />
+                  <span>Clear filter</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </TableHead>
     );
