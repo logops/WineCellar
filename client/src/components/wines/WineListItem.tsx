@@ -4,7 +4,7 @@ import WineGlassIcon from "./WineGlassIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
-import { Edit } from "lucide-react";
+import { Edit, X } from "lucide-react";
 
 interface WineListItemProps {
   wine: Wine;
@@ -93,6 +93,15 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         }
       }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => setShowEditModal(false)}
+            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-opacity"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
           <DialogHeader>
             <DialogTitle>
               Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}{wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
