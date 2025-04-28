@@ -37,7 +37,7 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
           </button>
           <Link href={user ? "/" : "/auth"} className="flex items-center">
             <span className="text-xl font-bold font-montserrat tracking-tight">Cellar</span>
-            <span className="ml-1 py-0.5 px-2 bg-cream-500 text-burgundy-600 text-xs font-bold rounded-sm">TRACKER</span>
+            <span className="ml-1 py-0.5 px-2 bg-cream-500 text-burgundy-600 text-xs font-bold rounded-sm">MASTER</span>
           </Link>
         </div>
         
@@ -82,10 +82,6 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
         )}
       </div>
       
-      {/* Subscription Banner */}
-      <div className="bg-burgundy-500 text-white py-2 px-4 text-center text-sm">
-        <span className="font-montserrat">Become a Cellar Subscriber to unlock all features &gt;</span>
-      </div>
     </header>
   );
 }
