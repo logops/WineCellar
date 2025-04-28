@@ -382,10 +382,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWine(insertWine: InsertWine): Promise<Wine> {
-    const [wine] = await db.insert(wines).values({
+    // Format date fields correctly for PostgreSQL
+    const formattedWine = {
       ...insertWine,
+      // Convert Date objects to ISO strings for PostgreSQL
+      purchaseDate: insertWine.purchaseDate ? new Date(insertWine.purchaseDate).toISOString().split('T')[0] : null,
+      drinkingWindowStart: insertWine.drinkingWindowStart ? new Date(insertWine.drinkingWindowStart).toISOString().split('T')[0] : null,
+      drinkingWindowEnd: insertWine.drinkingWindowEnd ? new Date(insertWine.drinkingWindowEnd).toISOString().split('T')[0] : null,
+      // Ensure all nullable fields are null rather than undefined
+      vineyard: insertWine.vineyard || null,
+      region: insertWine.region || null,
+      subregion: insertWine.subregion || null,
+      grapeVarieties: insertWine.grapeVarieties || null,
+      bottleSize: insertWine.bottleSize || "750ml",
+      purchaseLocation: insertWine.purchaseLocation || null,
+      rating: insertWine.rating || null,
+      notes: insertWine.notes || null,
+      // Set createdAt to current time
       createdAt: new Date()
-    }).returning();
+    };
+    
+    const [wine] = await db.insert(wines).values(formattedWine).returning();
     return wine;
   }
 
