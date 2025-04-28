@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { Wine } from "@shared/schema";
 import WineGlassIcon from "./WineGlassIcon";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
 import { Edit, X } from "lucide-react";
@@ -23,21 +33,16 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
     // Form dirty state will be managed by the form component
   };
 
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  
   // Close handler for the edit dialog
   const handleCloseDialog = () => {
     // Log the form state to help with debugging
     console.log("Form dirty state:", formIsDirty);
     
     if (formIsDirty) {
-      // Show simple browser confirmation dialog
-      const confirmed = window.confirm(
-        "You have unsaved changes. Are you sure you want to close without saving?"
-      );
-      
-      if (confirmed) {
-        closeModal();
-      }
-      // If not confirmed, keep the dialog open
+      // Show styled dialog instead of browser confirm
+      setShowUnsavedChangesDialog(true);
     } else {
       // No changes made, close dialog directly
       closeModal();
@@ -118,7 +123,32 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         </div>
       </div>
 
-      {/* Edit Wine Dialog - Using simple browser confirm dialog for unsaved changes */}
+      {/* Custom Unsaved Changes Dialog */}
+      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-burgundy-700">Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes to this wine. Are you sure you want to close without saving?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              className="bg-cream-100 text-burgundy-700 border-cream-300 hover:bg-cream-200"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-burgundy-600 hover:bg-burgundy-700"
+              onClick={closeModal}
+            >
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Wine Dialog */}
       <Dialog 
         open={showEditModal} 
         onOpenChange={(open) => {
@@ -136,9 +166,9 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                 Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}
                 {wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
               </DialogTitle>
-              <p className="text-gray-500 text-sm mt-1">
+              <DialogDescription className="text-gray-500 text-sm mt-1">
                 Edit details of this wine and save changes to update your collection
-              </p>
+              </DialogDescription>
             </DialogHeader>
             
             {/* Use a regular button instead of DialogClose + Button to ensure handleCloseDialog is called */}
@@ -160,9 +190,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
             <AddWineForm 
               wine={wine} 
               onSuccess={() => closeModal()}
-
               onFormChange={(isDirty) => setFormIsDirty(isDirty)}
-              // No need for hideCloseButton prop anymore
             />
           </div>
         </DialogContent>
