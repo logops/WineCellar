@@ -101,14 +101,12 @@ export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
       // Update the wine status if all bottles are consumed
       if (selectedWine && (selectedWine.quantity ?? 0) <= values.quantity) {
         await apiRequest("PATCH", `/api/wines/${selectedWine.id}`, {
-          ...selectedWine,
           quantity: 0,
           consumedStatus: 'consumed', // Mark as consumed
         });
       } else if (selectedWine) {
         // Just reduce the quantity
         await apiRequest("PATCH", `/api/wines/${selectedWine.id}`, {
-          ...selectedWine,
           quantity: (selectedWine.quantity ?? 0) - values.quantity,
         });
       }
