@@ -64,11 +64,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface AddWineFormProps {
   wine?: Wine;
   onSuccess?: () => void;
-  hideCloseButton?: boolean;
   onFormChange?: (isDirty: boolean) => void;
 }
 
-export default function AddWineForm({ wine, onSuccess, hideCloseButton = false, onFormChange }: AddWineFormProps) {
+export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [entryMethod, setEntryMethod] = useState("manual");

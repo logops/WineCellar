@@ -156,6 +156,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               }}
 
               onFormChange={(isDirty) => setFormIsDirty(isDirty)}
+              // No need for hideCloseButton prop anymore
             />
           </div>
         </DialogContent>
