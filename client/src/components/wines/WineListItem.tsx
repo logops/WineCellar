@@ -120,47 +120,52 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         </div>
       </div>
 
-      {/* Custom Unsaved Changes Dialog */}
-      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
-        <AlertDialogContent className="bg-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-burgundy-700">Unsaved Changes</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes to this wine. Are you sure you want to close without saving?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              className="bg-cream-100 text-burgundy-700 border-cream-300 hover:bg-cream-200"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <Button 
-              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-              onClick={() => {
-                console.log("Discard button clicked, forcing a complete reset");
-                // Completely reset the state - most reliable approach
-                setShowUnsavedChangesDialog(false);
-                setShowEditModal(false);
-                setFormIsDirty(false);
-                
-                // Force a page refresh to ensure a clean state
-                if (onUpdate) {
-                  onUpdate();
-                  
-                  // Wait a tiny bit to ensure everything's updated
-                  setTimeout(() => {
-                    // Force a UI refresh if needed
-                    window.dispatchEvent(new Event('resize'));
-                  }, 100);
-                }
-              }}
-            >
-              Discard Changes
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Import the new ConfirmDialog component */}
+      {showUnsavedChangesDialog && (
+        <div id="force-render-dialog">
+          <AlertDialog 
+            open={showUnsavedChangesDialog} 
+            onOpenChange={setShowUnsavedChangesDialog}
+          >
+            <AlertDialogContent className="bg-white">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-burgundy-700">Unsaved Changes</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You have unsaved changes to this wine. Are you sure you want to close without saving?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-cream-100 text-burgundy-700 border-cream-300 hover:bg-cream-200">
+                  Cancel
+                </AlertDialogCancel>
+                <Button 
+                  type="button"
+                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+                  onClick={() => {
+                    console.log("Discard button clicked - closing all dialogs first");
+                    
+                    // Set closing order with timeouts
+                    setShowUnsavedChangesDialog(false);
+                    
+                    setTimeout(() => {
+                      setShowEditModal(false);
+                      setFormIsDirty(false);
+                      
+                      if (onUpdate) {
+                        setTimeout(() => {
+                          onUpdate();
+                        }, 50);
+                      }
+                    }, 50);
+                  }}
+                >
+                  Discard Changes
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
 
       {/* Edit Wine Dialog */}
       <Dialog 
@@ -173,25 +178,20 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       >
         <DialogContent
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
-          onPointerDownOutside={(e) => {
-            console.log("Pointer down outside dialog");
-            // Always stop propagation to control the flow
-            e.stopPropagation();
+          onInteractOutside={(e) => {
+            console.log("Interaction outside dialog detected");
+            // Prevent event from continuing to propagate
+            e.preventDefault();
             
-            // If form is dirty, prevent immediate closing and show confirmation
+            // If form is dirty, show the confirmation dialog
             if (formIsDirty) {
-              e.preventDefault();
-              
-              // Set a timeout to ensure it runs after the current event cycle
-              setTimeout(() => {
-                setShowUnsavedChangesDialog(true);
-              }, 0);
+              console.log("Form is dirty, showing confirmation dialog");
+              setShowUnsavedChangesDialog(true);
             } else {
-              // Directly close with a timeout to ensure clean event handling
-              setTimeout(() => {
-                setShowEditModal(false);
-                if (onUpdate) onUpdate();
-              }, 0);
+              // Only if not dirty, close the dialog
+              console.log("Form is clean, closing directly");
+              setShowEditModal(false);
+              if (onUpdate) onUpdate();
             }
           }}
           onEscapeKeyDown={(e) => {
