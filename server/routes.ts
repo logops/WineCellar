@@ -317,25 +317,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Calculate statistics
-      const inCellar = wines.reduce((total, wine) => total + (wine.quantity || 0), 0);
-      const totalWines = wines.length;
+      // For inCellar, only count wines that are not consumed or removed
+      const activeWines = wines.filter(wine => 
+        !wine.consumedStatus || wine.consumedStatus === 'in_cellar'
+      );
+      
+      const inCellar = activeWines.reduce((total, wine) => total + (wine.quantity || 0), 0);
+      const totalWines = activeWines.length;
       const consumed = consumptions.reduce((total, consumption) => total + consumption.quantity, 0);
-      const purchased = inCellar + consumed;
-      const totalValue = wines.reduce((total, wine) => {
+      
+      // Purchased wines should equal the bottles in cellar (not wine count)
+      const purchased = inCellar; // Simply use the inCellar count as purchased count
+      
+      const totalValue = activeWines.reduce((total, wine) => {
         const value = wine.currentValue || 0;
         const quantity = wine.quantity || 0;
         return total + (value * quantity);
       }, 0);
       
-      // Count types
-      const wineTypes = wines.reduce((counts, wine) => {
+      // Count types (only for active wines)
+      const wineTypes = activeWines.reduce((counts, wine) => {
         const type = wine.type;
         counts[type] = (counts[type] || 0) + (wine.quantity || 0);
         return counts;
       }, {} as Record<string, number>);
       
-      // Drinking windows
-      const readyToDrink = wines.filter(wine => 
+      // Drinking windows (only for active wines)
+      const readyToDrink = activeWines.filter(wine => 
         wine.drinkingStatus === 'drink_now' ||
         (wine.drinkingWindowStart && new Date(wine.drinkingWindowStart) <= new Date())
       ).length;

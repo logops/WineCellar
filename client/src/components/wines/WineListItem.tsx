@@ -123,13 +123,13 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         <DialogContent 
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
           hideCloseButton={true}
-          // Check for unsaved changes before closing on outside click
+          // Simplified outside click behavior - always show confirmation or close
           onInteractOutside={(e) => {
-            e.preventDefault(); // Prevent immediate closing
             if (formDirty) {
+              // Show confirmation dialog for unsaved changes
               setShowConfirmDialog(true);
             } else {
-              // No unsaved changes, close immediately
+              // No changes, close the dialog
               setShowEditModal(false);
             }
           }}

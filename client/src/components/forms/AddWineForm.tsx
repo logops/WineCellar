@@ -118,13 +118,18 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false, 
     defaultValues,
   });
   
-  // Track when form becomes dirty (modified)
+  // Track when form becomes dirty (modified) by comparing current values with defaults
   useEffect(() => {
-    const subscription = form.watch(() => {
-      setFormDirty(true);
-      // Notify parent component of form changes
-      if (onFormChange) {
-        onFormChange(true);
+    const subscription = form.watch((value, { name, type }) => {
+      // Don't mark as dirty on initialization or reset
+      if (type === 'change') {
+        const formIsDirty = form.formState.isDirty;
+        setFormDirty(formIsDirty);
+        
+        // Notify parent component of form changes
+        if (onFormChange) {
+          onFormChange(formIsDirty);
+        }
       }
     });
     
