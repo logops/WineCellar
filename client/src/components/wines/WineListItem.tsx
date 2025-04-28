@@ -35,16 +35,20 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       );
       
       if (confirmed) {
-        setShowEditModal(false);
-        setFormIsDirty(false); // Reset the dirty state
-        if (onUpdate) onUpdate();
+        closeModal();
       }
       // If not confirmed, keep the dialog open
     } else {
       // No changes made, close dialog directly
-      setShowEditModal(false);
-      setFormIsDirty(false); // Ensure state is reset
+      closeModal();
     }
+  };
+  
+  // Centralized function to close the modal
+  const closeModal = () => {
+    setShowEditModal(false);
+    setFormIsDirty(false); // Reset the dirty state
+    if (onUpdate) onUpdate(); // Refresh the wine list when closing
   };
 
   return (
@@ -155,10 +159,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           <div className="p-1">
             <AddWineForm 
               wine={wine} 
-              onSuccess={() => {
-                setShowEditModal(false);
-                if (onUpdate) onUpdate();
-              }}
+              onSuccess={() => closeModal()}
 
               onFormChange={(isDirty) => setFormIsDirty(isDirty)}
               // No need for hideCloseButton prop anymore
