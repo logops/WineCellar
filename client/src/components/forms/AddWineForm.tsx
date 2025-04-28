@@ -44,8 +44,8 @@ const formSchema = insertWineSchema.extend({
   currentValue: z.coerce.number().min(0).optional(),
   quantity: z.coerce.number().min(1).default(1),
   // Add year fields for custom drinking window
-  drinkingWindowStartYear: z.coerce.number().min(new Date().getFullYear()).max(new Date().getFullYear() + 50).optional(),
-  drinkingWindowEndYear: z.coerce.number().min(new Date().getFullYear()).max(new Date().getFullYear() + 50).optional(),
+  drinkingWindowStartYear: z.coerce.number().min(1900).max(new Date().getFullYear() + 50).optional(),
+  drinkingWindowEndYear: z.coerce.number().min(1900).max(new Date().getFullYear() + 50).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;

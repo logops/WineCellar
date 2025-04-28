@@ -41,8 +41,8 @@ export default function CollectionStats() {
         {collectionStats.map((stat) => (
           <Link key={stat.label} href={stat.href} className="flex items-center justify-between p-3 border rounded-md hover:bg-cream-50 transition-colors">
             <span className="text-burgundy-600 font-medium">{stat.label}</span>
-            <div className="flex items-center">
-              <span className="text-lg font-semibold mr-2">{stat.count}</span>
+            <div className="flex items-center gap-2">
+              <span className="w-8 text-right text-lg font-semibold">{stat.count}</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>

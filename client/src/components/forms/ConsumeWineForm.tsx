@@ -149,20 +149,47 @@ export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Select Wine</FormLabel>
-                <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a wine from your cellar" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {availableWines.map(wine => (
-                      <SelectItem key={wine.id} value={wine.id.toString()}>
-                        {wine.vintage} {wine.producer} {wine.name} ({wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Type to search wines in your cellar"
+                    value={field.value ? availableWines.find(w => w.id === field.value)?.producer + ' ' + (availableWines.find(w => w.id === field.value)?.name || '') : ''}
+                    onChange={(e) => {
+                      // On text change, don't update the field yet, just filter the list
+                      setFilteredWines(availableWines.filter(wine => 
+                        `${wine.vintage} ${wine.producer} ${wine.name || ''}`
+                          .toLowerCase()
+                          .includes(e.target.value.toLowerCase())
+                      ));
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => {
+                      setFilteredWines(availableWines);
+                      setShowSuggestions(true);
+                    }}
+                  />
+                  
+                  {showSuggestions && (
+                    <ul className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border border-gray-200 rounded-md shadow-lg">
+                      {filteredWines.map(wine => (
+                        <li 
+                          key={wine.id}
+                          className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                          onClick={() => {
+                            field.onChange(wine.id);
+                            setShowSuggestions(false);
+                          }}
+                        >
+                          {wine.vintage} {wine.producer} {wine.name} ({wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''})
+                        </li>
+                      ))}
+                      {filteredWines.length === 0 && (
+                        <li className="px-4 py-2 text-sm text-gray-500">No wines found</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
