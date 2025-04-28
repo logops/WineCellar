@@ -34,7 +34,10 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           <div className="flex flex-col md:flex-row justify-between">
             <div>
               <h3 className="font-semibold text-burgundy-700">
-                {wine.producer} {wine.vintage && <span className="font-spectral">{wine.vintage}</span>} {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard}</span>} {wine.name}
+                {wine.vintage && <span className="font-spectral">{wine.vintage} </span>}
+                {wine.producer}{" "}
+                {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
+                {wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
               </h3>
               <p className="text-gray-600 text-sm font-medium">
                 {wine.grapeVarieties && <span className="mr-1">{wine.grapeVarieties}</span>}
@@ -87,7 +90,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Edit {wine.producer} {wine.vintage && wine.vintage} {wine.name}
+              Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}{wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
             </DialogTitle>
             <p className="text-gray-500 text-sm mt-1">
               Edit details of this wine and save changes to update your collection
