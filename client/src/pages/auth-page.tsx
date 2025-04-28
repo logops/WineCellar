@@ -86,7 +86,7 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 bg-primary/5 p-8 flex flex-col justify-center items-center order-1 md:order-2">
         <div className="max-w-md text-center md:text-left">
           <div className="flex justify-center md:justify-start mb-6">
-            <WineGlass className="h-12 w-12 text-primary" />
+            <GlassWater className="h-12 w-12 text-primary" />
           </div>
           <h1 className="text-4xl font-serif font-bold text-primary mb-4">Cellar Master</h1>
           <h2 className="text-2xl font-medium mb-6">Your Digital Wine Collection</h2>

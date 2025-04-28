@@ -23,30 +23,33 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="flex flex-col min-h-screen">
-          <Header 
-            onMenuButtonClick={() => setIsMobileMenuOpen(true)} 
-          />
-          <MobileMenu 
-            isOpen={isMobileMenuOpen} 
-            onClose={() => setIsMobileMenuOpen(false)} 
-          />
-          <main className="flex-grow">
-            <Switch>
-              <Route path="/" component={Dashboard} />
-              <Route path="/collection" component={Collection} />
-              <Route path="/search" component={Search} />
-              <Route path="/reports" component={Reports} />
-              <Route path="/wishlist" component={WishList} />
-              <Route path="/notes" component={Notes} />
-              <Route component={NotFound} />
-            </Switch>
-          </main>
-          <Footer />
-          <Toaster />
-        </div>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <div className="flex flex-col min-h-screen">
+            <Header 
+              onMenuButtonClick={() => setIsMobileMenuOpen(true)} 
+            />
+            <MobileMenu 
+              isOpen={isMobileMenuOpen} 
+              onClose={() => setIsMobileMenuOpen(false)} 
+            />
+            <main className="flex-grow">
+              <Switch>
+                <ProtectedRoute path="/" component={Dashboard} />
+                <ProtectedRoute path="/collection" component={Collection} />
+                <ProtectedRoute path="/search" component={Search} />
+                <ProtectedRoute path="/reports" component={Reports} />
+                <ProtectedRoute path="/wishlist" component={WishList} />
+                <ProtectedRoute path="/notes" component={Notes} />
+                <Route path="/auth" component={AuthPage} />
+                <Route component={NotFound} />
+              </Switch>
+            </main>
+            <Footer />
+            <Toaster />
+          </div>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
