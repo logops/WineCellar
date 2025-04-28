@@ -137,8 +137,21 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
         consumptionDate: new Date(),
         quantity: 1,
         notes: "Consumed from edit screen",
-        userId: 1, // Using default user ID 
       });
+      
+      // Also update the wine status to indicate it's been consumed if quantity becomes 0
+      if (wine.quantity <= 1) {
+        await apiRequest("PATCH", `/api/wines/${wine.id}`, {
+          ...wine,
+          consumedStatus: 'consumed', // Add flag to mark as consumed
+        });
+      } else {
+        // Just reduce the quantity by 1
+        await apiRequest("PATCH", `/api/wines/${wine.id}`, {
+          ...wine,
+          quantity: wine.quantity - 1,
+        });
+      }
 
       toast({
         title: "Wine Consumed",
@@ -247,7 +260,26 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
   }
 
   return (
-    <div className="p-1">
+    <div className="p-1 relative">
+      {/* Add close button in top right corner */}
+      <button 
+        type="button"
+        className="absolute top-0 right-0 p-2 text-gray-500 hover:text-burgundy-600 transition-colors"
+        onClick={() => {
+          if (formDirty) {
+            setShowConfirmDialog(true);
+          } else {
+            onSuccess?.();
+          }
+        }}
+        aria-label="Close"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
       <Tabs defaultValue="manual" value={entryMethod} onValueChange={setEntryMethod} className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="manual">Manual Entry</TabsTrigger>
@@ -650,19 +682,6 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
                   </Button>
                 )}
                 
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    if (formDirty) {
-                      setShowConfirmDialog(true);
-                    } else {
-                      onSuccess?.();
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : wine ? "Update Wine" : "Add to Cellar"}
                 </Button>
