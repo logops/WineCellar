@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Wine } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,15 +14,69 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { formatDate, formatPrice } from '@/lib/utils';
-import { Download, Settings } from 'lucide-react';
+import { 
+  Download, 
+  Settings, 
+  ArrowDownAZ, 
+  ArrowUpZA, 
+  Filter, 
+  X,
+  FilterX,
+  LucideIcon,
+  Check,
+  ChevronDown
+} from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 interface SpreadsheetViewProps {
   wines: Wine[];
   onWineUpdate: (id: number, data: Partial<Wine>) => void;
 }
+
+// Define filter types
+interface TextFilter {
+  type: 'text';
+  value: string;
+}
+
+interface ChoiceFilter {
+  type: 'choice';
+  selected: string[];
+}
+
+interface NumberRangeFilter {
+  type: 'number_range';
+  min: number | null;
+  max: number | null;
+}
+
+interface DateRangeFilter {
+  type: 'date_range';
+  start: Date | null;
+  end: Date | null;
+}
+
+type FilterValue = TextFilter | ChoiceFilter | NumberRangeFilter | DateRangeFilter;
+type Filters = {[key in keyof Wine]?: FilterValue};
 
 export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetViewProps) {
   // State for column visibility
@@ -54,6 +108,12 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
     direction: 'ascending'
   });
 
+  // State for filters
+  const [filters, setFilters] = useState<Filters>({});
+  
+  // State for filter menus
+  const [openFilterMenu, setOpenFilterMenu] = useState<keyof Wine | null>(null);
+
   // State for editing cells
   const [editingCell, setEditingCell] = useState<{
     id: number | null,
@@ -65,10 +125,69 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
 
   // State for edited values
   const [editValue, setEditValue] = useState<string>('');
+  
+  // Track filter text inputs
+  const [filterInputs, setFilterInputs] = useState<{[key: string]: string}>({});
+
+  // Get unique values for a column
+  const getUniqueValues = (key: keyof Wine) => {
+    const values = wines
+      .map(wine => wine[key])
+      .filter(value => value !== null && value !== undefined)
+      .map(value => String(value));
+    
+    // Use array method to ensure uniqueness instead of Set
+    const uniqueValues: string[] = [];
+    values.forEach(value => {
+      if (!uniqueValues.includes(value)) {
+        uniqueValues.push(value);
+      }
+    });
+    
+    return uniqueValues.sort();
+  };
+
+  // Apply filters to wines
+  const filteredWines = useMemo(() => {
+    return wines.filter(wine => {
+      // Check if the wine passes all filters
+      return Object.entries(filters).every(([key, filter]) => {
+        const value = wine[key as keyof Wine];
+        
+        // Skip null values
+        if (value === null || value === undefined) {
+          return true;
+        }
+        
+        switch (filter.type) {
+          case 'text':
+            return String(value).toLowerCase().includes(filter.value.toLowerCase());
+          
+          case 'choice':
+            return filter.selected.length === 0 || filter.selected.includes(String(value));
+          
+          case 'number_range':
+            const numValue = Number(value);
+            const passesMin = filter.min === null || numValue >= filter.min;
+            const passesMax = filter.max === null || numValue <= filter.max;
+            return passesMin && passesMax;
+          
+          case 'date_range':
+            const dateValue = new Date(String(value));
+            const passesStart = filter.start === null || dateValue >= filter.start;
+            const passesEnd = filter.end === null || dateValue <= filter.end;
+            return passesStart && passesEnd;
+            
+          default:
+            return true;
+        }
+      });
+    });
+  }, [wines, filters]);
 
   // Sorting function
   const sortedWines = useMemo(() => {
-    let sortableWines = [...wines];
+    let sortableWines = [...filteredWines];
     if (sortConfig.key !== null) {
       sortableWines.sort((a, b) => {
         const aValue = a[sortConfig.key as keyof Wine];
@@ -91,7 +210,7 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
       });
     }
     return sortableWines;
-  }, [wines, sortConfig]);
+  }, [filteredWines, sortConfig]);
 
   // Handle column sort
   const requestSort = (key: keyof Wine) => {
@@ -100,6 +219,90 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
       direction = 'descending';
     }
     setSortConfig({ key, direction });
+  };
+  
+  // Filter Management Functions
+  const addTextFilter = (column: keyof Wine, value: string) => {
+    if (!value.trim()) {
+      removeFilter(column);
+      return;
+    }
+    
+    setFilters(prev => ({
+      ...prev,
+      [column]: { type: 'text', value }
+    }));
+  };
+  
+  const addChoiceFilter = (column: keyof Wine, value: string, isSelected: boolean) => {
+    const currentFilter = filters[column] as ChoiceFilter | undefined;
+    const selected = currentFilter?.selected || [];
+    
+    let newSelected: string[];
+    if (isSelected) {
+      newSelected = [...selected, value];
+    } else {
+      newSelected = selected.filter(v => v !== value);
+    }
+    
+    if (newSelected.length === 0) {
+      removeFilter(column);
+      return;
+    }
+    
+    setFilters(prev => ({
+      ...prev,
+      [column]: { type: 'choice', selected: newSelected }
+    }));
+  };
+  
+  const addNumberRangeFilter = (column: keyof Wine, min: number | null, max: number | null) => {
+    if (min === null && max === null) {
+      removeFilter(column);
+      return;
+    }
+    
+    setFilters(prev => ({
+      ...prev,
+      [column]: { type: 'number_range', min, max }
+    }));
+  };
+  
+  const addDateRangeFilter = (column: keyof Wine, start: Date | null, end: Date | null) => {
+    if (start === null && end === null) {
+      removeFilter(column);
+      return;
+    }
+    
+    setFilters(prev => ({
+      ...prev,
+      [column]: { type: 'date_range', start, end }
+    }));
+  };
+  
+  const removeFilter = (column: keyof Wine) => {
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
+    
+    // Clear any filter input text
+    setFilterInputs(prev => {
+      const newInputs = { ...prev };
+      delete newInputs[column as string];
+      return newInputs;
+    });
+  };
+  
+  const clearAllFilters = () => {
+    setFilters({});
+    setFilterInputs({});
+  };
+  
+  // Determine if a column has an active filter
+  const hasFilter = (column: keyof Wine) => {
+    return column in filters;
   };
 
   // Export to CSV function
@@ -273,11 +476,215 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
     }
   };
 
+  // Column header with filtering
+  const renderColumnHeader = (column: {key: keyof Wine, label: string}) => {
+    const columnKey = column.key;
+    const filterValue = filters[columnKey];
+    const isFiltered = hasFilter(columnKey);
+    
+    return (
+      <TableHead 
+        key={columnKey}
+        className="px-0 py-2"
+      >
+        <div className="flex flex-col space-y-1">
+          {/* Column Header Label and Sort Controls */}
+          <div
+            className={`flex items-center justify-between px-4 py-1 cursor-pointer ${
+              sortConfig.key === columnKey ? "text-burgundy-800 font-semibold" : ""
+            }`}
+            onClick={() => requestSort(columnKey)}
+          >
+            <div className="flex items-center gap-1 truncate">
+              <span>{column.label}</span>
+              {sortConfig.key === columnKey && (
+                <span>
+                  {sortConfig.direction === 'ascending' ? 
+                    <ArrowDownAZ className="w-4 h-4" /> : 
+                    <ArrowUpZA className="w-4 h-4" />}
+                </span>
+              )}
+              {isFiltered && (
+                <Badge variant="outline" className="h-5 bg-burgundy-50 text-burgundy-800 ml-1">
+                  <Filter className="w-3 h-3 mr-1" />
+                  <span className="text-xs">Filtered</span>
+                </Badge>
+              )}
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 text-gray-500 hover:text-burgundy-700"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Filter {column.label}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                {/* Sort Options */}
+                <DropdownMenuGroup>
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestSort(columnKey);
+                      setSortConfig({key: columnKey, direction: 'ascending'});
+                    }}
+                  >
+                    <ArrowDownAZ className="w-4 h-4 mr-2" />
+                    <span>Sort A to Z</span>
+                    {sortConfig.key === columnKey && sortConfig.direction === 'ascending' && (
+                      <Check className="w-4 h-4 ml-auto" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestSort(columnKey);
+                      setSortConfig({key: columnKey, direction: 'descending'});
+                    }}
+                  >
+                    <ArrowUpZA className="w-4 h-4 mr-2" />
+                    <span>Sort Z to A</span>
+                    {sortConfig.key === columnKey && sortConfig.direction === 'descending' && (
+                      <Check className="w-4 h-4 ml-auto" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Filter Options */}
+                <DropdownMenuGroup>
+                  {/* Text search filter for text columns */}
+                  {['producer', 'name', 'vineyard', 'region', 'subregion', 'type', 'grapeVarieties', 'notes'].includes(String(columnKey)) && (
+                    <div className="p-2">
+                      <Input
+                        placeholder={`Filter ${column.label}...`}
+                        value={filterInputs[String(columnKey)] || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFilterInputs(prev => ({...prev, [columnKey]: value}));
+                          if (value.trim()) {
+                            addTextFilter(columnKey, value);
+                          } else {
+                            removeFilter(columnKey);
+                          }
+                        }}
+                        className="h-8 text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Number range filter for numeric columns */}
+                  {['vintage', 'purchasePrice', 'currentValue', 'quantity'].includes(String(columnKey)) && (
+                    <div className="p-2 space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor={`${columnKey}-min`} className="text-xs">Min</Label>
+                          <Input
+                            id={`${columnKey}-min`}
+                            type="number"
+                            placeholder="Min"
+                            value={(filters[columnKey] as NumberRangeFilter)?.min ?? ''}
+                            onChange={(e) => {
+                              const min = e.target.value ? Number(e.target.value) : null;
+                              const max = (filters[columnKey] as NumberRangeFilter)?.max ?? null;
+                              addNumberRangeFilter(columnKey, min, max);
+                            }}
+                            className="h-8 text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`${columnKey}-max`} className="text-xs">Max</Label>
+                          <Input
+                            id={`${columnKey}-max`}
+                            type="number"
+                            placeholder="Max"
+                            value={(filters[columnKey] as NumberRangeFilter)?.max ?? ''}
+                            onChange={(e) => {
+                              const max = e.target.value ? Number(e.target.value) : null;
+                              const min = (filters[columnKey] as NumberRangeFilter)?.min ?? null;
+                              addNumberRangeFilter(columnKey, min, max);
+                            }}
+                            className="h-8 text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Value selection filter */}
+                  {columnKey !== 'notes' && (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <span>Filter by values</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
+                          {getUniqueValues(columnKey).map((value) => (
+                            <DropdownMenuCheckboxItem
+                              key={value}
+                              checked={(filters[columnKey] as ChoiceFilter)?.selected?.includes(value) || false}
+                              onCheckedChange={(checked) => {
+                                addChoiceFilter(columnKey, value, checked);
+                              }}
+                            >
+                              {value}
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                  )}
+                  
+                  {/* Clear filter option */}
+                  {isFiltered && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFilter(columnKey);
+                      }}
+                      className="text-red-600"
+                    >
+                      <FilterX className="w-4 h-4 mr-2" />
+                      <span>Clear filter</span>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </TableHead>
+    );
+  };
+
   return (
     <div className="w-full overflow-hidden border border-cream-200 rounded-xl">
       <div className="p-4 flex justify-between items-center bg-cream-50 border-b border-cream-200">
         <h2 className="text-lg font-semibold text-burgundy-800">Wine Collection Spreadsheet</h2>
         <div className="flex gap-2">
+          {Object.keys(filters).length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex items-center gap-1 text-burgundy-700"
+              onClick={clearAllFilters}
+            >
+              <FilterX size={16} />
+              <span>Clear Filters</span>
+            </Button>
+          )}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-1">
@@ -320,15 +727,7 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
           <TableHeader>
             <TableRow>
               {columns.map((column) => 
-                columnVisibility[column.key] && (
-                  <TableHead 
-                    key={column.key}
-                    className={getHeaderClass(column.key)}
-                    onClick={() => requestSort(column.key)}
-                  >
-                    {column.label}{getSortIndicator(column.key)}
-                  </TableHead>
-                )
+                columnVisibility[column.key] && renderColumnHeader(column)
               )}
             </TableRow>
           </TableHeader>
