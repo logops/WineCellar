@@ -17,6 +17,7 @@ import { useState } from "react";
 import MobileMenu from "@/components/layout/MobileMenu";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { CellarsProvider } from "@/hooks/use-cellars";
 
 function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,31 +25,33 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <div className="flex flex-col min-h-screen">
-            <Header 
-              onMenuButtonClick={() => setIsMobileMenuOpen(true)} 
-            />
-            <MobileMenu 
-              isOpen={isMobileMenuOpen} 
-              onClose={() => setIsMobileMenuOpen(false)} 
-            />
-            <main className="flex-grow">
-              <Switch>
-                <ProtectedRoute path="/" component={Dashboard} />
-                <ProtectedRoute path="/collection" component={Collection} />
-                <ProtectedRoute path="/search" component={Search} />
-                <ProtectedRoute path="/reports" component={Reports} />
-                <ProtectedRoute path="/wishlist" component={WishList} />
-                <ProtectedRoute path="/notes" component={Notes} />
-                <Route path="/auth" component={AuthPage} />
-                <Route component={NotFound} />
-              </Switch>
-            </main>
-            <Footer />
-            <Toaster />
-          </div>
-        </TooltipProvider>
+        <CellarsProvider>
+          <TooltipProvider>
+            <div className="flex flex-col min-h-screen">
+              <Header 
+                onMenuButtonClick={() => setIsMobileMenuOpen(true)} 
+              />
+              <MobileMenu 
+                isOpen={isMobileMenuOpen} 
+                onClose={() => setIsMobileMenuOpen(false)} 
+              />
+              <main className="flex-grow">
+                <Switch>
+                  <ProtectedRoute path="/" component={Dashboard} />
+                  <ProtectedRoute path="/collection" component={Collection} />
+                  <ProtectedRoute path="/search" component={Search} />
+                  <ProtectedRoute path="/reports" component={Reports} />
+                  <ProtectedRoute path="/wishlist" component={WishList} />
+                  <ProtectedRoute path="/notes" component={Notes} />
+                  <Route path="/auth" component={AuthPage} />
+                  <Route component={NotFound} />
+                </Switch>
+              </main>
+              <Footer />
+              <Toaster />
+            </div>
+          </TooltipProvider>
+        </CellarsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

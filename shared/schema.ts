@@ -38,6 +38,8 @@ export const wines = pgTable("wines", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: integer("user_id"),
+  storageLocation: text("storage_location").default("Main Cellar"),
+  binNumber: text("bin_number"),
 });
 
 export const insertWineSchema = createInsertSchema(wines).omit({
