@@ -26,6 +26,7 @@ export default function Search() {
     vintage: [] as number[],
     drinkingWindow: [] as string[],
     purchaseLocation: [] as string[],
+    storageLocation: [] as string[],
     priceRange: undefined as [number, number] | undefined,
     purchaseDateRange: undefined as [Date, Date] | undefined,
     drinkingWindowRange: undefined as [Date, Date] | undefined
@@ -74,6 +75,10 @@ export default function Search() {
       // Filter by purchase location
       const matchesPurchaseLocation = !filters.purchaseLocation?.length || 
         (wine.purchaseLocation && filters.purchaseLocation.includes(wine.purchaseLocation));
+        
+      // Filter by storage location
+      const matchesStorageLocation = !filters.storageLocation?.length || 
+        (wine.storageLocation && filters.storageLocation.includes(wine.storageLocation));
 
       // Filter by price range
       const matchesPriceRange = !filters.priceRange || 
@@ -100,6 +105,7 @@ export default function Search() {
              matchesVintage && 
              matchesDrinkingWindow && 
              matchesPurchaseLocation && 
+             matchesStorageLocation &&
              matchesPriceRange && 
              matchesPurchaseDateRange &&
              matchesDrinkingWindowRange;
@@ -150,22 +156,24 @@ export default function Search() {
     setFilters(prev => {
       const newFilters = { ...prev };
       
-      // Handle array type filters (type, region, vintage, drinkingWindow, purchaseLocation)
-      if (['type', 'region', 'vintage', 'drinkingWindow', 'purchaseLocation'].includes(filterType)) {
+      // Handle array type filters (type, region, vintage, drinkingWindow, purchaseLocation, storageLocation)
+      if (['type', 'region', 'vintage', 'drinkingWindow', 'purchaseLocation', 'storageLocation'].includes(filterType)) {
         if (isSelected) {
           // Add to filter
           if (filterType === 'vintage') {
             newFilters.vintage = [...prev.vintage, value as number];
-          } else if (filterType === 'type' || filterType === 'region' || filterType === 'drinkingWindow' || filterType === 'purchaseLocation') {
-            const key = filterType as 'type' | 'region' | 'drinkingWindow' | 'purchaseLocation';
+          } else if (filterType === 'type' || filterType === 'region' || filterType === 'drinkingWindow' || 
+                    filterType === 'purchaseLocation' || filterType === 'storageLocation') {
+            const key = filterType as 'type' | 'region' | 'drinkingWindow' | 'purchaseLocation' | 'storageLocation';
             newFilters[key] = [...prev[key], value as string];
           }
         } else {
           // Remove from filter
           if (filterType === 'vintage') {
             newFilters.vintage = prev.vintage.filter(item => item !== value);
-          } else if (filterType === 'type' || filterType === 'region' || filterType === 'drinkingWindow' || filterType === 'purchaseLocation') {
-            const key = filterType as 'type' | 'region' | 'drinkingWindow' | 'purchaseLocation';
+          } else if (filterType === 'type' || filterType === 'region' || filterType === 'drinkingWindow' || 
+                    filterType === 'purchaseLocation' || filterType === 'storageLocation') {
+            const key = filterType as 'type' | 'region' | 'drinkingWindow' | 'purchaseLocation' | 'storageLocation';
             newFilters[key] = prev[key].filter(item => item !== value);
           }
         }
@@ -214,6 +222,7 @@ export default function Search() {
   const uniqueTypes = getUniqueValues('type') as string[];
   const uniqueRegions = getUniqueValues('region') as string[];
   const uniqueVintages = getUniqueValues('vintage') as number[];
+  const uniqueStorageLocations = getUniqueValues('storageLocation') as string[];
 
   return (
     <>
@@ -304,6 +313,7 @@ export default function Search() {
                     vintage: [] as number[],
                     drinkingWindow: [] as string[],
                     purchaseLocation: [] as string[],
+                    storageLocation: [] as string[],
                     priceRange: undefined,
                     purchaseDateRange: undefined,
                     drinkingWindowRange: undefined
