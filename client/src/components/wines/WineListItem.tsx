@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Wine } from "@shared/schema";
 import WineGlassIcon from "./WineGlassIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
-import { Edit } from "lucide-react";
+import { Edit, X } from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogContent,
@@ -15,6 +15,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface WineListItemProps {
   wine: Wine;
@@ -26,8 +27,24 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
 
+  // Reset form dirty state when dialog is opened
+  useEffect(() => {
+    if (showEditModal) {
+      setFormDirty(false);
+    }
+  }, [showEditModal]);
+
   const handleCardClick = () => {
     setShowEditModal(true);
+  };
+
+  // Function to handle closing the edit dialog
+  const handleCloseEdit = () => {
+    if (formDirty) {
+      setShowConfirmDialog(true);
+    } else {
+      setShowEditModal(false);
+    }
   };
 
   // Function to handle the discard changes action
@@ -108,32 +125,26 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       <Dialog 
         open={showEditModal} 
         onOpenChange={(open) => {
-          // This handles clicking outside to close
           if (!open) {
-            // Check for unsaved changes before closing
-            if (formDirty) {
-              setShowConfirmDialog(true);
-            } else {
-              // No unsaved changes, close immediately
-              setShowEditModal(false);
-            }
+            handleCloseEdit();
           }
         }}
       >
         <DialogContent 
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
-          hideCloseButton={true}
-          // Simplified outside click behavior - always show confirmation or close
-          onInteractOutside={(e) => {
-            if (formDirty) {
-              // Show confirmation dialog for unsaved changes
-              setShowConfirmDialog(true);
-            } else {
-              // No changes, close the dialog
-              setShowEditModal(false);
-            }
-          }}
         >
+          <Button 
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background 
+              transition-opacity hover:opacity-100 focus:outline-none 
+              focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+            onClick={handleCloseEdit}
+            variant="ghost"
+            size="icon"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Button>
+          
           <DialogHeader>
             <DialogTitle>
               Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}{wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
