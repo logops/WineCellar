@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -52,10 +52,20 @@ interface ConsumeWineFormProps {
 export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredWines, setFilteredWines] = useState<Wine[]>([]);
 
   const { data: wines, isLoading } = useQuery<Wine[]>({
     queryKey: ['/api/wines'],
   });
+  
+  // Initialize filtered wines when data loads
+  useEffect(() => {
+    if (wines) {
+      const available = wines.filter(w => w.quantity && w.quantity > 0);
+      setFilteredWines(available);
+    }
+  }, [wines]);
 
   const defaultValues: Partial<FormValues> = {
     consumptionDate: new Date(),
@@ -71,8 +81,11 @@ export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
   const selectedWine = wines?.find(wine => wine.id === selectedWineId);
   
   // Update quantity when wine selection changes
-  if (selectedWine && (!form.getValues("quantity") || form.getValues("quantity") > selectedWine.quantity)) {
-    form.setValue("quantity", Math.min(selectedWine.quantity, 1));
+  if (selectedWine && selectedWine.quantity !== null) {
+    const currentQuantity = form.getValues("quantity") || 0;
+    if (!currentQuantity || currentQuantity > selectedWine.quantity) {
+      form.setValue("quantity", Math.min(selectedWine.quantity, 1));
+    }
   }
 
   async function onSubmit(values: FormValues) {
@@ -128,7 +141,7 @@ export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
     );
   }
 
-  const availableWines = wines.filter(wine => wine.quantity > 0);
+  const availableWines = wines.filter(wine => wine.quantity !== null && wine.quantity > 0);
 
   if (availableWines.length === 0) {
     return (

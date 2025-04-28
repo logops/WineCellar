@@ -11,6 +11,17 @@ import { useAutocompleteSuggestions } from "@/lib/autocompleteService";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -62,6 +73,8 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
   const [drinkingWindowType, setDrinkingWindowType] = useState(
     wine?.drinkingStatus || "drink_later"
   );
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [formDirty, setFormDirty] = useState(false);
   
   // Get autocomplete suggestions
   const suggestions = useAutocompleteSuggestions();
