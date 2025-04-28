@@ -669,7 +669,7 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
                         <FormControl>
                           <Input 
                             type="number" 
-                            min={new Date().getFullYear()} 
+                            min={1900} 
                             max={new Date().getFullYear() + 50}
                             placeholder={new Date().getFullYear().toString()} 
                             {...field} 
@@ -691,7 +691,7 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
                         <FormControl>
                           <Input 
                             type="number" 
-                            min={new Date().getFullYear()} 
+                            min={1900} 
                             max={new Date().getFullYear() + 50}
                             placeholder={(new Date().getFullYear() + 5).toString()} 
                             {...field} 

@@ -86,22 +86,34 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       </div>
 
       {/* Edit Wine Dialog */}
-      <Dialog open={showEditModal} onOpenChange={(open) => {
-        if (!open) {
-          // This will be triggered when the dialog is closed by clicking the X button or clicking outside
-          setShowEditModal(false);
-        }
-      }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <button
-            type="button"
-            onClick={() => setShowEditModal(false)}
-            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-opacity"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </button>
+      <Dialog 
+        open={showEditModal} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowEditModal(false);
+          }
+        }}
+      >
+        <DialogContent 
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault(); // Prevent closing on outside click
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault(); // Prevent closing on Escape key
+          }}
+        >
+          <div className="absolute right-4 top-4 z-10">
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              className="rounded-sm opacity-70 ring-offset-background hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </button>
+          </div>
           <DialogHeader>
             <DialogTitle>
               Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}{wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
