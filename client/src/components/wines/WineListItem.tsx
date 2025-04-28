@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Wine } from "@shared/schema";
 import WineGlassIcon from "./WineGlassIcon";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -49,8 +49,10 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
     }
   };
   
-  // Centralized function to close the modal
+  // Centralized function to close all dialogs
   const closeModal = () => {
+    // Always make sure to close any open dialogs
+    setShowUnsavedChangesDialog(false);
     setShowEditModal(false);
     setFormIsDirty(false); // Reset the dirty state
     if (onUpdate) onUpdate(); // Refresh the wine list when closing
@@ -159,6 +161,13 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       >
         <DialogContent
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            // If form is dirty, prevent immediate closing and show confirmation
+            if (formIsDirty) {
+              e.preventDefault();
+              setShowUnsavedChangesDialog(true);
+            }
+          }}
         >
           <div className="flex justify-between items-center">
             <DialogHeader>
@@ -171,19 +180,25 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               </DialogDescription>
             </DialogHeader>
             
-            {/* Use a regular button instead of DialogClose + Button to ensure handleCloseDialog is called */}
-            <Button 
-              type="button"
-              className="rounded-sm opacity-70 ring-offset-background 
-                transition-opacity hover:opacity-100 focus:outline-none 
-                focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-              onClick={handleCloseDialog}
-              variant="ghost"
-              size="icon"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </Button>
+            {/* Use DialogClose with customized asChild to style it */}
+            <DialogClose asChild onClick={(e) => {
+              // Prevent the default close behavior
+              e.preventDefault();
+              // Use our custom handler instead
+              handleCloseDialog();
+            }}>
+              <Button
+                type="button"
+                className="rounded-sm opacity-70 ring-offset-background
+                  transition-opacity hover:opacity-100 focus:outline-none
+                  focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+                variant="ghost"
+                size="icon"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </DialogClose>
           </div>
           
           <div className="p-1">
