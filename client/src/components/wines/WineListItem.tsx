@@ -1,20 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Wine } from "@shared/schema";
 import WineGlassIcon from "./WineGlassIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
 import { Edit, X } from "lucide-react";
-import { 
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
 interface WineListItemProps {
@@ -25,40 +15,29 @@ interface WineListItemProps {
 export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [formDirty, setFormDirty] = useState(false);
+  const [formIsDirty, setFormIsDirty] = useState(false);
 
-  // Reset form dirty state when dialog is opened
-  useEffect(() => {
-    if (showEditModal) {
-      setFormDirty(false);
-    }
-  }, [showEditModal]);
-
+  // Simple function to handle card click
   const handleCardClick = () => {
     setShowEditModal(true);
+    setFormIsDirty(false); // Reset dirty state when opening
   };
 
-  // Function to handle closing the edit dialog
-  const handleCloseEdit = () => {
-    console.log("Close button clicked, form dirty:", formDirty);
-    if (formDirty) {
-      setShowConfirmDialog(true);
+  // Close handler for the edit dialog
+  const handleCloseDialog = () => {
+    if (formIsDirty) {
+      // Show simple browser confirmation dialog
+      const confirmed = window.confirm(
+        "You have unsaved changes. Are you sure you want to close without saving?"
+      );
+      
+      if (confirmed) {
+        setShowEditModal(false);
+        if (onUpdate) onUpdate();
+      }
     } else {
+      // No changes made, close dialog
       setShowEditModal(false);
-    }
-  };
-
-  // Function to handle the discard changes action
-  const handleDiscardChanges = () => {
-    console.log("Discard changes clicked");
-    setFormDirty(false); // Reset dirty state
-    setShowConfirmDialog(false);
-    setShowEditModal(false);
-    
-    // Trigger any updates needed
-    if (onUpdate) {
-      console.log("Calling onUpdate");
-      onUpdate();
     }
   };
 
@@ -129,92 +108,55 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         </div>
       </div>
 
-      {/* Edit Wine Dialog */}
-      <Dialog 
-        open={showEditModal} 
-        onOpenChange={(open) => {
-          if (!open) {
-            handleCloseEdit();
-          }
-        }}
-      >
-        <DialogContent 
-          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+      {/* Edit Wine Dialog - Using simple browser confirm dialog for unsaved changes */}
+      {showEditModal && (
+        <Dialog 
+          open={showEditModal} 
+          onOpenChange={(open) => {
+            if (!open) {
+              handleCloseDialog();
+            }
+          }}
         >
-          <Button 
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background 
-              transition-opacity hover:opacity-100 focus:outline-none 
-              focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-            onClick={handleCloseEdit}
-            variant="ghost"
-            size="icon"
+          <DialogContent
+            className="max-w-3xl max-h-[90vh] overflow-y-auto"
           >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
-          
-          <DialogHeader>
-            <DialogTitle>
-              Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}{wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
-            </DialogTitle>
-            <p className="text-gray-500 text-sm mt-1">
-              Edit details of this wine and save changes to update your collection
-            </p>
-          </DialogHeader>
-          <div className="p-1">
-            <AddWineForm 
-              wine={wine} 
-              onSuccess={() => {
-                setShowEditModal(false);
-                if (onUpdate) onUpdate();
-              }}
-              hideCloseButton={true}
-              onFormChange={(isDirty) => setFormDirty(isDirty)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Confirmation Dialog for Unsaved Changes */}
-      <AlertDialog 
-        open={showConfirmDialog} 
-        onOpenChange={(open) => {
-          if (!open) {
-            // Handle dialog closing through X button or escape key
-            // Don't close main dialog, just the confirmation
-            setShowConfirmDialog(false);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes that will be lost if you close this form.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <p className="text-gray-600 mb-2">Choose an option:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Continue editing to save your changes</li>
-              <li>Discard changes to exit without saving</li>
-            </ul>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={() => setShowConfirmDialog(false)}
-            >
-              Continue Editing
-            </AlertDialogCancel>
             <Button 
-              onClick={handleDiscardChanges}
-              className="bg-gray-600 hover:bg-gray-700 text-white"
+              type="button"
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background 
+                transition-opacity hover:opacity-100 focus:outline-none 
+                focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              onClick={handleCloseDialog}
+              variant="ghost"
+              size="icon"
             >
-              Discard Changes
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            
+            <DialogHeader>
+              <DialogTitle>
+                Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}
+                {wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
+              </DialogTitle>
+              <p className="text-gray-500 text-sm mt-1">
+                Edit details of this wine and save changes to update your collection
+              </p>
+            </DialogHeader>
+            <div className="p-1">
+              <AddWineForm 
+                wine={wine} 
+                onSuccess={() => {
+                  setShowEditModal(false);
+                  if (onUpdate) onUpdate();
+                }}
+                hideCloseButton={true}
+                onFormChange={(isDirty) => setFormIsDirty(isDirty)}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
