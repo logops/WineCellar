@@ -45,18 +45,13 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       setShowUnsavedChangesDialog(true);
     } else {
       // No changes made, close dialog directly
-      closeModal();
+      setShowEditModal(false);
+      if (onUpdate) onUpdate(); // Refresh the wine list when closing
     }
   };
   
-  // Centralized function to close all dialogs
-  const closeModal = () => {
-    // Always make sure to close any open dialogs
-    setShowUnsavedChangesDialog(false);
-    setShowEditModal(false);
-    setFormIsDirty(false); // Reset the dirty state
-    if (onUpdate) onUpdate(); // Refresh the wine list when closing
-  };
+  // Let's simplify this completely - we don't need this function anymore
+  // Each component will handle its own state directly
 
   return (
     <div 
@@ -224,7 +219,10 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           <div className="p-1">
             <AddWineForm 
               wine={wine} 
-              onSuccess={() => closeModal()}
+              onSuccess={() => {
+                setShowEditModal(false);
+                if (onUpdate) onUpdate();
+              }}
               onFormChange={(isDirty) => setFormIsDirty(isDirty)}
             />
           </div>
