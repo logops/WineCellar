@@ -309,9 +309,24 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
           type="button"
           className="absolute top-0 right-0 p-2 text-gray-500 hover:text-burgundy-600 transition-colors"
           onClick={() => {
-            if (formDirty) {
+            // Check if the form has validation errors
+            const hasErrors = Object.keys(form.formState.errors).length > 0;
+            
+            if (hasErrors) {
+              // If there are errors, trigger validation to show them
+              form.trigger();
+              
+              // Notify the user about the errors
+              toast({
+                title: "Form has errors",
+                description: "Please fix the highlighted fields before closing.",
+                variant: "destructive",
+              });
+            } else if (formDirty) {
+              // If form is dirty but valid, show confirmation dialog
               setShowConfirmDialog(true);
             } else {
+              // If form is not dirty and has no errors, close immediately
               onSuccess?.();
             }
           }}
@@ -736,12 +751,24 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
                     <AlertDialogHeader>
                       <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
                       <AlertDialogDescription>
-                        You have unsaved changes. Are you sure you want to leave without saving?
+                        You have unsaved changes that will be lost if you close this form.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="py-4">
+                      <p className="text-gray-600 mb-2">Choose an option:</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Continue editing to save your changes</li>
+                        <li>Discard changes to exit without saving</li>
+                      </ul>
+                    </div>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Continue Editing</AlertDialogCancel>
-                      <AlertDialogAction onClick={onSuccess}>Discard Changes</AlertDialogAction>
+                      <AlertDialogAction 
+                        onClick={onSuccess}
+                        className="bg-gray-600 hover:bg-gray-700"
+                      >
+                        Discard Changes
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

@@ -86,7 +86,12 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       </div>
 
       {/* Edit Wine Dialog */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+      <Dialog open={showEditModal} onOpenChange={(open) => {
+        if (!open) {
+          // This will be triggered when the dialog is closed by clicking the X button or clicking outside
+          setShowEditModal(false);
+        }
+      }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
