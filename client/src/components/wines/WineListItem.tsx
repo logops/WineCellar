@@ -25,6 +25,9 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
 
   // Close handler for the edit dialog
   const handleCloseDialog = () => {
+    // Log the form state to help with debugging
+    console.log("Form dirty state:", formIsDirty);
+    
     if (formIsDirty) {
       // Show simple browser confirmation dialog
       const confirmed = window.confirm(
@@ -33,11 +36,14 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       
       if (confirmed) {
         setShowEditModal(false);
+        setFormIsDirty(false); // Reset the dirty state
         if (onUpdate) onUpdate();
       }
+      // If not confirmed, keep the dialog open
     } else {
-      // No changes made, close dialog
+      // No changes made, close dialog directly
       setShowEditModal(false);
+      setFormIsDirty(false); // Ensure state is reset
     }
   };
 
@@ -131,20 +137,19 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               </p>
             </DialogHeader>
             
-            <DialogClose asChild>
-              <Button 
-                type="button"
-                className="rounded-sm opacity-70 ring-offset-background 
-                  transition-opacity hover:opacity-100 focus:outline-none 
-                  focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-                onClick={handleCloseDialog}
-                variant="ghost"
-                size="icon"
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-              </Button>
-            </DialogClose>
+            {/* Use a regular button instead of DialogClose + Button to ensure handleCloseDialog is called */}
+            <Button 
+              type="button"
+              className="rounded-sm opacity-70 ring-offset-background 
+                transition-opacity hover:opacity-100 focus:outline-none 
+                focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              onClick={handleCloseDialog}
+              variant="ghost"
+              size="icon"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
           </div>
           
           <div className="p-1">
