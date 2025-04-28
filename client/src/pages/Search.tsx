@@ -225,7 +225,24 @@ export default function Search() {
   const uniqueTypes = getUniqueValues('type') as string[];
   const uniqueRegions = getUniqueValues('region') as string[];
   const uniqueVintages = getUniqueValues('vintage') as number[];
-  const uniqueStorageLocations = getUniqueValues('storageLocation') as string[];
+  
+  // Combine storage locations from wine data and from cellars context
+  const wineStorageLocations = getUniqueValues('storageLocation') as string[];
+  
+  // Manually ensure uniqueness by combining arrays
+  const allStorageLocations: string[] = [];
+  // First add all cellars
+  cellars.forEach(cellar => {
+    if (!allStorageLocations.includes(cellar)) {
+      allStorageLocations.push(cellar);
+    }
+  });
+  // Then add unique wine storage locations
+  wineStorageLocations.forEach(location => {
+    if (!allStorageLocations.includes(location)) {
+      allStorageLocations.push(location);
+    }
+  });
 
   return (
     <>
@@ -259,7 +276,7 @@ export default function Search() {
             types={uniqueTypes}
             regions={uniqueRegions}
             vintages={uniqueVintages}
-            storageLocations={uniqueStorageLocations}
+            storageLocations={allStorageLocations}
             onFilterChange={handleFilterChange}
             onRangeFilterChange={handleRangeFilterChange}
             selectedFilters={filters}
