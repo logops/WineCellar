@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Wine } from "@shared/schema";
 import WineListItem from "./WineListItem";
 import WineListHeader from "./WineListHeader";
+import SpreadsheetView from "./SpreadsheetView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { TableCells, LayoutGrid } from "lucide-react";
 
 const sortWines = (wines: Wine[], sortBy: string): Wine[] => {
   const sortedWines = [...wines];
