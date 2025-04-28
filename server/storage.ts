@@ -4,8 +4,14 @@ import {
   consumptions, type Consumption, type InsertConsumption,
   wishlist, type Wishlist, type InsertWishlist
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
 // Interface for storage operations
+import session from "express-session";
+
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -14,6 +20,7 @@ export interface IStorage {
 
   // Wine operations
   getWines(): Promise<Wine[]>;
+  getWinesByUserId(userId: number): Promise<Wine[]>;
   getWine(id: number): Promise<Wine | undefined>;
   createWine(wine: InsertWine): Promise<Wine>;
   updateWine(id: number, wine: Partial<Wine>): Promise<Wine | undefined>;
@@ -21,14 +28,19 @@ export interface IStorage {
   
   // Consumption operations
   getConsumptions(): Promise<Consumption[]>;
+  getConsumptionsByUserId(userId: number): Promise<Consumption[]>;
   getConsumption(id: number): Promise<Consumption | undefined>;
   createConsumption(consumption: InsertConsumption): Promise<Consumption>;
   
   // Wishlist operations
   getWishlistItems(): Promise<Wishlist[]>;
+  getWishlistItemsByUserId(userId: number): Promise<Wishlist[]>;
   getWishlistItem(id: number): Promise<Wishlist | undefined>;
   createWishlistItem(item: InsertWishlist): Promise<Wishlist>;
   deleteWishlistItem(id: number): Promise<boolean>;
+  
+  // Session store for authentication
+  sessionStore: session.SessionStore;
 }
 
 // Memory storage implementation
@@ -308,4 +320,139 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
+  constructor() {
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  // Wine operations
+  async getWines(): Promise<Wine[]> {
+    return db.select().from(wines);
+  }
+
+  async getWinesByUserId(userId: number): Promise<Wine[]> {
+    return db.select().from(wines).where(eq(wines.userId, userId));
+  }
+
+  async getWine(id: number): Promise<Wine | undefined> {
+    const [wine] = await db.select().from(wines).where(eq(wines.id, id));
+    return wine;
+  }
+
+  async createWine(insertWine: InsertWine): Promise<Wine> {
+    const [wine] = await db.insert(wines).values({
+      ...insertWine,
+      createdAt: new Date()
+    }).returning();
+    return wine;
+  }
+
+  async updateWine(id: number, wineUpdate: Partial<Wine>): Promise<Wine | undefined> {
+    const [updatedWine] = await db.update(wines)
+      .set(wineUpdate)
+      .where(eq(wines.id, id))
+      .returning();
+    return updatedWine;
+  }
+
+  async deleteWine(id: number): Promise<boolean> {
+    const result = await db.delete(wines).where(eq(wines.id, id)).returning({ id: wines.id });
+    return result.length > 0;
+  }
+
+  // Consumption operations
+  async getConsumptions(): Promise<Consumption[]> {
+    return db.select().from(consumptions);
+  }
+
+  async getConsumptionsByUserId(userId: number): Promise<Consumption[]> {
+    return db.select().from(consumptions).where(eq(consumptions.userId, userId));
+  }
+
+  async getConsumption(id: number): Promise<Consumption | undefined> {
+    const [consumption] = await db.select().from(consumptions).where(eq(consumptions.id, id));
+    return consumption;
+  }
+
+  async createConsumption(insertConsumption: InsertConsumption): Promise<Consumption> {
+    // Start a transaction to update both consumption and wine quantity
+    const result = await db.transaction(async (tx) => {
+      // Create consumption record
+      const [consumption] = await tx.insert(consumptions)
+        .values({
+          ...insertConsumption,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      // Get the wine
+      const [wine] = await tx.select().from(wines).where(eq(wines.id, insertConsumption.wineId));
+      
+      if (wine && wine.quantity !== null) {
+        // Update wine quantity
+        await tx.update(wines)
+          .set({ quantity: Math.max(0, wine.quantity - insertConsumption.quantity) })
+          .where(eq(wines.id, insertConsumption.wineId));
+      }
+      
+      return consumption;
+    });
+    
+    return result;
+  }
+
+  // Wishlist operations
+  async getWishlistItems(): Promise<Wishlist[]> {
+    return db.select().from(wishlist);
+  }
+
+  async getWishlistItemsByUserId(userId: number): Promise<Wishlist[]> {
+    return db.select().from(wishlist).where(eq(wishlist.userId, userId));
+  }
+
+  async getWishlistItem(id: number): Promise<Wishlist | undefined> {
+    const [item] = await db.select().from(wishlist).where(eq(wishlist.id, id));
+    return item;
+  }
+
+  async createWishlistItem(insertItem: InsertWishlist): Promise<Wishlist> {
+    const [item] = await db.insert(wishlist)
+      .values({
+        ...insertItem,
+        createdAt: new Date()
+      })
+      .returning();
+    return item;
+  }
+
+  async deleteWishlistItem(id: number): Promise<boolean> {
+    const result = await db.delete(wishlist).where(eq(wishlist.id, id)).returning({ id: wishlist.id });
+    return result.length > 0;
+  }
+}
+
+// Use DatabaseStorage instead of MemStorage
+export const storage = new DatabaseStorage();
