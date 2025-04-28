@@ -407,8 +407,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateWine(id: number, wineUpdate: Partial<Wine>): Promise<Wine | undefined> {
+    // Format the update data consistently with createWine
+    const formattedUpdate: Record<string, any> = { ...wineUpdate };
+    
+    // Handle date fields if they exist in the update
+    if (formattedUpdate.purchaseDate) {
+      formattedUpdate.purchaseDate = new Date(formattedUpdate.purchaseDate).toISOString().split('T')[0];
+    }
+    if (formattedUpdate.drinkingWindowStart) {
+      formattedUpdate.drinkingWindowStart = new Date(formattedUpdate.drinkingWindowStart).toISOString().split('T')[0];
+    }
+    if (formattedUpdate.drinkingWindowEnd) {
+      formattedUpdate.drinkingWindowEnd = new Date(formattedUpdate.drinkingWindowEnd).toISOString().split('T')[0];
+    }
+    
+    // Convert undefined to null for optional fields
+    if ('vineyard' in formattedUpdate) formattedUpdate.vineyard = formattedUpdate.vineyard || null;
+    if ('region' in formattedUpdate) formattedUpdate.region = formattedUpdate.region || null;
+    if ('subregion' in formattedUpdate) formattedUpdate.subregion = formattedUpdate.subregion || null;
+    if ('grapeVarieties' in formattedUpdate) formattedUpdate.grapeVarieties = formattedUpdate.grapeVarieties || null;
+    if ('purchaseLocation' in formattedUpdate) formattedUpdate.purchaseLocation = formattedUpdate.purchaseLocation || null;
+    if ('rating' in formattedUpdate) formattedUpdate.rating = formattedUpdate.rating || null;
+    if ('notes' in formattedUpdate) formattedUpdate.notes = formattedUpdate.notes || null;
+    
     const [updatedWine] = await db.update(wines)
-      .set(wineUpdate)
+      .set(formattedUpdate)
       .where(eq(wines.id, id))
       .returning();
     return updatedWine;
@@ -434,14 +457,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createConsumption(insertConsumption: InsertConsumption): Promise<Consumption> {
+    // Format consumption date and nullable fields
+    const formattedConsumption = {
+      ...insertConsumption,
+      // Ensure consumptionDate is properly formatted if it's a Date object
+      consumptionDate: typeof insertConsumption.consumptionDate === 'object' 
+        ? new Date(insertConsumption.consumptionDate).toISOString().split('T')[0] 
+        : insertConsumption.consumptionDate,
+      // Handle nullable fields
+      rating: insertConsumption.rating || null,
+      notes: insertConsumption.notes || null,
+      createdAt: new Date()
+    };
+    
     // Start a transaction to update both consumption and wine quantity
     const result = await db.transaction(async (tx) => {
       // Create consumption record
       const [consumption] = await tx.insert(consumptions)
-        .values({
-          ...insertConsumption,
-          createdAt: new Date()
-        })
+        .values(formattedConsumption)
         .returning();
       
       // Get the wine
@@ -475,11 +508,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWishlistItem(insertItem: InsertWishlist): Promise<Wishlist> {
+    // Format nullable fields 
+    const formattedItem = {
+      ...insertItem,
+      // Format nullable fields
+      type: insertItem.type || null,
+      producer: insertItem.producer || null,
+      vintage: insertItem.vintage || null,
+      region: insertItem.region || null,
+      subregion: insertItem.subregion || null,
+      notes: insertItem.notes || null,
+      createdAt: new Date()
+    };
+    
     const [item] = await db.insert(wishlist)
-      .values({
-        ...insertItem,
-        createdAt: new Date()
-      })
+      .values(formattedItem)
       .returning();
     return item;
   }
