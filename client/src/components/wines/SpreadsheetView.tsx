@@ -389,8 +389,8 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
 
   // Column definitions for type safety and reusability
   const columns = [
-    { key: 'producer' as keyof Wine, label: 'Producer' },
     { key: 'vintage' as keyof Wine, label: 'Vintage' },
+    { key: 'producer' as keyof Wine, label: 'Producer' },
     { key: 'name' as keyof Wine, label: 'Name' },
     { key: 'vineyard' as keyof Wine, label: 'Vineyard' },
     { key: 'region' as keyof Wine, label: 'Region' },
@@ -438,6 +438,13 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
         return wine.notes ? 
           (wine.notes.length > 50 ? `${wine.notes.substring(0, 50)}...` : wine.notes) : 
           '-';
+      case 'name':
+        if (wine.name) {
+          return wine.name;
+        } else if (wine.grapeVarieties) {
+          return wine.grapeVarieties.split(',')[0].trim();
+        }
+        return '-';
       case 'drinkingStatus':
         if (wine.drinkingWindowStart && wine.drinkingWindowEnd) {
           const start = typeof wine.drinkingWindowStart === 'string' 
