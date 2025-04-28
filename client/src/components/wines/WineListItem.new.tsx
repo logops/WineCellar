@@ -122,6 +122,8 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       >
         <DialogContent 
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          // Remove the X button from the DialogContent
+          // The X will still be rendered but will be hidden with CSS
           hideCloseButton={true}
           // Check for unsaved changes before closing on outside click
           onInteractOutside={(e) => {
