@@ -8,10 +8,10 @@ export default function Footer() {
           <div className="mb-6 md:mb-0">
             <Link href="/" className="flex items-center">
               <span className="text-xl font-bold font-montserrat tracking-tight text-white">Cellar</span>
-              <span className="ml-1 py-0.5 px-2 bg-cream-500 text-burgundy-700 text-xs font-bold rounded-sm">TRACKER</span>
+              <span className="ml-1 py-0.5 px-2 bg-cream-500 text-burgundy-700 text-xs font-bold rounded-sm">MASTER</span>
             </Link>
             <p className="mt-2 max-w-md text-cream-300 text-sm">
-              Keep track of your wine collection with the modern version of CellarTracker. 
+              Keep track of your wine collection with the modern version of CellarMaster. 
               Organize, track, and enjoy your wines with confidence.
             </p>
           </div>
@@ -50,7 +50,7 @@ export default function Footer() {
         </div>
         
         <div className="mt-8 pt-6 border-t border-burgundy-700 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm text-cream-300">&copy; {new Date().getFullYear()} Cellar. All rights reserved.</p>
+          <p className="text-sm text-cream-300">&copy; {new Date().getFullYear()} CellarMaster. All rights reserved.</p>
           <div className="mt-4 md:mt-0 flex space-x-6">
             <a href="#" className="text-cream-300 hover:text-white">
               <span className="sr-only">Facebook</span>

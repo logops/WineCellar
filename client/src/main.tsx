@@ -13,7 +13,7 @@ document.head.appendChild(fontLinks);
 
 // Add title
 const titleTag = document.createElement('title');
-titleTag.textContent = 'Cellar | Modern Wine Collection Manager';
+titleTag.textContent = 'CellarMaster | Modern Wine Collection Manager';
 document.head.appendChild(titleTag);
 
 createRoot(document.getElementById("root")!).render(<App />);
