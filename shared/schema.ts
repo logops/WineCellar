@@ -31,6 +31,7 @@ export const wines = pgTable("wines", {
   currentValue: real("current_value"),
   purchaseDate: date("purchase_date"),
   purchaseLocation: text("purchase_location"),
+  storageLocation: text("storage_location").default("Main Cellar"),
   rating: real("rating"),
   drinkingWindowStart: date("drinking_window_start"),
   drinkingWindowEnd: date("drinking_window_end"),
@@ -38,7 +39,6 @@ export const wines = pgTable("wines", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: integer("user_id"),
-  storageLocation: text("storage_location").default("Main Cellar"),
   binNumber: text("bin_number"),
 });
 
