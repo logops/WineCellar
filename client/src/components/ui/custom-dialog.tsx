@@ -2,43 +2,19 @@
 
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 
-const CustomDialog = DialogPrimitive.Root
-
-const CustomDialogTrigger = DialogPrimitive.Trigger
-
-const CustomDialogPortal = DialogPrimitive.Portal
-
-const CustomDialogClose = DialogPrimitive.Close
-
-const CustomDialogOverlay = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    )}
-    {...props}
-  />
-))
-CustomDialogOverlay.displayName = DialogPrimitive.Overlay.displayName
-
-// Custom DialogContent without the default close button
+// Create a DialogContent variant without the close button
 const CustomDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
-    showCloseButton?: boolean;
-    onClose?: () => void;
-  }
->(({ className, children, showCloseButton = false, onClose, ...props }, ref) => (
-  <CustomDialogPortal>
-    <CustomDialogOverlay />
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPrimitive.Portal>
+    <DialogPrimitive.Overlay 
+      className={cn(
+        "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      )}
+    />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
@@ -48,84 +24,10 @@ const CustomDialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
-      )}
+      {/* No close button here */}
     </DialogPrimitive.Content>
-  </CustomDialogPortal>
+  </DialogPrimitive.Portal>
 ))
 CustomDialogContent.displayName = "CustomDialogContent"
 
-const CustomDialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left",
-      className
-    )}
-    {...props}
-  />
-)
-CustomDialogHeader.displayName = "CustomDialogHeader"
-
-const CustomDialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-      className
-    )}
-    {...props}
-  />
-)
-CustomDialogFooter.displayName = "CustomDialogFooter"
-
-const CustomDialogTitle = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
-CustomDialogTitle.displayName = DialogPrimitive.Title.displayName
-
-const CustomDialogDescription = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
-))
-CustomDialogDescription.displayName = DialogPrimitive.Description.displayName
-
-export {
-  CustomDialog,
-  CustomDialogPortal,
-  CustomDialogOverlay,
-  CustomDialogClose,
-  CustomDialogTrigger,
-  CustomDialogContent,
-  CustomDialogHeader,
-  CustomDialogFooter,
-  CustomDialogTitle,
-  CustomDialogDescription,
-}
+export { CustomDialogContent }

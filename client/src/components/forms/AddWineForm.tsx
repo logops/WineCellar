@@ -308,41 +308,7 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false, 
 
   return (
     <div className="p-1 relative">
-      {/* Only show close button if not explicitly hidden */}
-      {!hideCloseButton && (
-        <button 
-          type="button"
-          className="absolute top-0 right-0 p-2 text-gray-500 hover:text-burgundy-600 transition-colors"
-          onClick={() => {
-            // Check if the form has validation errors
-            const hasErrors = Object.keys(form.formState.errors).length > 0;
-            
-            if (hasErrors) {
-              // If there are errors, trigger validation to show them
-              form.trigger();
-              
-              // Notify the user about the errors
-              toast({
-                title: "Form has errors",
-                description: "Please fix the highlighted fields before closing.",
-                variant: "destructive",
-              });
-            } else if (formDirty) {
-              // If form is dirty but valid, show confirmation dialog
-              setShowConfirmDialog(true);
-            } else {
-              // If form is not dirty and has no errors, close immediately
-              onSuccess?.();
-            }
-          }}
-          aria-label="Close"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      )}
+      {/* Close button removed in favor of click-outside functionality */}
       
       <Tabs defaultValue="manual" value={entryMethod} onValueChange={setEntryMethod} className="mb-6">
         <TabsList className="grid w-full grid-cols-3">

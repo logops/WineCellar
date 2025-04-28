@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Wine } from "@shared/schema";
 import WineGlassIcon from "./WineGlassIcon";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CustomDialogContent } from "@/components/ui/custom-dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
 import { Edit } from "lucide-react";
@@ -113,7 +114,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           }
         }}
       >
-        <DialogContent 
+        <CustomDialogContent 
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
           // Check for unsaved changes before closing on outside click
           onInteractOutside={(e) => {
@@ -145,7 +146,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               onFormChange={(isDirty) => setFormDirty(isDirty)}
             />
           </div>
-        </DialogContent>
+        </CustomDialogContent>
       </Dialog>
       
       {/* Confirmation Dialog for Unsaved Changes */}
@@ -172,6 +173,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               onClick={() => {
                 setShowConfirmDialog(false);
                 setShowEditModal(false);
+                if (onUpdate) onUpdate(); // Make sure UI refreshes after closing
               }}
               className="bg-gray-600 hover:bg-gray-700"
             >
