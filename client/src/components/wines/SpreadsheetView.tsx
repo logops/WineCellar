@@ -441,11 +441,11 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
       case 'drinkingStatus':
         if (wine.drinkingWindowStart && wine.drinkingWindowEnd) {
           const start = typeof wine.drinkingWindowStart === 'string' 
-            ? wine.drinkingWindowStart 
-            : formatDate(wine.drinkingWindowStart);
+            ? new Date(wine.drinkingWindowStart).getFullYear()
+            : new Date(wine.drinkingWindowStart).getFullYear();
           const end = typeof wine.drinkingWindowEnd === 'string'
-            ? wine.drinkingWindowEnd
-            : formatDate(wine.drinkingWindowEnd);
+            ? new Date(wine.drinkingWindowEnd).getFullYear()
+            : new Date(wine.drinkingWindowEnd).getFullYear();
           return `${start} - ${end}`;
         } else if (wine.drinkingStatus) {
           return wine.drinkingStatus === 'drink_now' ? 'Drink Now' : 'Drink Later';

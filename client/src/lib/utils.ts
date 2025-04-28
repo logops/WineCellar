@@ -65,8 +65,8 @@ export function parseDrinkingWindow(
 ): string {
   if (!start && !end) return "Not specified";
   
-  const startDate = start ? formatDate(start, "yyyy") : "Now";
-  const endDate = end ? formatDate(end, "yyyy") : "Unknown";
+  const startDate = start ? new Date(start).getFullYear() : "Now";
+  const endDate = end ? new Date(end).getFullYear() : "Unknown";
   
   return `${startDate} - ${endDate}`;
 }
