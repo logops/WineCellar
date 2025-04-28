@@ -117,34 +117,48 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     defaultValues,
   });
   
-  // Track when form becomes dirty (modified) by comparing current values with defaults
+  // Track changes to form values using a more direct approach
   useEffect(() => {
-    // Check initial state
-    setFormDirty(form.formState.isDirty);
-    if (onFormChange) {
-      onFormChange(form.formState.isDirty);
-    }
-    
-    // Set up subscription to watch for changes
-    const subscription = form.watch(() => {
-      const formIsDirty = form.formState.isDirty;
-      setFormDirty(formIsDirty);
+    // Set up subscription to watch for changes in real-time
+    const subscription = form.watch((value, { name, type }) => {
+      // This will trigger on every field change
+      console.log("Form field changed:", name, type);
       
-      // Notify parent component of form changes
+      // Get current form values
+      const currentValues = form.getValues();
+      
+      // Compare with default values to determine if form is dirty
+      let isDirty = false;
+      
+      // Check each field for changes
+      Object.keys(defaultValues).forEach(key => {
+        const fieldKey = key as keyof typeof defaultValues;
+        const defaultVal = defaultValues[fieldKey];
+        const currentVal = currentValues[fieldKey as keyof FormValues];
+        
+        // Check if values are different
+        if (currentVal !== defaultVal && 
+            // Handle special case for empty strings vs undefined/null
+            !(
+              (currentVal === "" && (defaultVal === undefined || defaultVal === null)) ||
+              (defaultVal === "" && (currentVal === undefined || currentVal === null))
+            )
+           ) {
+          isDirty = true;
+        }
+      });
+      
+      console.log("Form dirty state (manual check):", isDirty);
+      
+      // Update local state and notify parent
+      setFormDirty(isDirty);
       if (onFormChange) {
-        onFormChange(formIsDirty);
+        onFormChange(isDirty);
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [form, onFormChange]);
-  
-  // Update parent when dirty state changes directly
-  useEffect(() => {
-    if (onFormChange) {
-      onFormChange(form.formState.isDirty);
-    }
-  }, [form.formState.isDirty, onFormChange]);
+  }, [form, defaultValues, onFormChange]);
 
   // Function to handle consumption of wine
   async function handleDrinkWine() {

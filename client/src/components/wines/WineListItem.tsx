@@ -20,7 +20,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
   // Simple function to handle card click
   const handleCardClick = () => {
     setShowEditModal(true);
-    setFormIsDirty(false); // Reset dirty state when opening
+    // Form dirty state will be managed by the form component
   };
 
   // Close handler for the edit dialog
