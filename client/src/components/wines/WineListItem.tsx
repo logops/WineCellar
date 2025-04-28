@@ -135,18 +135,29 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
             >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-burgundy-600 hover:bg-burgundy-700"
+            <Button 
+              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
               onClick={() => {
-                console.log("Discard button clicked, closing all dialogs");
-                // Directly close both dialogs without any further checks
+                console.log("Discard button clicked, forcing a complete reset");
+                // Completely reset the state - most reliable approach
                 setShowUnsavedChangesDialog(false);
                 setShowEditModal(false);
-                if (onUpdate) onUpdate(); // Refresh wine list
+                setFormIsDirty(false);
+                
+                // Force a page refresh to ensure a clean state
+                if (onUpdate) {
+                  onUpdate();
+                  
+                  // Wait a tiny bit to ensure everything's updated
+                  setTimeout(() => {
+                    // Force a UI refresh if needed
+                    window.dispatchEvent(new Event('resize'));
+                  }, 100);
+                }
               }}
             >
               Discard Changes
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -164,10 +175,23 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
           onPointerDownOutside={(e) => {
             console.log("Pointer down outside dialog");
+            // Always stop propagation to control the flow
+            e.stopPropagation();
+            
             // If form is dirty, prevent immediate closing and show confirmation
             if (formIsDirty) {
               e.preventDefault();
-              setShowUnsavedChangesDialog(true);
+              
+              // Set a timeout to ensure it runs after the current event cycle
+              setTimeout(() => {
+                setShowUnsavedChangesDialog(true);
+              }, 0);
+            } else {
+              // Directly close with a timeout to ensure clean event handling
+              setTimeout(() => {
+                setShowEditModal(false);
+                if (onUpdate) onUpdate();
+              }, 0);
             }
           }}
           onEscapeKeyDown={(e) => {
