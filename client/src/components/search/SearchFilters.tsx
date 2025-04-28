@@ -19,12 +19,14 @@ interface SearchFiltersProps {
   types: string[];
   regions: string[];
   vintages: number[];
+  storageLocations?: string[];
   selectedFilters: {
     type: string[];
     region: string[];
     vintage: number[];
     drinkingWindow: string[];
     purchaseLocation?: string[];
+    storageLocation?: string[];
     priceRange?: [number, number];
     purchaseDateRange?: [Date, Date];
     drinkingWindowRange?: [Date, Date];
@@ -37,10 +39,12 @@ export default function SearchFilters({
   types,
   regions,
   vintages,
+  storageLocations = ["Main Cellar"],
   selectedFilters,
   onFilterChange,
   onRangeFilterChange
 }: SearchFiltersProps) {
+  const selectedStorageLocations = selectedFilters.storageLocation || [];
   const [isOpen, setIsOpen] = useState(false);
 
   const getWineTypeName = (type: string): string => {
@@ -73,7 +77,8 @@ export default function SearchFilters({
     selectedFilters.region.length + 
     selectedFilters.vintage.length + 
     selectedFilters.drinkingWindow.length + 
-    (selectedFilters.purchaseLocation?.length || 0);
+    (selectedFilters.purchaseLocation?.length || 0) +
+    (selectedFilters.storageLocation?.length || 0);
 
   const [activeTab, setActiveTab] = useState("all");
   
@@ -315,6 +320,35 @@ export default function SearchFilters({
                       }}
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Storage Location Filter */}
+            <div className="bg-cream-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3 text-burgundy-700 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-burgundy-600 inline-block"></span>
+                Storage Location
+                {selectedFilters.storageLocation && selectedFilters.storageLocation.length > 0 && (
+                  <Badge variant="outline" className="ml-auto">{selectedFilters.storageLocation.length}</Badge>
+                )}
+              </h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                <div className="flex items-center">
+                  <Checkbox 
+                    id="storage-main-cellar"
+                    checked={storageLocations.includes("Main Cellar")}
+                    onCheckedChange={(checked) => {
+                      onFilterChange('storageLocation', "Main Cellar", checked === true);
+                    }}
+                    className="text-burgundy-600 border-cream-300"
+                  />
+                  <label 
+                    htmlFor="storage-main-cellar"
+                    className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Main Cellar
+                  </label>
                 </div>
               </div>
             </div>
