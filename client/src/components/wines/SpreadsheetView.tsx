@@ -289,87 +289,45 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
 
   // Export to CSV function
   const exportToCSV = () => {
-    // Define standard spreadsheet columns (following screenshot order)
-    const standardColumns = [
-      { key: 'type', label: 'Category' },
-      { key: 'quantity', label: 'Qty' },
-      { key: 'vintage', label: 'Vintage' },
-      { key: 'producer', label: 'Winery' },
-      { key: 'name', label: 'Wine (Name)' },
-      { key: 'grapeVarieties', label: 'Varietal(s)' },
-      { key: 'country', label: 'Country' },
-      { key: 'state', label: 'State' },
-      { key: 'region', label: 'Region' },
-      { key: 'subregion', label: 'Sub App' },
-      { key: 'vineyard', label: 'Vineyard/Cru' },
-      { key: 'drinkingStatus', label: 'Drinking Window' },
-      { key: 'currentValue', label: 'Value' },
-      { key: 'purchasePrice', label: 'Purchase Price' },
-      { key: 'notes', label: 'Notes' },
-    ];
+    // Get visible columns from the table view
+    const visibleColumns = columns
+      .filter(column => columnVisibility[column.key])
+      .map(column => ({
+        key: column.key,
+        label: column.label
+      }));
     
-    // Get column headers
-    const headers = standardColumns.map(col => `"${col.label}"`).join(',');
+    // Create CSV header
+    const header = visibleColumns.map(col => `"${col.label}"`).join(',');
     
-    // Group wines by type
-    const winesByType: Record<string, Wine[]> = {};
-    
-    sortedWines.forEach(wine => {
-      const type = wine.type || 'Uncategorized';
-      if (!winesByType[type]) {
-        winesByType[type] = [];
-      }
-      winesByType[type].push(wine);
-    });
-    
-    // Create CSV rows, grouped by type
-    let csvRows: string[] = [];
-    
-    Object.keys(winesByType).forEach(type => {
-      const winesOfType = winesByType[type];
-      
-      winesOfType.forEach((wine: Wine) => {
-        const row = standardColumns.map(col => {
-          const key = col.key as keyof Wine;
-          let value = wine[key];
-          
-          // Special case for 'name' - use first varietal if name is missing
-          if (key === 'name' && !value && wine.grapeVarieties) {
-            value = wine.grapeVarieties.split(',')[0].trim();
+    // Create CSV rows (in the same order as they appear in the table)
+    const rows = sortedWines.map(wine => {
+      return visibleColumns.map(col => {
+        const value = renderCell(wine, col.key);
+        // Format the value for CSV, removing any HTML tags if present
+        let csvValue = typeof value === 'string' ? value : String(value || '');
+        // If it's a React element, just use the raw value from wine
+        if (typeof value !== 'string') {
+          csvValue = wine[col.key] ? String(wine[col.key]) : '';
+        }
+        // For drinkingStatus, handle the special case
+        if (col.key === 'drinkingStatus') {
+          if (wine.drinkingWindowStart && wine.drinkingWindowEnd) {
+            const start = new Date(wine.drinkingWindowStart).getFullYear();
+            const end = new Date(wine.drinkingWindowEnd).getFullYear();
+            csvValue = `${start} - ${end}`;
+          } else if (wine.drinkingStatus) {
+            csvValue = wine.drinkingStatus === 'drink_now' ? 'Drink Now' : 'Drink Later';
           }
-          
-          // Special case for drinking window
-          if (key === 'drinkingStatus') {
-            if (wine.drinkingWindowStart && wine.drinkingWindowEnd) {
-              const start = new Date(wine.drinkingWindowStart).getFullYear();
-              const end = new Date(wine.drinkingWindowEnd).getFullYear();
-              return `"${start} - ${end}"`;
-            } else if (wine.drinkingStatus) {
-              return `"${wine.drinkingStatus === 'drink_now' ? 'Drink Now' : 'Drink Later'}"`;
-            }
-            return `""`;
-          }
-          
-          // Format dates
-          if (key === 'purchaseDate' && value) {
-            return `"${formatDate(value as string)}"`;
-          }
-          
-          // Format prices
-          if ((key === 'purchasePrice' || key === 'currentValue') && value !== null) {
-            return `"${formatPrice(value as number)}"`;
-          }
-          
-          // Default handling
-          return `"${value || ''}"`;
-        }).join(',');
+        }
         
-        csvRows.push(row);
-      });
-    });
+        // Remove any hyphen placeholders and wrap in quotes
+        return `"${csvValue === '-' ? '' : csvValue}"`;
+      }).join(',');
+    }).join('\\n');
     
-    // Combine headers and rows
-    const csv = `${headers}\\n${csvRows.join('\\n')}`;
+    // Combine header and rows
+    const csv = `${header}\\n${rows}`;
     
     // Create download link
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
