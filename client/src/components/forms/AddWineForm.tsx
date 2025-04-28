@@ -126,7 +126,7 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
     return () => subscription.unsubscribe();
   }, [form]);
 
-  // Function to handle consumption or removal of wine
+  // Function to handle consumption of wine
   async function handleDrinkWine() {
     if (!wine?.id) return;
     
@@ -175,6 +175,46 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
       toast({
         title: "Error",
         description: "There was a problem recording the consumption.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+  
+  // Function to handle removal of wine without consuming
+  async function handleRemoveWine() {
+    if (!wine?.id) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Update the wine status to remove it from the cellar
+      await apiRequest("PATCH", `/api/wines/${wine.id}`, {
+        ...wine,
+        quantity: 0,
+        consumedStatus: 'removed', // Add flag to mark as removed (not consumed)
+        notes: wine.notes ? `${wine.notes}\n(Removed from cellar: ${new Date().toLocaleDateString()})` : `Removed from cellar: ${new Date().toLocaleDateString()}`
+      });
+
+      toast({
+        title: "Wine Removed",
+        description: `${wine.producer} ${wine.name || ""} has been removed from your cellar.`,
+      });
+      
+      // Invalidate the wines query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/wines', 'in_cellar'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
+      
+      // Close the dialog and form
+      setShowDrinkDialog(false);
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error removing wine:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem removing the wine.",
         variant: "destructive",
       });
     } finally {
@@ -263,24 +303,26 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
 
   return (
     <div className="p-1 relative">
-      {/* Add close button in top right corner */}
-      <button 
-        type="button"
-        className="absolute top-0 right-0 p-2 text-gray-500 hover:text-burgundy-600 transition-colors"
-        onClick={() => {
-          if (formDirty) {
-            setShowConfirmDialog(true);
-          } else {
-            onSuccess?.();
-          }
-        }}
-        aria-label="Close"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
+      {/* Only show close button if not explicitly hidden */}
+      {!hideCloseButton && (
+        <button 
+          type="button"
+          className="absolute top-0 right-0 p-2 text-gray-500 hover:text-burgundy-600 transition-colors"
+          onClick={() => {
+            if (formDirty) {
+              setShowConfirmDialog(true);
+            } else {
+              onSuccess?.();
+            }
+          }}
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      )}
       
       <Tabs defaultValue="manual" value={entryMethod} onValueChange={setEntryMethod} className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -708,13 +750,35 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
                 <AlertDialog open={showDrinkDialog} onOpenChange={setShowDrinkDialog}>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Consume Wine</AlertDialogTitle>
+                      <AlertDialogTitle>Consume or Remove Wine</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Would you like to mark this wine as consumed? This will decrease the quantity by 1 and create a consumption record.
+                        Would you like to mark this wine as consumed or remove it from your cellar?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="py-4 flex flex-col space-y-2">
+                      <div className="p-3 border rounded-md hover:bg-cream-50">
+                        <h4 className="font-medium mb-1 text-burgundy-700">Consume Wine</h4>
+                        <p className="text-sm text-gray-600">
+                          Decreases quantity by 1 and creates a consumption record with tasting notes.
+                        </p>
+                      </div>
+                      <div className="p-3 border rounded-md hover:bg-cream-50">
+                        <h4 className="font-medium mb-1 text-burgundy-700">Remove from Cellar</h4>
+                        <p className="text-sm text-gray-600">
+                          Removes wine from your collection without creating a consumption record (for gifts, damaged bottles, etc.)
+                        </p>
+                      </div>
+                    </div>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <Button 
+                        onClick={handleRemoveWine}
+                        disabled={isSubmitting}
+                        variant="outline"
+                        className="mr-2"
+                      >
+                        Remove from Cellar
+                      </Button>
                       <AlertDialogAction 
                         onClick={handleDrinkWine}
                         disabled={isSubmitting}
