@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Wine } from "@shared/schema";
 import WineGlassIcon from "./WineGlassIcon";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
 import { Edit, X } from "lucide-react";
@@ -109,31 +109,18 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       </div>
 
       {/* Edit Wine Dialog - Using simple browser confirm dialog for unsaved changes */}
-      {showEditModal && (
-        <Dialog 
-          open={showEditModal} 
-          onOpenChange={(open) => {
-            if (!open) {
-              handleCloseDialog();
-            }
-          }}
+      <Dialog 
+        open={showEditModal} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog();
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
         >
-          <DialogContent
-            className="max-w-3xl max-h-[90vh] overflow-y-auto"
-          >
-            <Button 
-              type="button"
-              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background 
-                transition-opacity hover:opacity-100 focus:outline-none 
-                focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-              onClick={handleCloseDialog}
-              variant="ghost"
-              size="icon"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </Button>
-            
+          <div className="flex justify-between items-center">
             <DialogHeader>
               <DialogTitle>
                 Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}
@@ -143,20 +130,36 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                 Edit details of this wine and save changes to update your collection
               </p>
             </DialogHeader>
-            <div className="p-1">
-              <AddWineForm 
-                wine={wine} 
-                onSuccess={() => {
-                  setShowEditModal(false);
-                  if (onUpdate) onUpdate();
-                }}
-                hideCloseButton={true}
-                onFormChange={(isDirty) => setFormIsDirty(isDirty)}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+            
+            <DialogClose asChild>
+              <Button 
+                type="button"
+                className="rounded-sm opacity-70 ring-offset-background 
+                  transition-opacity hover:opacity-100 focus:outline-none 
+                  focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+                onClick={handleCloseDialog}
+                variant="ghost"
+                size="icon"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </DialogClose>
+          </div>
+          
+          <div className="p-1">
+            <AddWineForm 
+              wine={wine} 
+              onSuccess={() => {
+                setShowEditModal(false);
+                if (onUpdate) onUpdate();
+              }}
+
+              onFormChange={(isDirty) => setFormIsDirty(isDirty)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

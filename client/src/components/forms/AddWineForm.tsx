@@ -515,8 +515,27 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false, 
                           type="number" 
                           min="1"
                           {...field}
-                          value={field.value}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const inputValue = e.target.value;
+                            // Allow empty input for typing
+                            if (inputValue === "") {
+                              field.onChange("");
+                            } else {
+                              // Only apply numeric value when typing is complete
+                              const numValue = parseInt(inputValue);
+                              if (!isNaN(numValue)) {
+                                field.onChange(numValue <= 0 ? 1 : numValue);
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            // On blur, ensure we have at least 1
+                            const value = parseInt(e.target.value);
+                            if (isNaN(value) || value < 1) {
+                              field.onChange(1);
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
