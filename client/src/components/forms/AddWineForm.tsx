@@ -140,16 +140,17 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
       });
       
       // Also update the wine status to indicate it's been consumed if quantity becomes 0
-      if (wine.quantity <= 1) {
+      if ((wine.quantity ?? 0) <= 1) {
         await apiRequest("PATCH", `/api/wines/${wine.id}`, {
           ...wine,
+          quantity: 0,
           consumedStatus: 'consumed', // Add flag to mark as consumed
         });
       } else {
         // Just reduce the quantity by 1
         await apiRequest("PATCH", `/api/wines/${wine.id}`, {
           ...wine,
-          quantity: wine.quantity - 1,
+          quantity: (wine.quantity ?? 1) - 1,
         });
       }
 

@@ -45,9 +45,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user) {
         return res.status(401).json({ message: 'User not authenticated' });
       }
+
+      // Allow filtering by consumedStatus through query parameter
+      const consumedStatus = req.query.consumedStatus as string || 'in_cellar';
+      
       try {
         const wines = await storage.getWinesByUserId(req.user.id);
-        res.json(wines);
+        
+        // Filter wines based on consumedStatus
+        const filteredWines = wines.filter(wine => {
+          // If no consumedStatus is specified on the wine yet, treat it as 'in_cellar'
+          const status = wine.consumedStatus || 'in_cellar';
+          return consumedStatus === 'all' || status === consumedStatus;
+        });
+        
+        res.json(filteredWines);
       } catch (queryError) {
         console.error('Error fetching wines:', queryError);
         // If there's a database schema mismatch or other query error, 

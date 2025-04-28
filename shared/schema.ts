@@ -36,6 +36,7 @@ export const wines = pgTable("wines", {
   drinkingWindowStart: date("drinking_window_start"),
   drinkingWindowEnd: date("drinking_window_end"),
   drinkingStatus: text("drinking_status").default("drink_later"), // drink_now, drink_later, custom
+  consumedStatus: text("consumed_status").default("in_cellar"), // in_cellar, consumed
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: integer("user_id"),

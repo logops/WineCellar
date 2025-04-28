@@ -96,8 +96,22 @@ export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
       // Create consumption record
       await apiRequest("POST", "/api/consumptions", {
         ...values,
-        userId: 1 // Using default user ID in this example
       });
+      
+      // Update the wine status if all bottles are consumed
+      if (selectedWine && (selectedWine.quantity ?? 0) <= values.quantity) {
+        await apiRequest("PATCH", `/api/wines/${selectedWine.id}`, {
+          ...selectedWine,
+          quantity: 0,
+          consumedStatus: 'consumed', // Mark as consumed
+        });
+      } else if (selectedWine) {
+        // Just reduce the quantity
+        await apiRequest("PATCH", `/api/wines/${selectedWine.id}`, {
+          ...selectedWine,
+          quantity: (selectedWine.quantity ?? 0) - values.quantity,
+        });
+      }
 
       toast({
         title: "Wine Consumed",
