@@ -29,10 +29,10 @@ export default function CollectionStats() {
   };
 
   const collectionStats: CollectionStat[] = [
-    { label: 'In My Cellar', count: stats.inCellar, href: '/collection' },
-    { label: 'Pending Delivery', count: 0, href: '/collection' },
-    { label: 'Consumed', count: stats.consumed, href: '/collection' },
-    { label: 'Purchased', count: stats.purchased, href: '/collection' },
+    { label: 'In My Cellar', count: stats.inCellar, href: '/collection#in-cellar' },
+    { label: 'Pending Delivery', count: 0, href: '/collection#in-cellar' },
+    { label: 'Consumed', count: stats.consumed, href: '/collection#consumed' },
+    { label: 'Purchased', count: stats.purchased, href: '/collection#in-cellar' },
   ];
   
   if (isLoading) {

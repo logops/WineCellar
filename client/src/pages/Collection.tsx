@@ -1,13 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TabNavigation from "@/components/ui/TabNavigation";
 import WineList from "@/components/wines/WineList";
+import ConsumedWinesList from "@/components/wines/ConsumedWinesList";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "@/components/forms/AddWineForm";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Collection() {
   const [showAddWineModal, setShowAddWineModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'in-cellar' | 'consumed'>('in-cellar');
+  
+  // Check URL hash to determine initial active tab
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#consumed') {
+        setActiveTab('consumed');
+      } else {
+        setActiveTab('in-cellar');
+      }
+    };
+    
+    // Set initial tab based on current hash
+    handleHashChange();
+    
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
   
   const tabs = [
     { label: "My Cellar", href: "/" },
@@ -29,7 +53,25 @@ export default function Collection() {
           </Button>
         </div>
         
-        <WineList />
+        <Tabs 
+          defaultValue="in-cellar" 
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'in-cellar' | 'consumed')}
+          className="mb-6"
+        >
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="in-cellar">In Cellar</TabsTrigger>
+            <TabsTrigger value="consumed">Consumed</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="in-cellar" className="pt-4">
+            <WineList />
+          </TabsContent>
+          
+          <TabsContent value="consumed" className="pt-4">
+            <ConsumedWinesList />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Add Wine Dialog */}
