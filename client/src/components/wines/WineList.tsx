@@ -47,7 +47,12 @@ export default function WineList() {
   // Mutation for updating wines in spreadsheet view
   const updateWineMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: Partial<Wine> }) => {
-      return apiRequest('PATCH', `/api/wines/${id}`, data);
+      return fetch(`/api/wines/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
