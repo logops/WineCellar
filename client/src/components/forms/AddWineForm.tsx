@@ -741,6 +741,22 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
                   </Button>
                 )}
                 
+                {hideCloseButton ? null : (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      if (form.formState.isDirty) {
+                        setShowConfirmDialog(true);
+                      } else if (onSuccess) {
+                        onSuccess();
+                      }
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : wine ? "Update Wine" : "Add to Cellar"}
                 </Button>
