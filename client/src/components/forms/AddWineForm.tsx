@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -74,6 +74,7 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
     wine?.drinkingStatus || "drink_later"
   );
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showDrinkDialog, setShowDrinkDialog] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
   
   // Get autocomplete suggestions
@@ -114,7 +115,55 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+  
+  // Track when form becomes dirty (modified)
+  const formState = form.formState;
+  useEffect(() => {
+    setFormDirty(formState.isDirty);
+  }, [formState.isDirty]);
 
+  // Function to handle consumption or removal of wine
+  async function handleDrinkWine() {
+    if (!wine?.id) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Create consumption record
+      await apiRequest("POST", "/api/consumptions", {
+        wineId: wine.id,
+        consumptionDate: new Date(),
+        quantity: 1,
+        notes: "Consumed from edit screen",
+        userId: 1, // Using default user ID 
+      });
+
+      toast({
+        title: "Wine Consumed",
+        description: `1 bottle of ${wine.producer} ${wine.name || ""} marked as consumed.`,
+      });
+      
+      // Invalidate the wines query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/consumptions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
+      
+      // Close the dialog and form
+      setShowDrinkDialog(false);
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error consuming wine:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem recording the consumption.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+  
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     try {
@@ -586,12 +635,72 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
               />
               
               <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={onSuccess}>
+                {/* Show Drink/Remove button only when editing an existing wine */}
+                {wine && wine.id && (
+                  <Button 
+                    type="button"
+                    variant="secondary"
+                    className="mr-auto bg-burgundy-100 hover:bg-burgundy-200 text-burgundy-800"
+                    onClick={() => setShowDrinkDialog(true)}
+                  >
+                    Drink or Remove
+                  </Button>
+                )}
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    if (formDirty) {
+                      setShowConfirmDialog(true);
+                    } else {
+                      onSuccess?.();
+                    }
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : wine ? "Update Wine" : "Add to Cellar"}
                 </Button>
+
+                {/* Confirmation Dialog for Unsaved Changes */}
+                <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        You have unsaved changes. Are you sure you want to leave without saving?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+                      <AlertDialogAction onClick={onSuccess}>Discard Changes</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
+                {/* Drink/Remove Dialog */}
+                <AlertDialog open={showDrinkDialog} onOpenChange={setShowDrinkDialog}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Consume Wine</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Would you like to mark this wine as consumed? This will decrease the quantity by 1 and create a consumption record.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDrinkWine}
+                        disabled={isSubmitting}
+                        className="bg-burgundy-600 hover:bg-burgundy-700"
+                      >
+                        {isSubmitting ? "Processing..." : "Mark as Consumed"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </form>
           </Form>
