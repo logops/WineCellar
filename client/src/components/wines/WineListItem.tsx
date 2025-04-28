@@ -142,7 +142,13 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
             </AlertDialogCancel>
             <AlertDialogAction 
               className="bg-burgundy-600 hover:bg-burgundy-700"
-              onClick={closeModal}
+              onClick={() => {
+                console.log("Discard button clicked, closing all dialogs");
+                // Directly close both dialogs without any further checks
+                setShowUnsavedChangesDialog(false);
+                setShowEditModal(false);
+                if (onUpdate) onUpdate(); // Refresh wine list
+              }}
             >
               Discard Changes
             </AlertDialogAction>
@@ -161,8 +167,16 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       >
         <DialogContent
           className="max-w-3xl max-h-[90vh] overflow-y-auto"
-          onInteractOutside={(e) => {
+          onPointerDownOutside={(e) => {
+            console.log("Pointer down outside dialog");
             // If form is dirty, prevent immediate closing and show confirmation
+            if (formIsDirty) {
+              e.preventDefault();
+              setShowUnsavedChangesDialog(true);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            // Handle ESC key the same way as clicking X
             if (formIsDirty) {
               e.preventDefault();
               setShowUnsavedChangesDialog(true);
@@ -180,25 +194,31 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               </DialogDescription>
             </DialogHeader>
             
-            {/* Use DialogClose with customized asChild to style it */}
-            <DialogClose asChild onClick={(e) => {
-              // Prevent the default close behavior
-              e.preventDefault();
-              // Use our custom handler instead
-              handleCloseDialog();
-            }}>
-              <Button
-                type="button"
-                className="rounded-sm opacity-70 ring-offset-background
-                  transition-opacity hover:opacity-100 focus:outline-none
-                  focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-                variant="ghost"
-                size="icon"
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-              </Button>
-            </DialogClose>
+            {/* Use a regular button for more reliable behavior */}
+            <Button
+              type="button"
+              className="rounded-sm opacity-70 ring-offset-background
+                transition-opacity hover:opacity-100 focus:outline-none
+                focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log("X button clicked, handling close");
+                
+                if (formIsDirty) {
+                  // If form is dirty, show confirmation dialog
+                  setShowUnsavedChangesDialog(true);
+                } else {
+                  // If form is not dirty, close immediately
+                  setShowEditModal(false);
+                  if (onUpdate) onUpdate();
+                }
+              }}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
           </div>
           
           <div className="p-1">
