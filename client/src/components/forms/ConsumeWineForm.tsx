@@ -119,7 +119,7 @@ export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
       });
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wines', 'in_cellar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/consumptions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       

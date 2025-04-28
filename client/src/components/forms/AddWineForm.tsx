@@ -160,7 +160,7 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
       });
       
       // Invalidate the wines query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wines', 'in_cellar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/consumptions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       
@@ -236,7 +236,7 @@ export default function AddWineForm({ wine, onSuccess }: AddWineFormProps) {
       }
 
       // Invalidate the wines query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wines', 'in_cellar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       
       // Call success callback if provided

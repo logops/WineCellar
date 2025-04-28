@@ -41,7 +41,16 @@ export default function WineList() {
   const itemsPerPage = 10;
 
   const { data: wines, isLoading, refetch } = useQuery<Wine[]>({ 
-    queryKey: ['/api/wines'],
+    queryKey: ['/api/wines', 'in_cellar'],
+    queryFn: async () => {
+      const response = await fetch(`/api/wines?consumedStatus=in_cellar`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch wines');
+      }
+      return response.json();
+    }
   });
   
   // Mutation for updating wines in spreadsheet view
@@ -55,7 +64,7 @@ export default function WineList() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wines', 'in_cellar'] });
     },
   });
 
