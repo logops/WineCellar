@@ -96,13 +96,16 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               Edit details of this wine and save changes to update your collection
             </p>
           </DialogHeader>
-          <AddWineForm 
-            wine={wine} 
-            onSuccess={() => {
-              setShowEditModal(false);
-              if (onUpdate) onUpdate();
-            }} 
-          />
+          <div className="p-1">
+            <AddWineForm 
+              wine={wine} 
+              onSuccess={() => {
+                setShowEditModal(false);
+                if (onUpdate) onUpdate();
+              }} 
+              hideCloseButton={true}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
