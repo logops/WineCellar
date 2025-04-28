@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Account created",
-        description: `Welcome to Cellar Tracker, ${user.username}!`,
+        description: `Welcome to CellarMaster, ${user.username}!`,
       });
     },
     onError: (error: Error) => {
