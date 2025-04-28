@@ -334,22 +334,24 @@ export default function SearchFilters({
                 )}
               </h3>
               <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                <div className="flex items-center">
-                  <Checkbox 
-                    id="storage-main-cellar"
-                    checked={storageLocations.includes("Main Cellar")}
-                    onCheckedChange={(checked) => {
-                      onFilterChange('storageLocation', "Main Cellar", checked === true);
-                    }}
-                    className="text-burgundy-600 border-cream-300"
-                  />
-                  <label 
-                    htmlFor="storage-main-cellar"
-                    className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Main Cellar
-                  </label>
-                </div>
+                {storageLocations.map(location => (
+                  <div key={location} className="flex items-center">
+                    <Checkbox 
+                      id={`storage-${location.toLowerCase().replace(/\s+/g, '-')}`}
+                      checked={selectedStorageLocations.includes(location)}
+                      onCheckedChange={(checked) => {
+                        onFilterChange('storageLocation', location, checked === true);
+                      }}
+                      className="text-burgundy-600 border-cream-300"
+                    />
+                    <label 
+                      htmlFor={`storage-${location.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {location}
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -452,11 +454,14 @@ export default function SearchFilters({
               onFilterChange('region', '', false);
               onFilterChange('vintage', 0, false);
               onFilterChange('drinkingWindow', '', false);
+              onFilterChange('storageLocation', '', false);
+              onFilterChange('purchaseLocation', '', false);
               if (onRangeFilterChange) {
                 onRangeFilterChange('priceRange', [0, 1000] as [number, number]);
                 const today = new Date();
                 const pastDate = new Date(2000, 0, 1);
                 onRangeFilterChange('purchaseDateRange', [pastDate, today] as [Date, Date]);
+                onRangeFilterChange('drinkingWindowRange', [pastDate, today] as [Date, Date]);
               }
             }}
           >

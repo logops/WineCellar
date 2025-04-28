@@ -7,6 +7,7 @@ import { Wine } from "@shared/schema";
 import WineListItem from "@/components/wines/WineListItem";
 import { Skeleton } from "@/components/ui/skeleton";
 import SearchFilters from "@/components/search/SearchFilters";
+import { useCellars } from "@/hooks/use-cellars";
 import { 
   Select, 
   SelectContent, 
@@ -35,6 +36,8 @@ export default function Search() {
   const { data: wines, isLoading } = useQuery<Wine[]>({ 
     queryKey: ['/api/wines'],
   });
+  
+  const { cellars } = useCellars();
 
   const tabs = [
     { label: "My Cellar", href: "/" },
@@ -256,6 +259,7 @@ export default function Search() {
             types={uniqueTypes}
             regions={uniqueRegions}
             vintages={uniqueVintages}
+            storageLocations={uniqueStorageLocations}
             onFilterChange={handleFilterChange}
             onRangeFilterChange={handleRangeFilterChange}
             selectedFilters={filters}
