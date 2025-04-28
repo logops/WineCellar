@@ -12,8 +12,11 @@ import Search from "@/pages/Search";
 import Reports from "@/pages/Reports";
 import WishList from "@/pages/WishList";
 import Notes from "@/pages/Notes";
+import AuthPage from "@/pages/auth-page";
 import { useState } from "react";
 import MobileMenu from "@/components/layout/MobileMenu";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
