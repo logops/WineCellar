@@ -68,7 +68,7 @@ interface AddWineFormProps {
   onFormChange?: (isDirty: boolean) => void;
 }
 
-export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }: AddWineFormProps) {
+export default function AddWineForm({ wine, onSuccess, hideCloseButton = false, onFormChange }: AddWineFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [entryMethod, setEntryMethod] = useState("manual");
@@ -122,10 +122,14 @@ export default function AddWineForm({ wine, onSuccess, hideCloseButton = false }
   useEffect(() => {
     const subscription = form.watch(() => {
       setFormDirty(true);
+      // Notify parent component of form changes
+      if (onFormChange) {
+        onFormChange(true);
+      }
     });
     
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, onFormChange]);
 
   // Function to handle consumption of wine
   async function handleDrinkWine() {

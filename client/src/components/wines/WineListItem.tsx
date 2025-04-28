@@ -142,6 +142,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                 if (onUpdate) onUpdate();
               }}
               hideCloseButton={true}
+              onFormChange={(isDirty) => setFormDirty(isDirty)}
             />
           </div>
         </DialogContent>
