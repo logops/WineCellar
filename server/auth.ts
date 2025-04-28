@@ -5,11 +5,11 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User } from "@shared/schema";
+import { User as SchemaUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User extends SchemaUser {}
   }
 }
 
@@ -55,7 +55,7 @@ export function setupAuth(app: Express) {
           return done(null, user);
         }
       } catch (error) {
-        return done(error);
+        return done(error as Error);
       }
     }),
   );
@@ -95,7 +95,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate("local", (err: Error, user: User, info: any) => {
+    passport.authenticate("local", (err: Error | null, user: SchemaUser | false, info: { message: string } | undefined) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Authentication failed" });
       
