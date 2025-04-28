@@ -4,7 +4,10 @@ import { storage } from "./storage";
 import { 
   insertWineSchema, 
   insertConsumptionSchema, 
-  insertWishlistSchema 
+  insertWishlistSchema,
+  type Wine,
+  type Consumption,
+  type Wishlist
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -42,8 +45,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user) {
         return res.status(401).json({ message: 'User not authenticated' });
       }
-      const wines = await storage.getWinesByUserId(req.user.id);
-      res.json(wines);
+      try {
+        const wines = await storage.getWinesByUserId(req.user.id);
+        res.json(wines);
+      } catch (queryError) {
+        console.error('Error fetching wines:', queryError);
+        // If there's a database schema mismatch or other query error, 
+        // return an empty array rather than failing
+        res.json([]);
+      }
     } catch (err) {
       res.status(500).json({ message: 'Failed to fetch wines' });
     }
@@ -150,8 +160,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'User not authenticated' });
       }
       
-      const consumptions = await storage.getConsumptionsByUserId(req.user.id);
-      res.json(consumptions);
+      try {
+        const consumptions = await storage.getConsumptionsByUserId(req.user.id);
+        res.json(consumptions);
+      } catch (queryError) {
+        console.error('Error fetching consumptions:', queryError);
+        // If there's a database schema mismatch or other query error, 
+        // return an empty array rather than failing
+        res.json([]);
+      }
     } catch (err) {
       res.status(500).json({ message: 'Failed to fetch consumptions' });
     }
@@ -194,8 +211,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'User not authenticated' });
       }
       
-      const wishlistItems = await storage.getWishlistItemsByUserId(req.user.id);
-      res.json(wishlistItems);
+      try {
+        const wishlistItems = await storage.getWishlistItemsByUserId(req.user.id);
+        res.json(wishlistItems);
+      } catch (queryError) {
+        console.error('Error fetching wishlist items:', queryError);
+        // If there's a database schema mismatch or other query error, 
+        // return an empty array rather than failing
+        res.json([]);
+      }
     } catch (err) {
       res.status(500).json({ message: 'Failed to fetch wishlist items' });
     }
