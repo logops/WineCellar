@@ -3,103 +3,139 @@
 @tailwind utilities;
 
 :root {
-  --background: 43 48% 95%;
-  --foreground: 20 14.3% 4.1%;
-  --muted: 60 4.8% 95.9%;
-  --muted-foreground: 25 5.3% 44.7%;
+  /* New color palette based on client requirements */
+  --rich-burgundy: 350 54% 32%; /* #722F37 */
+  --deep-purple: 324 50% 19%;   /* #4A1942 */
+  --warm-beige: 38 56% 90%;     /* #F2E8DC */
+  --dark-charcoal: 0 0% 20%;    /* #333333 */
+  
+  /* Base colors derived from the new palette */
+  --background: 38 56% 95%;
+  --foreground: 0 0% 20%;
+  --muted: 38 20% 95%;
+  --muted-foreground: 0 0% 40%;
   --popover: 0 0% 100%;
-  --popover-foreground: 20 14.3% 4.1%;
+  --popover-foreground: 0 0% 20%;
   --card: 0 0% 100%;
-  --card-foreground: 20 14.3% 4.1%;
-  --border: 20 5.9% 90%;
-  --input: 20 5.9% 90%;
-  --primary: 345 57% 35%;
-  --primary-foreground: 355 100% 97%;
-  --secondary: 43 45% 94%;
-  --secondary-foreground: 24 9.8% 10%;
-  --accent: 43 60% 85%;
-  --accent-foreground: 24 9.8% 10%;
+  --card-foreground: 0 0% 20%;
+  --border: 38 20% 90%;
+  --input: 38 20% 90%;
+  --primary: 350 54% 32%;
+  --primary-foreground: 38 56% 95%;
+  --secondary: 324 50% 19%;
+  --secondary-foreground: 38 56% 95%;
+  --accent: 38 56% 90%;
+  --accent-foreground: 0 0% 20%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
-  --ring: 20 14.3% 4.1%;
+  --ring: 0 0% 20%;
   --radius: 0.5rem;
 
-  /* Custom colors for wine app */
-  --burgundy-50: 350 100% 98%;
-  --burgundy-100: 350 90% 95%;
-  --burgundy-200: 348 83% 85%;
-  --burgundy-300: 348 69% 79%;
-  --burgundy-400: 347 70% 64%;
-  --burgundy-500: 347 63% 50%;
-  --burgundy-600: 345 57% 35%;
-  --burgundy-700: 345 56% 22%;
-  --burgundy-800: 343 53% 15%;
-  --burgundy-900: 343 53% 10%;
+  /* Custom burgundy shades based on rich-burgundy */
+  --burgundy-50: 350 54% 98%;
+  --burgundy-100: 350 54% 95%;
+  --burgundy-200: 350 54% 90%;
+  --burgundy-300: 350 54% 80%;
+  --burgundy-400: 350 54% 60%;
+  --burgundy-500: 350 54% 45%;
+  --burgundy-600: 350 54% 32%; /* #722F37 */
+  --burgundy-700: 350 54% 25%;
+  --burgundy-800: 350 54% 18%;
+  --burgundy-900: 350 54% 12%;
 
-  --cream-50: 43 100% 99%;
-  --cream-100: 43 45% 98%;
-  --cream-200: 43 70% 96%;
-  --cream-300: 42 70% 92%;
-  --cream-400: 43 70% 85%;
-  --cream-500: 47 75% 80%;
-  --cream-600: 43 67% 55%;
-  --cream-700: 43 66% 33%;
-  --cream-800: 43 67% 24%;
-  --cream-900: 43 67% 16%;
+  /* Custom cream shades based on warm-beige */
+  --cream-50: 38 56% 99%;
+  --cream-100: 38 56% 95%;
+  --cream-200: 38 56% 90%; /* #F2E8DC */
+  --cream-300: 38 50% 85%;
+  --cream-400: 38 45% 80%;
+  --cream-500: 38 40% 75%;
+  --cream-600: 38 35% 65%;
+  --cream-700: 38 30% 50%;
+  --cream-800: 38 25% 35%;
+  --cream-900: 38 20% 20%;
 
-  --gold: 46 66% 52%;
-  --gold-light: 46 76% 85%;
+  /* Purple shades */
+  --purple-50: 324 50% 98%;
+  --purple-100: 324 50% 95%;
+  --purple-200: 324 50% 90%;
+  --purple-300: 324 50% 80%;
+  --purple-400: 324 50% 60%;
+  --purple-500: 324 50% 40%;
+  --purple-600: 324 50% 30%;
+  --purple-700: 324 50% 19%; /* #4A1942 */
+  --purple-800: 324 50% 12%;
+  --purple-900: 324 50% 8%;
+
+  /* Gold accents */
+  --gold: 45 65% 50%;
+  --gold-light: 45 75% 85%;
 
   /* Wine glass colors */
-  --wine-red: 345 57% 35%;
-  --wine-white: 45 70% 76%;
+  --wine-red: 350 54% 32%;
+  --wine-white: 38 56% 90%;
   --wine-rose: 350 65% 72%;
-  --wine-sparkling: 46 76% 85%;
+  --wine-sparkling: 45 75% 85%;
 }
 
 .dark {
-  --background: 20 14.3% 4.1%;
-  --foreground: 60 9.1% 97.8%;
-  --muted: 12 6.5% 15.1%;
-  --muted-foreground: 24 5.4% 63.9%;
-  --popover: 20 14.3% 4.1%;
-  --popover-foreground: 60 9.1% 97.8%;
-  --card: 20 14.3% 4.1%;
-  --card-foreground: 60 9.1% 97.8%;
-  --border: 12 6.5% 15.1%;
-  --input: 12 6.5% 15.1%;
-  --primary: 346 63% 50%;
-  --primary-foreground: 355 100% 97%;
-  --secondary: 12 6.5% 15.1%;
-  --secondary-foreground: 60 9.1% 97.8%;
-  --accent: 12 6.5% 15.1%;
-  --accent-foreground: 60 9.1% 97.8%;
+  /* Dark mode colors derived from our new palette */
+  --background: 0 0% 10%;
+  --foreground: 38 30% 95%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 38 20% 80%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 38 30% 95%;
+  --card: 0 0% 12%;
+  --card-foreground: 38 30% 95%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --primary: 350 54% 40%;
+  --primary-foreground: 38 56% 95%;
+  --secondary: 324 40% 25%;
+  --secondary-foreground: 38 56% 95%;
+  --accent: 38 30% 35%;
+  --accent-foreground: 38 56% 95%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-  --ring: 24 5.7% 82.9%;
+  --ring: 38 56% 80%;
 
   /* Custom colors for wine app in dark mode */
-  --burgundy-50: 350 100% 98%;
-  --burgundy-100: 350 90% 95%;
-  --burgundy-200: 348 83% 85%;
-  --burgundy-300: 348 69% 79%;
-  --burgundy-400: 347 70% 64%;
-  --burgundy-500: 347 63% 50%;
-  --burgundy-600: 345 57% 35%;
-  --burgundy-700: 345 56% 22%;
-  --burgundy-800: 343 53% 15%;
-  --burgundy-900: 343 53% 10%;
+  /* Keep burgundy slightly brighter in dark mode for better contrast */
+  --burgundy-50: 350 54% 95%;
+  --burgundy-100: 350 54% 90%;
+  --burgundy-200: 350 54% 85%;
+  --burgundy-300: 350 54% 75%;
+  --burgundy-400: 350 54% 65%;
+  --burgundy-500: 350 54% 55%;
+  --burgundy-600: 350 54% 45%;
+  --burgundy-700: 350 54% 35%;
+  --burgundy-800: 350 54% 25%;
+  --burgundy-900: 350 54% 15%;
 
-  --cream-50: 43 100% 99%;
-  --cream-100: 43 30% 95%;
-  --cream-200: 43 70% 96%;
-  --cream-300: 42 70% 92%;
-  --cream-400: 43 70% 85%;
-  --cream-500: 47 75% 80%;
-  --cream-600: 43 67% 55%;
-  --cream-700: 43 66% 33%;
-  --cream-800: 43 67% 24%;
-  --cream-900: 43 67% 16%;
+  /* Cream colors need to be darker in dark mode for better contrast */
+  --cream-50: 38 25% 90%;
+  --cream-100: 38 25% 80%;
+  --cream-200: 38 25% 70%;
+  --cream-300: 38 25% 60%;
+  --cream-400: 38 25% 50%;
+  --cream-500: 38 25% 40%;
+  --cream-600: 38 25% 30%;
+  --cream-700: 38 25% 25%;
+  --cream-800: 38 25% 20%;
+  --cream-900: 38 25% 15%;
+  
+  /* Purple shades for dark mode */
+  --purple-50: 324 40% 90%;
+  --purple-100: 324 40% 85%;
+  --purple-200: 324 40% 75%;
+  --purple-300: 324 40% 65%;
+  --purple-400: 324 40% 55%;
+  --purple-500: 324 40% 45%;
+  --purple-600: 324 40% 35%;
+  --purple-700: 324 40% 25%;
+  --purple-800: 324 40% 15%;
+  --purple-900: 324 40% 10%;
 }
 
 @layer base {
@@ -108,11 +144,11 @@
   }
 
   body {
-    @apply font-spectral antialiased bg-cream-100 text-foreground tracking-tight;
+    @apply font-sans antialiased bg-cream-100 text-foreground tracking-tight;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-montserrat font-semibold tracking-tight;
+    @apply font-serif font-medium tracking-tight text-burgundy-700;
   }
   
   h1 {
@@ -133,12 +169,23 @@
 }
 
 @layer utilities {
+  /* Elegant serif for headings */
+  .font-serif {
+    font-family: "Spectral", "Playfair Display", "Baskerville", "Garamond", serif;
+  }
+
+  /* Clean sans-serif for body text */
+  .font-sans {
+    font-family: "Montserrat", "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+  
+  /* Legacy class support */
   .font-montserrat {
-    font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+    font-family: "Montserrat", "Open Sans", ui-sans-serif, system-ui, sans-serif;
   }
 
   .font-spectral {
-    font-family: "Spectral", serif;
+    font-family: "Spectral", "Playfair Display", "Baskerville", "Garamond", serif;
   }
 
   .hide-scrollbar::-webkit-scrollbar {
