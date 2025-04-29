@@ -346,12 +346,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         !wine.consumedStatus || wine.consumedStatus === 'in_cellar'
       );
       
+      // For consumed wines, we'll count ones explicitly marked as consumed
+      const consumedWines = wines.filter(wine => 
+        wine.consumedStatus === 'consumed'
+      );
+      
       const inCellar = activeWines.reduce((total, wine) => total + (wine.quantity || 0), 0);
       const totalWines = activeWines.length;
-      const consumed = consumptions.reduce((total, consumption) => total + consumption.quantity, 0);
       
-      // Purchased wines should equal the bottles in cellar (not wine count)
-      const purchased = inCellar; // Simply use the inCellar count as purchased count
+      // Get a list of valid consumption records (those that match wines marked as consumed)
+      const validConsumptions = consumptions.filter(consumption => {
+        // Get the wine referenced by this consumption
+        const consumedWine = wines.find(wine => wine.id === consumption.wineId);
+        // Count only if it belongs to a wine marked as consumed or if it's been fully consumed
+        return consumedWine?.consumedStatus === 'consumed' || 
+               (consumedWine && (consumedWine.quantity === 0 || consumedWine.quantity === null));
+      });
+      
+      // Calculate consumed count from validated consumptions
+      const consumed = validConsumptions.reduce((total, consumption) => total + consumption.quantity, 0);
+      
+      // Total purchased is the sum of what's in cellar plus what's been consumed
+      const totalInventory = inCellar + consumed;
+      const purchased = totalInventory;
       
       const totalValue = activeWines.reduce((total, wine) => {
         const value = wine.currentValue || 0;
