@@ -232,24 +232,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
       
-      // If the wine is already marked as consumed, don't create duplicate consumption records
-      if (wine.consumedStatus === 'consumed') {
-        console.log(`Wine ID ${wine.id} is already marked as consumed. Skipping consumption record creation.`);
-        return res.status(200).json({ 
-          message: 'Wine is already consumed',
-          wine
-        });
-      }
+      // Calculate the remaining quantity after consumption
+      const currentQuantity = wine.quantity || 0;
+      const consumeQuantity = consumptionData.quantity || 1;
+      const remainingQuantity = Math.max(0, currentQuantity - consumeQuantity);
       
+      // Create the consumption record
       const validatedData = insertConsumptionSchema.parse(consumptionData);
       const consumption = await storage.createConsumption(validatedData);
       
-      // Mark the wine as consumed and update its quantity
-      console.log(`Updating wine with fields: { quantity: 0, consumedStatus: 'consumed' }`);
-      await storage.updateWine(wine.id, {
-        quantity: 0,
-        consumedStatus: 'consumed'
-      });
+      // Update the wine quantity and status based on remaining quantity
+      if (remainingQuantity === 0) {
+        // If no bottles remain, mark as consumed
+        console.log(`Updating wine with fields: { quantity: 0, consumedStatus: 'consumed' }`);
+        await storage.updateWine(wine.id, {
+          quantity: 0,
+          consumedStatus: 'consumed'
+        });
+      } else {
+        // Otherwise just update the quantity
+        console.log(`Updating wine with fields: { quantity: ${remainingQuantity}, consumedStatus: 'in_cellar' }`);
+        await storage.updateWine(wine.id, {
+          quantity: remainingQuantity,
+          consumedStatus: 'in_cellar'
+        });
+      }
       
       res.status(201).json(consumption);
     } catch (err) {
@@ -372,22 +379,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const inCellar = activeWines.reduce((total, wine) => total + (wine.quantity || 0), 0);
       const totalWines = activeWines.length;
       
-      // Get a list of valid consumption records based on consumed wines
-      // We'll create a map of wine IDs to the number of bottles consumed
-      const consumedWinesMap = new Map<number, boolean>();
+      // For consumed count, we need to count ALL consumption records, 
+      // including both wines marked as 'consumed' and partially consumed wines still in the cellar
+      // All consumption records are considered valid for counting
+      const validConsumptions = consumptions;
       
-      // Mark all wines that are explicitly set as 'consumed'
-      consumedWines.forEach(wine => {
-        consumedWinesMap.set(wine.id, true);
-      });
-      
-      // Only count consumption records for wines marked as consumed
-      const validConsumptions = consumptions.filter(consumption => {
-        return consumedWinesMap.has(consumption.wineId);
-      });
-      
-      // Calculate consumed count from validated consumptions
-      const consumed = validConsumptions.reduce((total, consumption) => total + consumption.quantity, 0);
+      // Calculate consumed count from all consumption records
+      const consumed = consumptions.reduce((total, consumption) => total + consumption.quantity, 0);
       
       // Add detailed logging to debug the issue
       console.log("DETAILED STATS DEBUG:", {
