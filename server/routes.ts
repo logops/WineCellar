@@ -387,33 +387,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate consumed count from all consumption records
       const consumed = consumptions.reduce((total, consumption) => total + consumption.quantity, 0);
       
-      // For purchased count, we need to calculate the total bottles ever added to the collection
-      // This is different from just adding inCellar + consumed, as that can double-count bottles
-      // when many consumption records are created
+      // For purchased count, we need the total number of unique bottles that have been added to the collection
+      // This should only count each bottle once and should not increase when a bottle is consumed
       
-      // Get unique wine IDs for all wines that have ever been in the collection
-      const allWineIds = new Set(wines.map(wine => wine.id));
+      // Get all wines (both active and consumed)
+      const allWines = wines;
       
-      // Calculate total bottles purchased across all wines (original quantities)
-      // For wines that have been fully consumed, we'll use the quantity from consumption records
-      // For wines still in the cellar, we'll use their current quantity plus consumed bottles
+      // Calculate purchased by counting the initial quantity of each wine
+      // For active wines, this is their current quantity plus consumed bottles
+      // For fully consumed wines, this is the total consumed quantity
       let purchased = 0;
       
-      // First, count bottles for each wine by adding its original quantity
-      allWineIds.forEach(wineId => {
-        const wine = wines.find(w => w.id === wineId);
-        if (wine) {
-          // For active wines, count their current quantity
-          if (!wine.consumedStatus || wine.consumedStatus === 'in_cellar') {
-            purchased += wine.quantity || 0;
-          }
+      // Get count of all bottles ever purchased (original quantities before consumption)
+      allWines.forEach(wine => {
+        const initialQuantity = wine.quantity || 0; // Current quantity (could be 0 if fully consumed)
+        const consumedQuantity = consumptions
+          .filter(c => c.wineId === wine.id)
+          .reduce((total, c) => total + c.quantity, 0);
           
-          // Add consumed bottles for this wine
-          const consumedBottles = consumptions
-            .filter(c => c.wineId === wineId)
-            .reduce((total, c) => total + c.quantity, 0);
-          
-          purchased += consumedBottles;
+        // For wines with purchase price, count them in purchased total
+        // If no purchase price, it could be a gift or not purchased
+        if (wine.purchasePrice && wine.purchasePrice > 0) {
+          // Add the total bottles (current + consumed)
+          purchased += initialQuantity + consumedQuantity;
         }
       });
       
