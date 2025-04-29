@@ -74,12 +74,17 @@ export default function ConsumedWinesList() {
     <div className="bg-white rounded-lg shadow-sm p-5 mb-8">
       <WineListHeader
         title="Consumed Wines"
-        count={sortedWines.length}
+        count={sortedWines.reduce((total, wine) => total + (wine.quantity || 1), 0)}
         totalWines={sortedWines.length}
         onSortChange={setSortBy}
         onSearchClick={() => {}}
       />
       
+      {/* Total count of wines and bottles */}
+      <div className="text-sm text-gray-600 mb-4 italic">
+        {sortedWines.length} wine{sortedWines.length !== 1 ? 's' : ''}, {sortedWines.reduce((total, wine) => total + (wine.quantity || 1), 0)} bottle{sortedWines.reduce((total, wine) => total + (wine.quantity || 1), 0) !== 1 ? 's' : ''}
+      </div>
+
       <div className="space-y-3 mt-4">
         {sortedWines.map((wine) => (
           <div key={wine.id} className="border border-cream-200 rounded-lg p-4">
@@ -90,6 +95,7 @@ export default function ConsumedWinesList() {
                 </h3>
                 <p className="text-gray-600 text-sm">
                   {wine.type} · {wine.region} {wine.subregion ? `(${wine.subregion})` : ''}
+                  {wine.quantity && wine.quantity > 1 ? ` · ${wine.quantity} bottles` : ''}
                 </p>
               </div>
               <div className="text-right">
