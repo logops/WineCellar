@@ -12,7 +12,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import { handleWineLabelAnalysis } from './anthropic';
+import { handleWineLabelAnalysis, handleWineRecommendations } from './anthropic';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -502,6 +502,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error recording label analytics:', error);
       res.status(500).json({ message: 'Failed to record analytics' });
+    }
+  });
+
+  // AI Wine recommendation endpoint
+  app.post('/api/wine-recommendations', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      // Handle the wine recommendation request
+      // Pass in the user's query and their wine collection
+      return await handleWineRecommendations(req, res);
+    } catch (error) {
+      console.error('Error in wine recommendation route:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
     }
   });
 
