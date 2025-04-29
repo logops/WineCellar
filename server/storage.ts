@@ -39,6 +39,9 @@ export interface IStorage {
   createWishlistItem(item: InsertWishlist): Promise<Wishlist>;
   deleteWishlistItem(id: number): Promise<boolean>;
   
+  // Label recognition analytics
+  recordLabelAnalytics(userId: number, imageHash: string, originalPrediction: any, userCorrection: any | null, wasAccurate: boolean): Promise<void>;
+  
   // Session store for authentication
   sessionStore: session.Store;
 }
@@ -181,6 +184,25 @@ export class MemStorage implements IStorage {
 
   async deleteWishlistItem(id: number): Promise<boolean> {
     return this.wishlistItems.delete(id);
+  }
+  
+  // Label analytics operations
+  async recordLabelAnalytics(
+    userId: number, 
+    imageHash: string, 
+    originalPrediction: any, 
+    userCorrection: any | null, 
+    wasAccurate: boolean
+  ): Promise<void> {
+    // In memory implementation just logs the analytics
+    console.log('Label Analytics Recorded:', {
+      userId,
+      imageHash,
+      wasAccurate,
+      originalPrediction,
+      userCorrection
+    });
+    // No persistent storage in memory implementation
   }
 
   // Initialize sample data
@@ -530,6 +552,28 @@ export class DatabaseStorage implements IStorage {
   async deleteWishlistItem(id: number): Promise<boolean> {
     const result = await db.delete(wishlist).where(eq(wishlist.id, id)).returning({ id: wishlist.id });
     return result.length > 0;
+  }
+  
+  // Label analytics operations
+  async recordLabelAnalytics(
+    userId: number, 
+    imageHash: string, 
+    originalPrediction: any, 
+    userCorrection: any | null, 
+    wasAccurate: boolean
+  ): Promise<void> {
+    try {
+      await db.insert(labelAnalytics).values({
+        userId,
+        imageHash,
+        originalPrediction,
+        userCorrection,
+        wasAccurate,
+      });
+      console.log('Label analytics recorded successfully');
+    } catch (error) {
+      console.error('Error recording label analytics:', error);
+    }
   }
 }
 

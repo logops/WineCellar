@@ -472,8 +472,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Wine label recognition route
+  // Wine label recognition routes
   app.post('/api/analyze-wine-label', isAuthenticated, handleWineLabelAnalysis);
+  
+  // Endpoint to record user feedback on label recognition
+  app.post('/api/label-analytics', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      const { imageHash, originalPrediction, userCorrection, wasAccurate } = req.body;
+      
+      if (!imageHash || !originalPrediction) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // Record the feedback in the database
+      await storage.recordLabelAnalytics(
+        req.user.id,
+        imageHash,
+        originalPrediction,
+        userCorrection || null,
+        wasAccurate || false
+      );
+      
+      res.status(200).json({ message: 'Label analytics recorded successfully' });
+    } catch (error) {
+      console.error('Error recording label analytics:', error);
+      res.status(500).json({ message: 'Failed to record analytics' });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

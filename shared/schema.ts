@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, date, timestamp, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, date, timestamp, real, varchar, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -96,3 +96,14 @@ export type InsertConsumption = z.infer<typeof insertConsumptionSchema>;
 
 export type Wishlist = typeof wishlist.$inferSelect;
 export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
+
+// Define a table for recording label recognition feedback
+export const labelAnalytics = pgTable("label_analytics", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  imageHash: varchar("image_hash", { length: 64 }),
+  originalPrediction: jsonb("original_prediction").notNull(),
+  userCorrection: jsonb("user_correction"),
+  wasAccurate: boolean("was_accurate").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
