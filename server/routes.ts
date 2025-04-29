@@ -12,6 +12,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
+import { handleWineLabelAnalysis } from './anthropic';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
