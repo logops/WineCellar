@@ -5,6 +5,8 @@ import WineListItem from "./WineListItem";
 import WineListHeader from "./WineListHeader";
 import SpreadsheetView from "./SpreadsheetView";
 import { WineFilters } from "./WineFilters";
+import CollectionDashboard from "@/components/dashboard/CollectionDashboard";
+import ConsumedWinesList from "./ConsumedWinesList";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,8 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'spreadsheet'>(defaultView);
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState<'in-cellar' | 'consumed'>('in-cellar');
+  const [showDashboard, setShowDashboard] = useState(false);
   const itemsPerPage = 10;
 
   const { data: wines, isLoading, refetch } = useQuery<Wine[]>({ 
@@ -165,17 +169,64 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
       
       {/* Main Content */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden transition-all duration-300">
-        {/* Filter toggle button for mobile */}
-        <div className="p-4">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-gray-200"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="mr-2 h-4 w-4" />
-            {showFilters ? 'Hide Filters' : 'Show Filters'}
-          </Button>
+        {/* Top action bar with filter toggles */}
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-200"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </Button>
+            
+            {/* Collection/Recent Activity toggle */}
+            <div className="inline-flex p-1 bg-cream-50 rounded-md">
+              <Button 
+                variant={activeTab === 'in-cellar' ? 'default' : 'ghost'}
+                onClick={() => {
+                  setActiveTab('in-cellar');
+                  setShowDashboard(false);
+                }}
+                className={`rounded-sm ${activeTab === 'in-cellar' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                size="sm"
+              >
+                Collection
+              </Button>
+              <Button 
+                variant={activeTab === 'consumed' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('consumed')}
+                className={`rounded-sm ${activeTab === 'consumed' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                size="sm"
+              >
+                Recent Activity
+              </Button>
+            </div>
+          </div>
+          
+          {/* My Wines/Dashboard toggle - only when on Collection tab */}
+          {activeTab === 'in-cellar' && (
+            <div className="inline-flex p-1 bg-cream-50 rounded-md">
+              <Button 
+                variant={!showDashboard ? 'default' : 'ghost'}
+                onClick={() => setShowDashboard(false)}
+                className={`rounded-sm ${!showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                size="sm"
+              >
+                My Wines
+              </Button>
+              <Button 
+                variant={showDashboard ? 'default' : 'ghost'}
+                onClick={() => setShowDashboard(true)}
+                className={`rounded-sm ${showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                size="sm"
+              >
+                Dashboard
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-gray-100">
@@ -234,43 +285,79 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
           </div>
         </div>
         
-        {viewMode === 'card' ? (
-          <div className="p-6 border-t border-gray-100">
-            <div className="grid gap-6">
-              {currentWines.map((wine) => (
-                <WineListItem key={wine.id} wine={wine} onUpdate={() => refetch()} />
-              ))}
-            </div>
-            
-            {currentWines.length === 0 && (
-              <div className="text-center py-10">
-                <p className="text-gray-500">No wines match your current filters.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-4 text-gray-600"
-                  onClick={() => {
-                    setSearchQuery('');
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="border-t border-gray-100">
-            <SpreadsheetView 
-              wines={sortedWines} 
-              onWineUpdate={(id, data) => {
-                updateWineMutation.mutate({ id, data });
+        {/* Dashboard View - shown conditionally */}
+        {activeTab === 'in-cellar' && showDashboard && (
+          <div className="border-t border-gray-100 p-6">
+            <CollectionDashboard 
+              statistics={{
+                inCellar: totalBottles,
+                totalWines: sortedWines.length,
+                consumed: 0,
+                purchased: 0,
+                redCount: typeCounts['Red'] || 0,
+                whiteCount: typeCounts['White'] || 0,
+                sparklingCount: typeCounts['Sparkling'] || 0,
+                otherCount: typeCounts['Other'] || 0,
+                totalValue: sortedWines.reduce((sum, wine) => sum + (wine.currentValue || 0) * (wine.quantity || 0), 0),
+                averageRating: sortedWines.reduce((sum, wine) => sum + (wine.rating || 0), 0) / sortedWines.length || 0,
+                readyToDrink: sortedWines.filter(wine => 
+                  wine.drinkBy && new Date(wine.drinkBy) >= new Date() && 
+                  wine.drinkFrom && new Date(wine.drinkFrom) <= new Date()
+                ).length
               }}
             />
           </div>
         )}
+          
+        {/* Consumed Wines List - shown when activeTab is 'consumed' */}
+        {activeTab === 'consumed' && (
+          <div className="border-t border-gray-100">
+            <ConsumedWinesList />
+          </div>
+        )}
         
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {/* Regular Wine List - shown when activeTab is 'in-cellar' and dashboard is not showing */}
+        {activeTab === 'in-cellar' && !showDashboard && (
+          <>
+            {viewMode === 'card' ? (
+              <div className="p-6 border-t border-gray-100">
+                <div className="grid gap-6">
+                  {currentWines.map((wine) => (
+                    <WineListItem key={wine.id} wine={wine} onUpdate={() => refetch()} />
+                  ))}
+                </div>
+                
+                {currentWines.length === 0 && (
+                  <div className="text-center py-10">
+                    <p className="text-gray-500">No wines match your current filters.</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-4 text-gray-600"
+                      onClick={() => {
+                        setSearchQuery('');
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="border-t border-gray-100">
+                <SpreadsheetView 
+                  wines={sortedWines} 
+                  onWineUpdate={(id, data) => {
+                    updateWineMutation.mutate({ id, data });
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
+        
+        {/* Pagination - only show for regular wine list */}
+        {activeTab === 'in-cellar' && !showDashboard && totalPages > 1 && (
           <div className="p-6 flex justify-center border-t border-gray-100">
             <nav className="flex items-center gap-1">
               <Button 
