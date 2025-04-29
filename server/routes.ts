@@ -132,10 +132,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
       
-      const updatedWine = await storage.updateWine(id, req.body);
+      // Only send specific fields in the update
+      const updateFields: Partial<Wine> = {};
+      
+      // Handle quantity updates
+      if (req.body.quantity !== undefined) {
+        updateFields.quantity = req.body.quantity;
+      }
+      
+      // Handle consumedStatus updates
+      if (req.body.consumedStatus !== undefined) {
+        updateFields.consumedStatus = req.body.consumedStatus;
+      }
+      
+      console.log("Updating wine with fields:", updateFields);
+      
+      const updatedWine = await storage.updateWine(id, updateFields);
+      
+      if (!updatedWine) {
+        return res.status(500).json({ message: 'Failed to update wine - no wine returned' });
+      }
+      
       res.json(updatedWine);
     } catch (err) {
-      res.status(500).json({ message: 'Failed to update wine' });
+      console.error("Error updating wine:", err);
+      res.status(500).json({ 
+        message: 'Failed to update wine',
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
     }
   });
 
