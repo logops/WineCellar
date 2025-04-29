@@ -47,6 +47,7 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
             <Link href="/collection" className="text-cream-100 hover:text-white">My Collection</Link>
             <Link href="/notes" className="text-cream-100 hover:text-white">My Notes</Link>
             <Link href="/reports" className="text-cream-100 hover:text-white">Reports</Link>
+            <Link href="/reports?tab=statistics" className="text-cream-100 hover:text-white">Statistics</Link>
             <div className="relative">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
