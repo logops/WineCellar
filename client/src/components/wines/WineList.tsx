@@ -119,41 +119,188 @@ export default function WineList() {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-5">
-      <WineListHeader
-        title="In My Cellar"
-        count={totalBottles}
-        totalWines={sortedWines.length}
-        onSortChange={setSortBy}
-        onSearchClick={() => setSearchVisible(true)}
-      />
-      
-      <div className="flex justify-between items-center mb-4">
-        <div className="text-sm text-gray-600">
-          {viewMode === 'card' && (
-            <>{(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, sortedWines.length)} of {sortedWines.length}</>
-          )}
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-medium text-gray-800 mb-1">Wine Type</h2>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 bg-cream-50 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              All <span className="ml-1 text-gray-500">(86)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              Red <span className="ml-1 text-gray-500">(58)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              White <span className="ml-1 text-gray-500">(16)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              Sparkling <span className="ml-1 text-gray-500">(8)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              Dessert <span className="ml-1 text-gray-500">(4)</span>
+            </Button>
+          </div>
         </div>
         
-        <div className="flex rounded-md overflow-hidden border border-cream-200">
-          <Button
-            variant={viewMode === 'card' ? 'default' : 'outline'}
-            size="sm"
-            className={`rounded-none ${viewMode === 'card' ? 'bg-burgundy-600 hover:bg-burgundy-700' : ''}`}
-            onClick={() => setViewMode('card')}
-          >
-            <LayoutGrid size={16} className="mr-1" />
-            <span className="text-xs">Card View</span>
-          </Button>
-          <Button
-            variant={viewMode === 'spreadsheet' ? 'default' : 'outline'}
-            size="sm"
-            className={`rounded-none ${viewMode === 'spreadsheet' ? 'bg-burgundy-600 hover:bg-burgundy-700' : ''}`}
-            onClick={() => setViewMode('spreadsheet')}
-          >
-            <Table2 size={16} className="mr-1" />
-            <span className="text-xs">Table View</span>
-          </Button>
+        <div className="mb-6">
+          <h2 className="text-xl font-medium text-gray-800 mb-1">Region</h2>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 bg-cream-50 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              All <span className="ml-1 text-gray-500">(86)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              France <span className="ml-1 text-gray-500">(42)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              Italy <span className="ml-1 text-gray-500">(18)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              USA <span className="ml-1 text-gray-500">(15)</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
+            >
+              Spain <span className="ml-1 text-gray-500">(11)</span>
+            </Button>
+          </div>
+        </div>
+        
+        <div className="mb-6">
+          <h2 className="text-xl font-medium text-gray-800 mb-1">More Filters</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <div>
+              <Select onValueChange={(val) => console.log(val)} defaultValue="vintage">
+                <SelectTrigger className="w-full border-gray-200">
+                  <SelectValue placeholder="Vintage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vintage">Vintage</SelectItem>
+                  <SelectItem value="2020">2020</SelectItem>
+                  <SelectItem value="2019">2019</SelectItem>
+                  <SelectItem value="2018">2018</SelectItem>
+                  <SelectItem value="2017">2017</SelectItem>
+                  <SelectItem value="older">Older</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select onValueChange={(val) => console.log(val)} defaultValue="varietal">
+                <SelectTrigger className="w-full border-gray-200">
+                  <SelectValue placeholder="Varietal" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="varietal">Varietal</SelectItem>
+                  <SelectItem value="cabernet">Cabernet Sauvignon</SelectItem>
+                  <SelectItem value="pinot">Pinot Noir</SelectItem>
+                  <SelectItem value="chardonnay">Chardonnay</SelectItem>
+                  <SelectItem value="sauvignon">Sauvignon Blanc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-gray-600"
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      <div className="border-t border-gray-100">
+        <div className="px-6 py-4 flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            {viewMode === 'card' && (
+              <>{(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, sortedWines.length)} of {sortedWines.length} wines</>
+            )}
+          </div>
+          
+          <div className="flex gap-2 items-center">
+            <Select onValueChange={setSortBy} defaultValue="default">
+              <SelectTrigger className="w-[180px] border-gray-200">
+                <SelectValue placeholder="Sort by Default" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Sort by Default</SelectItem>
+                <SelectItem value="name-asc">Name: A-Z</SelectItem>
+                <SelectItem value="name-desc">Name: Z-A</SelectItem>
+                <SelectItem value="vintage-desc">Vintage: Newest First</SelectItem>
+                <SelectItem value="vintage-asc">Vintage: Oldest First</SelectItem>
+                <SelectItem value="value-desc">Value: High to Low</SelectItem>
+                <SelectItem value="value-asc">Value: Low to High</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <div className="flex rounded-md overflow-hidden border border-gray-200">
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'outline'}
+                size="sm"
+                className={`rounded-none ${viewMode === 'card' ? 'bg-burgundy-600 hover:bg-burgundy-700' : ''}`}
+                onClick={() => setViewMode('card')}
+              >
+                <LayoutGrid size={16} />
+              </Button>
+              <Button
+                variant={viewMode === 'spreadsheet' ? 'default' : 'outline'}
+                size="sm"
+                className={`rounded-none ${viewMode === 'spreadsheet' ? 'bg-burgundy-600 hover:bg-burgundy-700' : ''}`}
+                onClick={() => setViewMode('spreadsheet')}
+              >
+                <Table2 size={16} />
+              </Button>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSearchVisible(true)}
+              className="h-10 w-10 border-gray-200"
+            >
+              <Search className="h-5 w-5 text-gray-600" />
+              <span className="sr-only">Search</span>
+            </Button>
+          </div>
         </div>
       </div>
       
