@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Wine } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { Wine, insertWineSchema } from "@shared/schema";
+import { Wine as WineSchema, insertWineSchema } from "@shared/schema";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import StorageLocationField from "./StorageLocationField";
 
@@ -63,9 +63,16 @@ const formSchema = insertWineSchema.extend({
 type FormValues = z.infer<typeof formSchema>;
 
 interface AddWineFormProps {
-  wine?: Wine;
+  wine?: WineSchema;
   onSuccess?: () => void;
   onFormChange?: (isDirty: boolean) => void;
+}
+
+interface RecommendedDrinkingWindow {
+  startYear: number;
+  endYear: number;
+  notes: string;
+  isPastPrime: boolean;
 }
 
 export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFormProps) {
@@ -78,6 +85,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showDrinkDialog, setShowDrinkDialog] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
+  const [recommendedDrinkingWindow, setRecommendedDrinkingWindow] = useState<RecommendedDrinkingWindow | null>(null);
   
   // Get autocomplete suggestions
   const suggestions = useAutocompleteSuggestions();
@@ -650,6 +658,48 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               
               <div>
                 <FormLabel>Drinking Window</FormLabel>
+                
+                {/* Show Claude's recommendation if available */}
+                {recommendedDrinkingWindow && (
+                  <div className="bg-burgundy-50 border border-burgundy-200 rounded-md p-3 mb-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="text-sm font-semibold text-burgundy-700 flex items-center">
+                          <Wine className="h-4 w-4 mr-1" /> 
+                          AI Recommended Drinking Window
+                        </h4>
+                        <p className="text-sm text-burgundy-800 mt-1">
+                          {recommendedDrinkingWindow.isPastPrime 
+                            ? "This wine is past its prime drinking window." 
+                            : `Recommended: ${recommendedDrinkingWindow.startYear} - ${recommendedDrinkingWindow.endYear}`}
+                        </p>
+                        <p className="text-xs text-burgundy-600 mt-1">
+                          {recommendedDrinkingWindow.notes}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button 
+                          type="button"
+                          size="sm"
+                          variant="ghost" 
+                          className="h-6 text-xs text-burgundy-700"
+                          onClick={() => {
+                            setDrinkingWindowType("custom");
+                            form.setValue("drinkingWindowStartYear", recommendedDrinkingWindow.startYear);
+                            form.setValue("drinkingWindowEndYear", recommendedDrinkingWindow.endYear);
+                            toast({
+                              title: "Recommendation Applied",
+                              description: "The recommended drinking window has been applied.",
+                            });
+                          }}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex space-x-4 mt-2">
                   <Button
                     type="button"
