@@ -86,6 +86,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [showDrinkDialog, setShowDrinkDialog] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
   const [recommendedDrinkingWindow, setRecommendedDrinkingWindow] = useState<RecommendedDrinkingWindow | null>(null);
+  const [originalPrediction, setOriginalPrediction] = useState<any>(null);
   
   // Get autocomplete suggestions
   const suggestions = useAutocompleteSuggestions();
@@ -683,10 +684,28 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           size="sm"
                           variant="ghost" 
                           className="h-6 text-xs text-burgundy-700"
-                          onClick={() => {
+                          onClick={async () => {
+                            // Apply the recommendation to the form
                             setDrinkingWindowType("custom");
                             form.setValue("drinkingWindowStartYear", recommendedDrinkingWindow.startYear);
                             form.setValue("drinkingWindowEndYear", recommendedDrinkingWindow.endYear);
+                            
+                            // Record analytics that the user accepted the drinking window recommendation
+                            if (originalPrediction) {
+                              try {
+                                const imageHash = btoa(originalPrediction.producer + originalPrediction.vintage); // Simple hash
+                                await apiRequest("POST", "/api/label-analytics", {
+                                  imageHash,
+                                  originalPrediction,
+                                  wasAccurate: true, // General recognition was accurate
+                                  drinkingWindowAccepted: true // User applied the recommended drinking window
+                                });
+                                console.log("Recorded drinking window acceptance");
+                              } catch (error) {
+                                console.error("Failed to record analytics:", error);
+                              }
+                            }
+                            
                             toast({
                               title: "Recommendation Applied",
                               description: "The recommended drinking window has been applied.",
@@ -694,6 +713,40 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           }}
                         >
                           Apply
+                        </Button>
+                        <Button 
+                          type="button"
+                          size="sm"
+                          variant="ghost" 
+                          className="h-6 text-xs text-burgundy-500"
+                          onClick={async () => {
+                            // Record that the recommendation was rejected
+                            if (originalPrediction) {
+                              try {
+                                const imageHash = btoa(originalPrediction.producer + originalPrediction.vintage); // Simple hash
+                                await apiRequest("POST", "/api/label-analytics", {
+                                  imageHash,
+                                  originalPrediction,
+                                  wasAccurate: true, // General recognition was accurate
+                                  drinkingWindowAccepted: false // User rejected the recommended drinking window
+                                });
+                                console.log("Recorded drinking window rejection");
+                              } catch (error) {
+                                console.error("Failed to record analytics:", error);
+                              }
+                            }
+                            
+                            // Hide the recommendation UI
+                            setRecommendedDrinkingWindow(null);
+                            
+                            toast({
+                              title: "Recommendation Ignored",
+                              description: "You can set a custom drinking window below.",
+                              variant: "secondary"
+                            });
+                          }}
+                        >
+                          Ignore
                         </Button>
                       </div>
                     </div>
@@ -911,6 +964,9 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         <TabsContent value="label">
           <WineLabelRecognition 
             onResult={(recognitionResult) => {
+              // Store the original prediction for analytics
+              setOriginalPrediction(recognitionResult);
+              
               // Handle the recognition result by updating the form fields
               form.setValue("producer", recognitionResult.producer || "");
               form.setValue("name", recognitionResult.name || "");
