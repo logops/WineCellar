@@ -870,6 +870,30 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               form.setValue("grapeVarieties", recognitionResult.grapeVarieties || "");
               form.setValue("type", recognitionResult.type?.toLowerCase() || "red");
               
+              // Handle recommended drinking window if available
+              if (recognitionResult.recommendedDrinkingWindow) {
+                const { startYear, endYear, isPastPrime, notes } = recognitionResult.recommendedDrinkingWindow;
+                
+                // Store the recommendation for later use
+                setRecommendedDrinkingWindow({
+                  startYear,
+                  endYear, 
+                  isPastPrime,
+                  notes
+                });
+                
+                // If it's a past prime wine, set to drink now
+                if (isPastPrime) {
+                  setDrinkingWindowType("drink_now");
+                } else {
+                  // Set to custom by default so we can show the years
+                  setDrinkingWindowType("custom");
+                  // Fill in the recommended years
+                  form.setValue("drinkingWindowStartYear", startYear);
+                  form.setValue("drinkingWindowEndYear", endYear);
+                }
+              }
+              
               // Switch to manual entry form to allow user to edit or complete missing fields
               setEntryMethod("manual");
               

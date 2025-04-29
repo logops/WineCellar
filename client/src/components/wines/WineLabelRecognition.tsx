@@ -7,6 +7,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+interface RecommendedDrinkingWindow {
+  startYear: number;
+  endYear: number;
+  notes: string;
+  isPastPrime: boolean;
+}
+
 interface RecognitionResult {
   producer: string | null;
   name: string | null;
@@ -18,6 +25,7 @@ interface RecognitionResult {
   type: string | null;
   alcoholContent: number | null;
   confidence: number;
+  recommendedDrinkingWindow?: RecommendedDrinkingWindow;
 }
 
 interface WineLabelRecognitionProps {
