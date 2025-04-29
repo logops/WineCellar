@@ -57,6 +57,10 @@ export async function analyzeWineLabel(imageBase64: string) {
     });
 
     // Extract text content from the response
+    if (response.content[0].type !== 'text') {
+      throw new Error('Unexpected response type from Claude');
+    }
+    
     const text = response.content[0].text;
     
     // Find the JSON object in the response

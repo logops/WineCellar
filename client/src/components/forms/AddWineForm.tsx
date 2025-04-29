@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutocompleteSuggestions } from "@/lib/autocompleteService";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { WineLabelRecognition } from "@/components/wines/WineLabelRecognition";
 import {
   AlertDialog,
   AlertDialogAction,

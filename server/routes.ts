@@ -472,6 +472,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Wine label recognition route
+  app.post('/api/analyze-wine-label', isAuthenticated, handleWineLabelAnalysis);
+
   const httpServer = createServer(app);
   return httpServer;
 }
