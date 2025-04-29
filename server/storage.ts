@@ -2,7 +2,8 @@ import {
   users, type User, type InsertUser,
   wines, type Wine, type InsertWine,
   consumptions, type Consumption, type InsertConsumption,
-  wishlist, type Wishlist, type InsertWishlist
+  wishlist, type Wishlist, type InsertWishlist,
+  labelAnalytics
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -563,6 +564,8 @@ export class DatabaseStorage implements IStorage {
     wasAccurate: boolean
   ): Promise<void> {
     try {
+      // Import labelAnalytics schema for database operations
+      const { labelAnalytics } = await import('@shared/schema');
       await db.insert(labelAnalytics).values({
         userId,
         imageHash,
