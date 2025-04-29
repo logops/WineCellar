@@ -164,7 +164,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
       />
       
       {/* Main Content */}
-      <div className={`bg-white rounded-lg shadow-sm overflow-hidden transition-all duration-300 ${showFilters ? 'ml-64' : ''}`}>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden transition-all duration-300">
         {/* Filter toggle button for mobile */}
         <div className="p-4">
           <Button

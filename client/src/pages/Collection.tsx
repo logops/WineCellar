@@ -62,22 +62,52 @@ export default function Collection() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-serif font-medium text-gray-800">My Wine Collection</h1>
-          <div className="flex gap-3">
+          <Button 
+            onClick={() => setShowAddWineModal(true)}
+            className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Wine
+          </Button>
+        </div>
+        
+        {/* Toggle Buttons */}
+        <div className="mb-6 flex flex-col space-y-3">
+          <div className="inline-flex p-1 bg-cream-50 rounded-md self-start">
             <Button 
-              variant="outline"
-              className={`text-burgundy-600 border-burgundy-200 ${showDashboard ? 'bg-cream-100' : ''}`}
+              variant={activeTab === 'in-cellar' ? 'secondary' : 'ghost'}
+              onClick={() => setActiveTab('in-cellar')}
+              className="rounded-sm px-4 py-1"
               size="sm"
-              onClick={() => setShowDashboard(!showDashboard)}
             >
-              <LayoutDashboard className="h-4 w-4 mr-2" />
-              Dashboard
+              Collection
             </Button>
             <Button 
-              onClick={() => setShowAddWineModal(true)}
-              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+              variant={activeTab === 'consumed' ? 'secondary' : 'ghost'}
+              onClick={() => setActiveTab('consumed')}
+              className="rounded-sm px-4 py-1"
+              size="sm"
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Wine
+              Recent Activity
+            </Button>
+          </div>
+          
+          <div className="inline-flex p-1 bg-cream-50 rounded-md self-start">
+            <Button 
+              variant={!showDashboard ? 'secondary' : 'ghost'}
+              onClick={() => setShowDashboard(false)}
+              className="rounded-sm px-4 py-1"
+              size="sm"
+            >
+              My Wines
+            </Button>
+            <Button 
+              variant={showDashboard ? 'secondary' : 'ghost'}
+              onClick={() => setShowDashboard(true)}
+              className="rounded-sm px-4 py-1"
+              size="sm"
+            >
+              Dashboard
             </Button>
           </div>
         </div>
@@ -101,35 +131,16 @@ export default function Collection() {
           />
         )}
         
-        <Tabs 
-          defaultValue="in-cellar" 
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as 'in-cellar' | 'consumed')}
-          className="mb-6"
-        >
-          <TabsList className="space-x-1 bg-cream-100 p-1 rounded-lg mb-6">
-            <TabsTrigger 
-              value="in-cellar" 
-              className="data-[state=active]:bg-white data-[state=active]:text-burgundy-700 rounded-md transition-all"
-            >
-              Collection
-            </TabsTrigger>
-            <TabsTrigger 
-              value="consumed"
-              className="data-[state=active]:bg-white data-[state=active]:text-burgundy-700 rounded-md transition-all"  
-            >
-              Recent Activity
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="in-cellar" className="pt-4 animate-in fade-in-50">
+        {/* Main Content */}
+        <div className="animate-in fade-in-50">
+          {activeTab === 'in-cellar' && !showDashboard && (
             <WineList defaultView="spreadsheet" />
-          </TabsContent>
+          )}
           
-          <TabsContent value="consumed" className="pt-4 animate-in fade-in-50">
+          {activeTab === 'consumed' && !showDashboard && (
             <ConsumedWinesList />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
 
       {/* Add Wine Dialog */}
