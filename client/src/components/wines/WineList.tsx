@@ -8,8 +8,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Table2, LayoutGrid } from "lucide-react";
+import { Table2, LayoutGrid, Search } from "lucide-react";
 
 const sortWines = (wines: Wine[], sortBy: string): Wine[] => {
   const sortedWines = [...wines];
@@ -305,93 +312,133 @@ export default function WineList() {
       </div>
       
       {viewMode === 'card' ? (
-        <>
-          <div className="text-xs text-gray-500 mb-2">
-            <span className="mr-4">Key: V - Value</span>
-          </div>
-          
-          <div className="space-y-3">
+        <div className="p-6 border-t border-gray-100">
+          <div className="grid gap-6">
             {currentWines.map((wine) => (
               <WineListItem key={wine.id} wine={wine} onUpdate={() => refetch()} />
             ))}
           </div>
-        </>
+          
+          {currentWines.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-gray-500">No wines match your current filters.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-4 text-gray-600"
+                onClick={() => {
+                  setSearchQuery('');
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
+        </div>
       ) : (
-        <SpreadsheetView 
-          wines={sortedWines} 
-          onWineUpdate={(id, data) => {
-            updateWineMutation.mutate({ id, data });
-          }}
-        />
+        <div className="border-t border-gray-100">
+          <SpreadsheetView 
+            wines={sortedWines} 
+            onWineUpdate={(id, data) => {
+              updateWineMutation.mutate({ id, data });
+            }}
+          />
+        </div>
       )}
       
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex justify-center">
-          <nav className="flex items-center">
-            <button 
-              className="px-2 py-1 border rounded-l-md text-gray-600 bg-white hover:bg-cream-50 disabled:opacity-50"
+        <div className="p-6 flex justify-center border-t border-gray-100">
+          <nav className="flex items-center gap-1">
+            <Button 
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 rounded-full border-gray-200"
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              aria-label="Previous page"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-            </button>
+              <span className="sr-only">Previous</span>
+            </Button>
             
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-              <button
+              <Button
                 key={pageNum}
-                className={`px-3 py-1 border-t border-b ${
+                variant={pageNum === currentPage ? "default" : "outline"}
+                size="sm"
+                className={`h-8 w-8 rounded-full border-gray-200 p-0 ${
                   pageNum === currentPage
-                    ? 'bg-burgundy-600 text-white'
-                    : 'text-gray-700 hover:bg-cream-50'
+                    ? 'bg-burgundy-600 hover:bg-burgundy-700'
+                    : 'text-gray-600 hover:bg-cream-50'
                 }`}
                 onClick={() => setCurrentPage(pageNum)}
               >
                 {pageNum}
-              </button>
+              </Button>
             ))}
             
-            <button 
-              className="px-2 py-1 border rounded-r-md text-gray-600 bg-white hover:bg-cream-50 disabled:opacity-50"
+            <Button 
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 rounded-full border-gray-200"
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              aria-label="Next page"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
-            </button>
+              <span className="sr-only">Next</span>
+            </Button>
           </nav>
         </div>
       )}
       
       {/* Search Dialog */}
       <Dialog open={searchVisible} onOpenChange={setSearchVisible}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Search Wines</DialogTitle>
+        <DialogContent className="sm:max-w-md p-6">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-xl font-medium text-gray-800">Search Wines</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Search by name, producer, region, or grape"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              autoFocus
-            />
-            <div className="flex justify-end space-x-2">
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="search-query" className="text-sm text-gray-500 block mb-2">
+                Search your collection
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <Input
+                  id="search-query"
+                  placeholder="Wine name, producer, region, or grape variety"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 border-gray-200"
+                  autoFocus
+                />
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                Search results will update as you type.
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-2">
               <Button 
                 variant="outline" 
+                size="sm"
+                className="border-gray-200 text-gray-600"
                 onClick={() => {
                   setSearchQuery('');
                   setSearchVisible(false);
                 }}
               >
-                Clear
+                Reset
               </Button>
               <Button 
+                size="sm"
+                className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
                 onClick={() => {
                   setCurrentPage(1);
                   setSearchVisible(false);

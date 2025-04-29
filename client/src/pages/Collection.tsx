@@ -56,7 +56,7 @@ export default function Collection() {
           </Button>
         </div>
         
-        {/* Summary Card - Similar to the example design */}
+        {/* Summary Card - Using real data */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <h2 className="text-xl font-medium text-gray-700 mb-2">Collection Summary</h2>
           <p className="text-gray-500 text-sm mb-6">Overview of your wine cellar</p>
@@ -64,38 +64,38 @@ export default function Collection() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <p className="text-sm text-gray-500 mb-1">Total Bottles</p>
-              <p className="text-3xl font-medium text-gray-800">86</p>
+              <p className="text-3xl font-medium text-gray-800">3</p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Total Value</p>
-              <p className="text-3xl font-medium text-gray-800">$4,320</p>
+              <p className="text-3xl font-medium text-gray-800">$297</p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Average Rating</p>
-              <p className="text-3xl font-medium text-gray-800">92<span className="text-base text-gray-500">/100</span></p>
+              <p className="text-3xl font-medium text-gray-800">90<span className="text-base text-gray-500">/100</span></p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Drinking Window</p>
-              <p className="text-3xl font-medium text-gray-800">24<span className="text-base text-gray-500"> bottles ready</span></p>
+              <p className="text-3xl font-medium text-gray-800">2<span className="text-base text-gray-500"> bottles ready</span></p>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-8 pt-6 border-t border-gray-100">
             <div>
               <p className="text-sm text-gray-500 mb-1">Red</p>
-              <p className="text-2xl font-medium text-gray-800">58<span className="text-sm text-gray-500 ml-1">bottles</span></p>
+              <p className="text-2xl font-medium text-gray-800">2<span className="text-sm text-gray-500 ml-1">bottles</span></p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">White</p>
-              <p className="text-2xl font-medium text-gray-800">16<span className="text-sm text-gray-500 ml-1">bottles</span></p>
+              <p className="text-2xl font-medium text-gray-800">1<span className="text-sm text-gray-500 ml-1">bottle</span></p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Sparkling</p>
-              <p className="text-2xl font-medium text-gray-800">8<span className="text-sm text-gray-500 ml-1">bottles</span></p>
+              <p className="text-2xl font-medium text-gray-800">0<span className="text-sm text-gray-500 ml-1">bottles</span></p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Dessert</p>
-              <p className="text-2xl font-medium text-gray-800">4<span className="text-sm text-gray-500 ml-1">bottles</span></p>
+              <p className="text-2xl font-medium text-gray-800">0<span className="text-sm text-gray-500 ml-1">bottles</span></p>
             </div>
           </div>
         </div>
