@@ -170,40 +170,38 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
       {/* Main Content */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden transition-all duration-300">
         {/* Top action bar with filter toggles */}
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
+        <div className="p-4 flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-gray-200"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+          
+          {/* Collection/Recent Activity toggle */}
+          <div className="inline-flex p-1 bg-cream-50 rounded-md">
+            <Button 
+              variant={activeTab === 'in-cellar' ? 'default' : 'ghost'}
+              onClick={() => {
+                setActiveTab('in-cellar');
+                setShowDashboard(false);
+              }}
+              className={`rounded-sm ${activeTab === 'in-cellar' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
               size="sm"
-              className="border-gray-200"
-              onClick={() => setShowFilters(!showFilters)}
             >
-              <Filter className="mr-2 h-4 w-4" />
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
+              Collection
             </Button>
-            
-            {/* Collection/Recent Activity toggle */}
-            <div className="inline-flex p-1 bg-cream-50 rounded-md">
-              <Button 
-                variant={activeTab === 'in-cellar' ? 'default' : 'ghost'}
-                onClick={() => {
-                  setActiveTab('in-cellar');
-                  setShowDashboard(false);
-                }}
-                className={`rounded-sm ${activeTab === 'in-cellar' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
-                size="sm"
-              >
-                Collection
-              </Button>
-              <Button 
-                variant={activeTab === 'consumed' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('consumed')}
-                className={`rounded-sm ${activeTab === 'consumed' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
-                size="sm"
-              >
-                Recent Activity
-              </Button>
-            </div>
+            <Button 
+              variant={activeTab === 'consumed' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('consumed')}
+              className={`rounded-sm ${activeTab === 'consumed' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+              size="sm"
+            >
+              Recent Activity
+            </Button>
           </div>
           
           {/* My Wines/Dashboard toggle - only when on Collection tab */}
@@ -300,10 +298,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
                 otherCount: typeCounts['Other'] || 0,
                 totalValue: sortedWines.reduce((sum, wine) => sum + (wine.currentValue || 0) * (wine.quantity || 0), 0),
                 averageRating: sortedWines.reduce((sum, wine) => sum + (wine.rating || 0), 0) / sortedWines.length || 0,
-                readyToDrink: sortedWines.filter(wine => 
-                  wine.drinkBy && new Date(wine.drinkBy) >= new Date() && 
-                  wine.drinkFrom && new Date(wine.drinkFrom) <= new Date()
-                ).length
+                readyToDrink: 0 // Calculate ready to drink wines in the CollectionDashboard component
               }}
             />
           </div>

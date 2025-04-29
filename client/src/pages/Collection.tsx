@@ -62,61 +62,14 @@ export default function Collection() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-serif font-medium text-gray-800">My Wine Collection</h1>
           
-          <div className="flex items-center space-x-4">
-            {/* Collection/Recent Activity toggle */}
-            <div className="inline-flex p-1 bg-cream-50 rounded-md">
-              <Button 
-                variant={activeTab === 'in-cellar' ? 'default' : 'ghost'}
-                onClick={() => {
-                  setActiveTab('in-cellar');
-                  setShowDashboard(false);
-                }}
-                className={`rounded-sm ${activeTab === 'in-cellar' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
-                size="sm"
-              >
-                Collection
-              </Button>
-              <Button 
-                variant={activeTab === 'consumed' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('consumed')}
-                className={`rounded-sm ${activeTab === 'consumed' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
-                size="sm"
-              >
-                Recent Activity
-              </Button>
-            </div>
-            
-            {/* My Wines/Dashboard toggle - only when on Collection tab */}
-            {activeTab === 'in-cellar' && (
-              <div className="inline-flex p-1 bg-cream-50 rounded-md">
-                <Button 
-                  variant={!showDashboard ? 'default' : 'ghost'}
-                  onClick={() => setShowDashboard(false)}
-                  className={`rounded-sm ${!showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
-                  size="sm"
-                >
-                  My Wines
-                </Button>
-                <Button 
-                  variant={showDashboard ? 'default' : 'ghost'}
-                  onClick={() => setShowDashboard(true)}
-                  className={`rounded-sm ${showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
-                  size="sm"
-                >
-                  Dashboard
-                </Button>
-              </div>
-            )}
-            
-            {/* Add Wine button */}
-            <Button 
-              onClick={() => setShowAddWineModal(true)}
-              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Wine
-            </Button>
-          </div>
+          {/* Add Wine button */}
+          <Button 
+            onClick={() => setShowAddWineModal(true)}
+            className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Wine
+          </Button>
         </div>
         
         {/* Dashboard View - shown conditionally */}
