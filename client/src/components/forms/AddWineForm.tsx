@@ -29,6 +29,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,7 +52,12 @@ import { Autocomplete } from "@/components/ui/autocomplete";
 import StorageLocationField from "./StorageLocationField";
 
 const formSchema = insertWineSchema.extend({
-  vintage: z.coerce.number().min(1900).max(new Date().getFullYear() + 10).optional(),
+  // Updated to accept 0 (non-vintage) or year between 1900 and current year + 10
+  vintage: z.coerce.number()
+    .refine(val => val === 0 || (val >= 1900 && val <= new Date().getFullYear() + 10), {
+      message: "Enter a valid vintage year or 0 for non-vintage wines"
+    })
+    .optional(),
   purchasePrice: z.coerce.number().min(0).optional(),
   currentValue: z.coerce.number().min(0).optional(),
   quantity: z.coerce.number().min(1).default(1),
@@ -404,15 +410,28 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                       <FormLabel>Vintage</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
-                          placeholder="e.g. 2015 (or 0 for non-vintage)" 
+                          type="text" 
+                          placeholder="e.g. 2015 or NV for non-vintage" 
                           {...field}
                           value={field.value || ""}
+                          onChange={(e) => {
+                            const value = e.target.value.trim();
+                            // Handle "NV" input (convert to 0)
+                            if (value.toLowerCase() === "nv") {
+                              field.onChange(0);
+                            } else {
+                              // Try to convert to number
+                              const numValue = parseInt(value);
+                              if (!isNaN(numValue) || value === "") {
+                                field.onChange(value === "" ? undefined : numValue);
+                              }
+                            }
+                          }}
                         />
                       </FormControl>
-                      <FormDescription className="text-xs">
-                        Enter vintage year or use 0 for non-vintage wines
-                      </FormDescription>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Enter vintage year or "NV" for non-vintage wines
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
