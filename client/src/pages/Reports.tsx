@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TabNavigation from "@/components/ui/TabNavigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReadyToDrinkList from "@/components/reports/ReadyToDrinkList";
@@ -7,15 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Wine } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocation } from "wouter";
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState("ready-to-drink");
+  const [location] = useLocation();
+  
+  // Extract the tab from the URL query parameter if present
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['ready-to-drink', 'wine-list', 'statistics'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
   
   const tabs = [
     { label: "My Cellar", href: "/" },
     { label: "Search", href: "/search" },
     { label: "My Notes", href: "/notes" },
-    { label: "Statistics", href: "/statistics" },
+    { label: "Statistics", href: "/reports?tab=statistics" },
   ];
 
   const { data: wines, isLoading } = useQuery<Wine[]>({ 
