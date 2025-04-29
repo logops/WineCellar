@@ -84,6 +84,15 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </li>
             <li>
               <Link 
+                href="/recommendations" 
+                className="block py-2 px-4 hover:bg-cream-100 rounded-md"
+                onClick={onClose}
+              >
+                Wine Recommendations
+              </Link>
+            </li>
+            <li>
+              <Link 
                 href="/notes" 
                 className="block py-2 px-4 hover:bg-cream-100 rounded-md"
                 onClick={onClose}

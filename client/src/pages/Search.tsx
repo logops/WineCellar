@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import TabNavigation from "@/components/ui/TabNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import WineListItem from "@/components/wines/WineListItem";
 import { Skeleton } from "@/components/ui/skeleton";
 import SearchFilters from "@/components/search/SearchFilters";
 import { useCellars } from "@/hooks/use-cellars";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Select, 
   SelectContent, 
@@ -15,12 +17,32 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, Wine as WineIcon, Search as SearchIcon, Sparkles } from "lucide-react";
+
+interface WineRecommendationResult {
+  recommendations: {
+    wineId: number;
+    wine: string;
+    reasoning: string;
+    characteristics: string;
+    servingSuggestions: string;
+    confidenceScore: number;
+  }[];
+  additionalSuggestions: string;
+}
 
 export default function Search() {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Wine[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [sortBy, setSortBy] = useState("default");
+  const [activeTab, setActiveTab] = useState<string>("basic");
+  const [aiQuery, setAiQuery] = useState("");
+  const [recommendationResults, setRecommendationResults] = useState<WineRecommendationResult | null>(null);
   const [filters, setFilters] = useState({
     type: [] as string[],
     region: [] as string[],
@@ -38,10 +60,48 @@ export default function Search() {
   });
   
   const { cellars } = useCellars();
+  
+  // Mutation for getting AI wine recommendations
+  const recommendMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await fetch('/api/wine-recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query,
+          wines: wines || []
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get wine recommendations');
+      }
+      
+      const result = await response.json();
+      return result.data as WineRecommendationResult;
+    },
+    onSuccess: (data) => {
+      setRecommendationResults(data);
+      toast({
+        title: 'Recommendation Complete',
+        description: 'AI has analyzed your cellar and found matches!',
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Recommendation Failed',
+        description: error instanceof Error ? error.message : 'Failed to get recommendations',
+      });
+    }
+  });
 
   const tabs = [
     { label: "My Cellar", href: "/" },
     { label: "Search", href: "/search" },
+    { label: "Recommendations", href: "/recommendations" },
     { label: "My Notes", href: "/notes" },
     { label: "Statistics", href: "/statistics" },
   ];
@@ -252,38 +312,111 @@ export default function Search() {
         <div className="bg-white rounded-lg shadow-sm p-5 mb-6">
           <h1 className="text-2xl font-montserrat font-semibold text-burgundy-700 mb-6">Search Your Cellar</h1>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="md:col-span-2">
-              <Input
-                placeholder="Search by name, producer, region, or grape varieties..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
+          <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic" className="flex items-center">
+                <SearchIcon className="w-4 h-4 mr-2" />
+                Basic Search
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="flex items-center">
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Recommendations
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="md:col-span-2">
+                  <Input
+                    placeholder="Search by name, producer, region, or grape varieties..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Button 
+                    onClick={handleSearch} 
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Loading..." : "Search"}
+                  </Button>
+                </div>
+              </div>
+              
+              <SearchFilters 
+                types={uniqueTypes}
+                regions={uniqueRegions}
+                vintages={uniqueVintages}
+                storageLocations={allStorageLocations}
+                onFilterChange={handleFilterChange}
+                onRangeFilterChange={handleRangeFilterChange}
+                selectedFilters={filters}
               />
-            </div>
-            <div>
-              <Button 
-                onClick={handleSearch} 
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? "Loading..." : "Search"}
-              </Button>
-            </div>
-          </div>
-          
-          <SearchFilters 
-            types={uniqueTypes}
-            regions={uniqueRegions}
-            vintages={uniqueVintages}
-            storageLocations={allStorageLocations}
-            onFilterChange={handleFilterChange}
-            onRangeFilterChange={handleRangeFilterChange}
-            selectedFilters={filters}
-          />
+            </TabsContent>
+            
+            <TabsContent value="ai" className="pt-4">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">What would you like to drink?</h3>
+                <p className="text-gray-600 mb-4">
+                  Ask a natural language question like "I'm having ribeye steak tonight" or "What goes well with spicy Asian food?" 
+                  Our AI sommelier will suggest wines from your cellar.
+                </p>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (aiQuery.trim()) {
+                    recommendMutation.mutate(aiQuery);
+                  } else {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Empty Query',
+                      description: 'Please enter a query to get recommendations.',
+                    });
+                  }
+                }}>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <Input
+                        placeholder="E.g., I'm having ribeye steak tonight..."
+                        value={aiQuery}
+                        onChange={(e) => setAiQuery(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <Button 
+                        type="submit"
+                        className="w-full"
+                        disabled={recommendMutation.isPending || isLoading || !wines?.length}
+                      >
+                        {recommendMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Finding Matches...
+                          </>
+                        ) : "Get Recommendations"}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {isLoading && (
+                    <p className="text-sm text-gray-500 mt-2">Loading your wine collection...</p>
+                  )}
+                  
+                  {wines?.length === 0 && (
+                    <p className="text-sm text-red-500 mt-2">
+                      You need wines in your cellar to get recommendations.
+                    </p>
+                  )}
+                </form>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
         
-        {hasSearched && (
+        {/* Basic search results */}
+        {hasSearched && activeTab === 'basic' && (
           <div className="bg-white rounded-lg shadow-sm p-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <div>
@@ -342,6 +475,102 @@ export default function Search() {
                 }} variant="outline" className="mt-4">
                   Clear Filters
                 </Button>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* AI recommendation results */}
+        {activeTab === 'ai' && recommendationResults && (
+          <div className="bg-white rounded-lg shadow-sm p-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <div>
+                <h2 className="text-xl font-montserrat font-semibold text-burgundy-700">Wine Recommendations</h2>
+                <p className="text-gray-600 text-sm">Based on: "{aiQuery}"</p>
+              </div>
+              
+              <div className="mt-4 sm:mt-0">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setAiQuery("");
+                    setRecommendationResults(null);
+                  }}
+                  size="sm"
+                >
+                  New Recommendation
+                </Button>
+              </div>
+            </div>
+            
+            {recommendationResults.recommendations.length > 0 ? (
+              <div className="space-y-4">
+                {recommendationResults.recommendations.map((rec, index) => {
+                  const wine = wines?.find(w => w.id === rec.wineId);
+                  if (!wine) return null;
+                  
+                  return (
+                    <Card key={index} className="border-burgundy-100">
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col md:flex-row gap-4">
+                          <div className="flex-1">
+                            <div className="flex justify-between mb-2">
+                              <div>
+                                <h3 className="text-lg font-medium text-burgundy-700">{rec.wine}</h3>
+                                <p className="text-sm text-gray-600">
+                                  {wine.region && `${wine.region}`}
+                                  {wine.vintage && wine.region && ` • `}
+                                  {wine.vintage === 0 ? "NV" : wine.vintage}
+                                </p>
+                              </div>
+                              <div>
+                                {rec.confidenceScore >= 0.8 ? (
+                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Strong Match</Badge>
+                                ) : rec.confidenceScore >= 0.6 ? (
+                                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Good Match</Badge>
+                                ) : (
+                                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">Possible Match</Badge>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="mb-3">
+                              <h4 className="text-sm font-medium mb-1 flex items-center">
+                                <WineIcon className="h-4 w-4 mr-1 text-burgundy-600" />
+                                Perfect Match Because:
+                              </h4>
+                              <p className="text-sm text-gray-600">{rec.reasoning}</p>
+                            </div>
+                            
+                            <div className="mb-3">
+                              <h4 className="text-sm font-medium mb-1">Flavor Profile:</h4>
+                              <p className="text-sm text-gray-600">{rec.characteristics}</p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="text-sm font-medium mb-1">Serving Suggestions:</h4>
+                              <p className="text-sm text-gray-600">{rec.servingSuggestions}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-gray-500">No specific recommendations found for your query.</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {recommendationResults.additionalSuggestions && (
+              <div className="mt-6">
+                <Separator className="my-4" />
+                <h3 className="text-lg font-medium text-gray-800 mb-2">Additional Suggestions</h3>
+                <p className="text-gray-600">{recommendationResults.additionalSuggestions}</p>
               </div>
             )}
           </div>
