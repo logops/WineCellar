@@ -482,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'User not authenticated' });
       }
       
-      const { imageHash, originalPrediction, userCorrection, wasAccurate } = req.body;
+      const { imageHash, originalPrediction, userCorrection, wasAccurate, drinkingWindowAccepted } = req.body;
       
       if (!imageHash || !originalPrediction) {
         return res.status(400).json({ message: 'Missing required fields' });
@@ -494,7 +494,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageHash,
         originalPrediction,
         userCorrection || null,
-        wasAccurate || false
+        wasAccurate || false,
+        drinkingWindowAccepted || false
       );
       
       res.status(200).json({ message: 'Label analytics recorded successfully' });
