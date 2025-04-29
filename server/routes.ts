@@ -387,6 +387,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate consumed count from all consumption records
       const consumed = consumptions.reduce((total, consumption) => total + consumption.quantity, 0);
       
+      // For purchased count, we need to calculate the total bottles ever added to the collection
+      // This is different from just adding inCellar + consumed, as that can double-count bottles
+      // when many consumption records are created
+      
+      // Get unique wine IDs for all wines that have ever been in the collection
+      const allWineIds = new Set(wines.map(wine => wine.id));
+      
+      // Calculate total bottles purchased across all wines (original quantities)
+      // For wines that have been fully consumed, we'll use the quantity from consumption records
+      // For wines still in the cellar, we'll use their current quantity plus consumed bottles
+      let purchased = 0;
+      
+      // First, count bottles for each wine by adding its original quantity
+      allWineIds.forEach(wineId => {
+        const wine = wines.find(w => w.id === wineId);
+        if (wine) {
+          // For active wines, count their current quantity
+          if (!wine.consumedStatus || wine.consumedStatus === 'in_cellar') {
+            purchased += wine.quantity || 0;
+          }
+          
+          // Add consumed bottles for this wine
+          const consumedBottles = consumptions
+            .filter(c => c.wineId === wineId)
+            .reduce((total, c) => total + c.quantity, 0);
+          
+          purchased += consumedBottles;
+        }
+      });
+      
       // Add detailed logging to debug the issue
       console.log("DETAILED STATS DEBUG:", {
         totalWines: wines.length,
@@ -406,12 +436,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: c.createdAt
         })),
         validConsumptions: validConsumptions.length,
-        consumptionQuantitySum: consumed
+        consumptionQuantitySum: consumed,
+        purchasedTotal: purchased
       });
-      
-      // Total purchased is the sum of what's in cellar plus what's been consumed
-      const totalInventory = inCellar + consumed;
-      const purchased = totalInventory;
       
       const totalValue = activeWines.reduce((total, wine) => {
         const value = wine.currentValue || 0;
