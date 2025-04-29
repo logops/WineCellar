@@ -71,45 +71,52 @@ export default function Collection() {
           </Button>
         </div>
         
-        {/* Toggle Buttons */}
-        <div className="mb-6 flex flex-col space-y-3">
-          <div className="inline-flex p-1 bg-cream-50 rounded-md self-start">
+        {/* Main Toggle Buttons */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="inline-flex p-1 bg-cream-50 rounded-md">
             <Button 
-              variant={activeTab === 'in-cellar' ? 'secondary' : 'ghost'}
-              onClick={() => setActiveTab('in-cellar')}
-              className="rounded-sm px-4 py-1"
+              variant={activeTab === 'in-cellar' ? 'default' : 'ghost'}
+              onClick={() => {
+                setActiveTab('in-cellar');
+                // Default to showing wines when switching to collection
+                setShowDashboard(false);
+              }}
+              className={`rounded-sm ${activeTab === 'in-cellar' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
               size="sm"
             >
               Collection
             </Button>
             <Button 
-              variant={activeTab === 'consumed' ? 'secondary' : 'ghost'}
+              variant={activeTab === 'consumed' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('consumed')}
-              className="rounded-sm px-4 py-1"
+              className={`rounded-sm ${activeTab === 'consumed' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
               size="sm"
             >
               Recent Activity
             </Button>
           </div>
           
-          <div className="inline-flex p-1 bg-cream-50 rounded-md self-start">
-            <Button 
-              variant={!showDashboard ? 'secondary' : 'ghost'}
-              onClick={() => setShowDashboard(false)}
-              className="rounded-sm px-4 py-1"
-              size="sm"
-            >
-              My Wines
-            </Button>
-            <Button 
-              variant={showDashboard ? 'secondary' : 'ghost'}
-              onClick={() => setShowDashboard(true)}
-              className="rounded-sm px-4 py-1"
-              size="sm"
-            >
-              Dashboard
-            </Button>
-          </div>
+          {/* Only show view toggle when on Collection tab */}
+          {activeTab === 'in-cellar' && (
+            <div className="inline-flex p-1 bg-cream-50 rounded-md">
+              <Button 
+                variant={!showDashboard ? 'default' : 'ghost'}
+                onClick={() => setShowDashboard(false)}
+                className={`rounded-sm ${!showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                size="sm"
+              >
+                My Wines
+              </Button>
+              <Button 
+                variant={showDashboard ? 'default' : 'ghost'}
+                onClick={() => setShowDashboard(true)}
+                className={`rounded-sm ${showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                size="sm"
+              >
+                Dashboard
+              </Button>
+            </div>
+          )}
         </div>
         
         {/* Dashboard View - shown conditionally */}
