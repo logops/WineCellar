@@ -232,10 +232,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
       
+      // If the wine is already marked as consumed, don't create duplicate consumption records
+      if (wine.consumedStatus === 'consumed') {
+        console.log(`Wine ID ${wine.id} is already marked as consumed. Skipping consumption record creation.`);
+        return res.status(200).json({ 
+          message: 'Wine is already consumed',
+          wine
+        });
+      }
+      
       const validatedData = insertConsumptionSchema.parse(consumptionData);
       const consumption = await storage.createConsumption(validatedData);
+      
+      // Mark the wine as consumed and update its quantity
+      console.log(`Updating wine with fields: { quantity: 0, consumedStatus: 'consumed' }`);
+      await storage.updateWine(wine.id, {
+        quantity: 0,
+        consumedStatus: 'consumed'
+      });
+      
       res.status(201).json(consumption);
     } catch (err) {
+      console.error('Error creating consumption:', err);
       handleZodError(err, res);
     }
   });
@@ -354,13 +372,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const inCellar = activeWines.reduce((total, wine) => total + (wine.quantity || 0), 0);
       const totalWines = activeWines.length;
       
-      // Get a list of valid consumption records (those that match wines marked as consumed)
+      // Get a list of valid consumption records based on consumed wines
+      // We'll create a map of wine IDs to the number of bottles consumed
+      const consumedWinesMap = new Map<number, boolean>();
+      
+      // Mark all wines that are explicitly set as 'consumed'
+      consumedWines.forEach(wine => {
+        consumedWinesMap.set(wine.id, true);
+      });
+      
+      // Only count consumption records for wines marked as consumed
       const validConsumptions = consumptions.filter(consumption => {
-        // Get the wine referenced by this consumption
-        const consumedWine = wines.find(wine => wine.id === consumption.wineId);
-        // Count only if it belongs to a wine marked as consumed or if it's been fully consumed
-        return consumedWine?.consumedStatus === 'consumed' || 
-               (consumedWine && (consumedWine.quantity === 0 || consumedWine.quantity === null));
+        return consumedWinesMap.has(consumption.wineId);
       });
       
       // Calculate consumed count from validated consumptions

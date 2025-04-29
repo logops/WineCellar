@@ -93,31 +93,29 @@ export default function ConsumeWineForm({ onSuccess }: ConsumeWineFormProps) {
     
     setIsSubmitting(true);
     try {
-      // Create consumption record
-      await apiRequest("POST", "/api/consumptions", {
+      // Create consumption record - the backend will handle marking the wine as consumed
+      const response = await apiRequest("POST", "/api/consumptions", {
         ...values,
       });
       
-      // Update the wine status if all bottles are consumed
-      if (selectedWine && (selectedWine.quantity ?? 0) <= values.quantity) {
-        await apiRequest("PATCH", `/api/wines/${selectedWine.id}`, {
-          quantity: 0,
-          consumedStatus: 'consumed', // Mark as consumed
+      // Check if the API returned a success or already-consumed message
+      const result = await response.json();
+      const isAlreadyConsumed = result.message === 'Wine is already consumed';
+      
+      if (isAlreadyConsumed) {
+        toast({
+          title: "Wine Already Consumed",
+          description: `${selectedWine.producer} ${selectedWine.name} is already marked as consumed.`,
         });
-      } else if (selectedWine) {
-        // Just reduce the quantity
-        await apiRequest("PATCH", `/api/wines/${selectedWine.id}`, {
-          quantity: (selectedWine.quantity ?? 0) - values.quantity,
+      } else {
+        toast({
+          title: "Wine Consumed",
+          description: `${values.quantity} bottle${values.quantity > 1 ? 's' : ''} of ${selectedWine.producer} ${selectedWine.name} marked as consumed.`,
         });
       }
 
-      toast({
-        title: "Wine Consumed",
-        description: `${values.quantity} bottle${values.quantity > 1 ? 's' : ''} of ${selectedWine.producer} ${selectedWine.name} marked as consumed.`,
-      });
-
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/wines', 'in_cellar'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
       queryClient.invalidateQueries({ queryKey: ['/api/consumptions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       
