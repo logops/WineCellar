@@ -366,6 +366,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate consumed count from validated consumptions
       const consumed = validConsumptions.reduce((total, consumption) => total + consumption.quantity, 0);
       
+      // Add detailed logging to debug the issue
+      console.log("DETAILED STATS DEBUG:", {
+        totalWines: wines.length,
+        activeWines: activeWines.length,
+        consumedWines: consumedWines.length,
+        consumedWineDetails: consumedWines.map(w => ({
+          id: w.id,
+          name: `${w.vintage} ${w.producer} ${w.name}`,
+          quantity: w.quantity,
+          status: w.consumedStatus
+        })),
+        consumptions: consumptions.length,
+        consumptionDetails: consumptions.map(c => ({
+          id: c.id,
+          wineId: c.wineId,
+          quantity: c.quantity,
+          date: c.createdAt
+        })),
+        validConsumptions: validConsumptions.length,
+        consumptionQuantitySum: consumed
+      });
+      
       // Total purchased is the sum of what's in cellar plus what's been consumed
       const totalInventory = inCellar + consumed;
       const purchased = totalInventory;
