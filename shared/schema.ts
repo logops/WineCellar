@@ -105,5 +105,6 @@ export const labelAnalytics = pgTable("label_analytics", {
   originalPrediction: jsonb("original_prediction").notNull(),
   userCorrection: jsonb("user_correction"),
   wasAccurate: boolean("was_accurate").default(false),
+  drinkingWindowAccepted: boolean("drinking_window_accepted").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });

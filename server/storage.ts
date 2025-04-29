@@ -41,7 +41,7 @@ export interface IStorage {
   deleteWishlistItem(id: number): Promise<boolean>;
   
   // Label recognition analytics
-  recordLabelAnalytics(userId: number, imageHash: string, originalPrediction: any, userCorrection: any | null, wasAccurate: boolean): Promise<void>;
+  recordLabelAnalytics(userId: number, imageHash: string, originalPrediction: any, userCorrection: any | null, wasAccurate: boolean, drinkingWindowAccepted?: boolean): Promise<void>;
   
   // Session store for authentication
   sessionStore: session.Store;
@@ -193,7 +193,8 @@ export class MemStorage implements IStorage {
     imageHash: string, 
     originalPrediction: any, 
     userCorrection: any | null, 
-    wasAccurate: boolean
+    wasAccurate: boolean,
+    drinkingWindowAccepted?: boolean
   ): Promise<void> {
     // In memory implementation just logs the analytics
     console.log('Label Analytics Recorded:', {
@@ -201,7 +202,8 @@ export class MemStorage implements IStorage {
       imageHash,
       wasAccurate,
       originalPrediction,
-      userCorrection
+      userCorrection,
+      drinkingWindowAccepted
     });
     // No persistent storage in memory implementation
   }
@@ -561,7 +563,8 @@ export class DatabaseStorage implements IStorage {
     imageHash: string, 
     originalPrediction: any, 
     userCorrection: any | null, 
-    wasAccurate: boolean
+    wasAccurate: boolean,
+    drinkingWindowAccepted?: boolean
   ): Promise<void> {
     try {
       // Import labelAnalytics schema for database operations
@@ -572,6 +575,7 @@ export class DatabaseStorage implements IStorage {
         originalPrediction,
         userCorrection,
         wasAccurate,
+        drinkingWindowAccepted: drinkingWindowAccepted || false,
       });
       console.log('Label analytics recorded successfully');
     } catch (error) {
