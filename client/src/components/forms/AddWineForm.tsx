@@ -269,6 +269,24 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     try {
+      // Check for required fields - allow numeric vintage or "NV" for non-vintage wines
+      if (!values.vintage && values.vintage !== 0) { // Allow 0 as a value for "NV" (Non-Vintage)
+        // Show a more descriptive error
+        toast({
+          title: "Missing Vintage",
+          description: "Please enter a vintage year or use 0 for non-vintage wines.",
+          variant: "destructive"
+        });
+        
+        form.setError("vintage", {
+          type: "manual",
+          message: "Enter vintage year or 0 for non-vintage"
+        });
+        
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Apply drinking window based on selection
       const now = new Date();
       const currentYear = now.getFullYear();
@@ -387,11 +405,14 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                       <FormControl>
                         <Input 
                           type="number" 
-                          placeholder="e.g. 2015" 
+                          placeholder="e.g. 2015 (or 0 for non-vintage)" 
                           {...field}
                           value={field.value || ""}
                         />
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        Enter vintage year or use 0 for non-vintage wines
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -741,8 +762,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                             
                             toast({
                               title: "Recommendation Ignored",
-                              description: "You can set a custom drinking window below.",
-                              variant: "secondary"
+                              description: "You can set a custom drinking window below."
                             });
                           }}
                         >
@@ -970,7 +990,11 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               // Handle the recognition result by updating the form fields
               form.setValue("producer", recognitionResult.producer || "");
               form.setValue("name", recognitionResult.name || "");
-              form.setValue("vintage", recognitionResult.vintage || undefined);
+              
+              // Set a default current year vintage if not detected
+              const currentYear = new Date().getFullYear();
+              form.setValue("vintage", recognitionResult.vintage || currentYear);
+              
               form.setValue("region", recognitionResult.region || "");
               form.setValue("subregion", recognitionResult.subregion || "");
               form.setValue("grapeVarieties", recognitionResult.grapeVarieties || "");
