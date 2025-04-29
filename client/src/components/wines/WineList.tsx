@@ -4,6 +4,7 @@ import { Wine } from "@shared/schema";
 import WineListItem from "./WineListItem";
 import WineListHeader from "./WineListHeader";
 import SpreadsheetView from "./SpreadsheetView";
+import { WineFilters } from "./WineFilters";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Table2, LayoutGrid, Search } from "lucide-react";
+import { Table2, LayoutGrid, Search, Filter } from "lucide-react";
 
 const sortWines = (wines: Wine[], sortBy: string): Wine[] => {
   const sortedWines = [...wines];
@@ -49,6 +50,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'spreadsheet'>(defaultView);
+  const [showFilters, setShowFilters] = useState(false);
   const itemsPerPage = 10;
 
   const { data: wines, isLoading, refetch } = useQuery<Wine[]>({ 
@@ -122,6 +124,25 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   // Calculate total bottles
   const totalBottles = sortedWines.reduce((sum, wine) => sum + (wine.quantity || 0), 0);
   
+  // Calculate data for filters
+  const typeCounts = sortedWines.reduce((counts: Record<string, number>, wine) => {
+    const type = wine.type || 'Other';
+    counts[type] = (counts[type] || 0) + 1;
+    return counts;
+  }, {});
+  
+  const regionCounts = sortedWines.reduce((counts: Record<string, number>, wine) => {
+    const region = wine.region || 'Unknown';
+    counts[region] = (counts[region] || 0) + 1;
+    return counts;
+  }, {});
+  
+  const vintageCounts = sortedWines.reduce((counts: Record<string, number>, wine) => {
+    const vintage = wine.vintage?.toString() || 'Unknown';
+    counts[vintage] = (counts[vintage] || 0) + 1;
+    return counts;
+  }, {});
+  
   // Pagination
   const totalPages = Math.ceil(sortedWines.length / itemsPerPage);
   const currentWines = sortedWines.slice(
@@ -130,136 +151,31 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="p-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-medium text-gray-800 mb-1">Wine Type</h2>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 bg-cream-50 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              All <span className="ml-1 text-gray-500">(86)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              Red <span className="ml-1 text-gray-500">(58)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              White <span className="ml-1 text-gray-500">(16)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              Sparkling <span className="ml-1 text-gray-500">(8)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              Dessert <span className="ml-1 text-gray-500">(4)</span>
-            </Button>
-          </div>
-        </div>
-        
-        <div className="mb-6">
-          <h2 className="text-xl font-medium text-gray-800 mb-1">Region</h2>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 bg-cream-50 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              All <span className="ml-1 text-gray-500">(86)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              France <span className="ml-1 text-gray-500">(42)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              Italy <span className="ml-1 text-gray-500">(18)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              USA <span className="ml-1 text-gray-500">(15)</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full px-4 py-1 border-gray-200 hover:bg-cream-100 text-gray-700 font-normal"
-            >
-              Spain <span className="ml-1 text-gray-500">(11)</span>
-            </Button>
-          </div>
-        </div>
-        
-        <div className="mb-6">
-          <h2 className="text-xl font-medium text-gray-800 mb-1">More Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            <div>
-              <Select onValueChange={(val) => console.log(val)} defaultValue="vintage">
-                <SelectTrigger className="w-full border-gray-200">
-                  <SelectValue placeholder="Vintage" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vintage">Vintage</SelectItem>
-                  <SelectItem value="2020">2020</SelectItem>
-                  <SelectItem value="2019">2019</SelectItem>
-                  <SelectItem value="2018">2018</SelectItem>
-                  <SelectItem value="2017">2017</SelectItem>
-                  <SelectItem value="older">Older</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select onValueChange={(val) => console.log(val)} defaultValue="varietal">
-                <SelectTrigger className="w-full border-gray-200">
-                  <SelectValue placeholder="Varietal" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="varietal">Varietal</SelectItem>
-                  <SelectItem value="cabernet">Cabernet Sauvignon</SelectItem>
-                  <SelectItem value="pinot">Pinot Noir</SelectItem>
-                  <SelectItem value="chardonnay">Chardonnay</SelectItem>
-                  <SelectItem value="sauvignon">Sauvignon Blanc</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-gray-600"
-            >
-              Clear Filters
-            </Button>
-          </div>
-        </div>
-      </div>
+    <>
+      {/* Sidebar Filters */}
+      <WineFilters
+        isOpen={showFilters}
+        onToggle={() => setShowFilters(!showFilters)}
+        onFilterChange={() => {}} // We'll implement this later
+        totalCount={sortedWines.length}
+        regionCounts={regionCounts}
+        typeCounts={typeCounts}
+        vintageCounts={vintageCounts}
+      />
       
-      <div className="border-t border-gray-100">
+      <div className={`bg-white rounded-lg shadow-sm overflow-hidden ${showFilters ? 'ml-64' : ''} transition-all duration-300`}>
+        {/* Filter button for mobile/tablet */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="m-4 border-gray-200"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter className="mr-2 h-4 w-4" />
+          Filters
+        </Button>
+        
+        <div className="border-t border-gray-100">
         <div className="px-6 py-4 flex justify-between items-center">
           <div className="text-sm text-gray-600">
             {viewMode === 'card' && (
@@ -454,6 +370,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }
