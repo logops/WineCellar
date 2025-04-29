@@ -859,19 +859,27 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         </TabsContent>
         
         <TabsContent value="label">
-          <div className="text-center py-12">
-            <div className="mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-burgundy-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium mb-2">Capture Wine Label</h3>
-            <p className="text-gray-600 mb-4">Take a photo of the wine label to identify and fill in wine details automatically.</p>
-            <Button onClick={() => setEntryMethod("manual")} variant="outline">
-              Switch to Manual Entry
-            </Button>
-          </div>
+          <WineLabelRecognition 
+            onResult={(recognitionResult) => {
+              // Handle the recognition result by updating the form fields
+              form.setValue("producer", recognitionResult.producer || "");
+              form.setValue("name", recognitionResult.name || "");
+              form.setValue("vintage", recognitionResult.vintage || undefined);
+              form.setValue("region", recognitionResult.region || "");
+              form.setValue("subregion", recognitionResult.subregion || "");
+              form.setValue("grapeVarieties", recognitionResult.grapeVarieties || "");
+              form.setValue("type", recognitionResult.type?.toLowerCase() || "red");
+              
+              // Switch to manual entry form to allow user to edit or complete missing fields
+              setEntryMethod("manual");
+              
+              toast({
+                title: "Wine Label Recognized",
+                description: "The wine details have been filled in. Please review and make any necessary changes.",
+              });
+            }}
+            onCancel={() => setEntryMethod("manual")}
+          />
         </TabsContent>
       </Tabs>
     </div>

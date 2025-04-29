@@ -107,8 +107,15 @@ export async function handleWineLabelAnalysis(req: Request, res: Response) {
       base64Data = base64Data.split(',')[1];
     }
 
+    console.log('Starting wine label analysis with Claude API...');
+    
     // Analyze the wine label using Claude
     const analysisResult = await analyzeWineLabel(base64Data);
+    
+    console.log('Wine label analysis result:', 
+      analysisResult.success ? 'Success' : 'Failed', 
+      analysisResult.success ? analysisResult.data : analysisResult.error
+    );
 
     if (!analysisResult.success) {
       return res.status(500).json({
