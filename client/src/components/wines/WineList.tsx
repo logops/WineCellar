@@ -39,12 +39,16 @@ const sortWines = (wines: Wine[], sortBy: string): Wine[] => {
   }
 };
 
-export default function WineList() {
+interface WineListProps {
+  defaultView?: 'card' | 'spreadsheet';
+}
+
+export default function WineList({ defaultView = 'card' }: WineListProps) {
   const [sortBy, setSortBy] = useState('default');
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<'card' | 'spreadsheet'>('card');
+  const [viewMode, setViewMode] = useState<'card' | 'spreadsheet'>(defaultView);
   const itemsPerPage = 10;
 
   const { data: wines, isLoading, refetch } = useQuery<Wine[]>({ 

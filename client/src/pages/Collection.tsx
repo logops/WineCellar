@@ -2,15 +2,30 @@ import { useState, useEffect } from "react";
 import TabNavigation from "@/components/ui/TabNavigation";
 import WineList from "@/components/wines/WineList";
 import ConsumedWinesList from "@/components/wines/ConsumedWinesList";
+import CollectionDashboard from "@/components/dashboard/CollectionDashboard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "@/components/forms/AddWineForm";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, LayoutDashboard } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Collection() {
   const [showAddWineModal, setShowAddWineModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'in-cellar' | 'consumed'>('in-cellar');
+  const [showDashboard, setShowDashboard] = useState(false);
+  
+  // Get statistics data
+  const { data: statistics } = useQuery({ 
+    queryKey: ['/api/statistics'],
+    queryFn: async () => {
+      const response = await fetch('/api/statistics');
+      if (!response.ok) {
+        throw new Error('Failed to fetch statistics');
+      }
+      return response.json();
+    }
+  });
   
   // Check URL hash to determine initial active tab
   useEffect(() => {
@@ -44,61 +59,47 @@ export default function Collection() {
     <>
       <TabNavigation tabs={tabs} activeTab="My Cellar" />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-serif font-medium text-gray-800">My Wine Collection</h1>
-          <Button 
-            onClick={() => setShowAddWineModal(true)}
-            className="bg-burgundy-600 hover:bg-burgundy-700 text-white font-medium"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Wine
-          </Button>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-serif font-medium text-gray-800">My Wine Collection</h1>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline"
+              className={`text-burgundy-600 border-burgundy-200 ${showDashboard ? 'bg-cream-100' : ''}`}
+              size="sm"
+              onClick={() => setShowDashboard(!showDashboard)}
+            >
+              <LayoutDashboard className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
+            <Button 
+              onClick={() => setShowAddWineModal(true)}
+              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Wine
+            </Button>
+          </div>
         </div>
         
-        {/* Summary Card - Using real data */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-xl font-medium text-gray-700 mb-2">Collection Summary</h2>
-          <p className="text-gray-500 text-sm mb-6">Overview of your wine cellar</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Total Bottles</p>
-              <p className="text-3xl font-medium text-gray-800">3</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Total Value</p>
-              <p className="text-3xl font-medium text-gray-800">$297</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Average Rating</p>
-              <p className="text-3xl font-medium text-gray-800">90<span className="text-base text-gray-500">/100</span></p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Drinking Window</p>
-              <p className="text-3xl font-medium text-gray-800">2<span className="text-base text-gray-500"> bottles ready</span></p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-8 pt-6 border-t border-gray-100">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Red</p>
-              <p className="text-2xl font-medium text-gray-800">2<span className="text-sm text-gray-500 ml-1">bottles</span></p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">White</p>
-              <p className="text-2xl font-medium text-gray-800">1<span className="text-sm text-gray-500 ml-1">bottle</span></p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Sparkling</p>
-              <p className="text-2xl font-medium text-gray-800">0<span className="text-sm text-gray-500 ml-1">bottles</span></p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Dessert</p>
-              <p className="text-2xl font-medium text-gray-800">0<span className="text-sm text-gray-500 ml-1">bottles</span></p>
-            </div>
-          </div>
-        </div>
+        {/* Dashboard View - shown conditionally */}
+        {showDashboard && statistics && (
+          <CollectionDashboard 
+            statistics={{
+              inCellar: statistics.inCellar || 0,
+              totalWines: statistics.totalWines || 0,
+              consumed: statistics.consumed || 0,
+              purchased: statistics.purchased || 0,
+              redCount: statistics.redCount || 0,
+              whiteCount: statistics.whiteCount || 0,
+              sparklingCount: statistics.sparklingCount || 0,
+              otherCount: statistics.otherCount || 0,
+              totalValue: statistics.totalValue || 0,
+              averageRating: statistics.averageRating || 0,
+              readyToDrink: statistics.readyToDrink || 0
+            }}
+          />
+        )}
         
         <Tabs 
           defaultValue="in-cellar" 
@@ -122,7 +123,7 @@ export default function Collection() {
           </TabsList>
           
           <TabsContent value="in-cellar" className="pt-4 animate-in fade-in-50">
-            <WineList />
+            <WineList defaultView="spreadsheet" />
           </TabsContent>
           
           <TabsContent value="consumed" className="pt-4 animate-in fade-in-50">
