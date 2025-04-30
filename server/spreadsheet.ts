@@ -65,21 +65,26 @@ interface BatchProcessResult {
 }
 
 // Mapping of common column names to our schema fields
+// Field mappings with high-priority keywords first for better matching
 const commonColumnMappings: Record<string, string[]> = {
-  'producer': ['producer', 'winery', 'vineyard', 'château', 'domaine', 'bodega', 'estate'],
-  'name': ['name', 'wine name', 'wine', 'cuvée', 'bottling'],
+  'producer': ['producer', 'winery', 'winery name', 'maker', 'château', 'domaine', 'bodega', 'estate', 'vineyard'],
+  'name': ['name', 'wine name', 'wine', 'cuvée', 'bottling', 'label', 'product'],
   'vintage': ['vintage', 'year', 'vin'],
-  'type': ['type', 'wine type', 'color'],
-  'grapeVarieties': ['varietal', 'variety', 'grape', 'cepage', 'grape variety', 'grapes', 'grape varieties'],
-  'region': ['region', 'appellation', 'ava', 'growing region'],
-  'subregion': ['sub region', 'subregion', 'sub-region'],
-  'purchasePrice': ['purchase price', 'price', 'cost', 'bought for', 'purchase cost'],
-  'currentValue': ['current value', 'value', 'market price', 'current price'],
-  'quantity': ['quantity', 'qty', 'bottles', 'count', 'number of bottles'],
-  'notes': ['notes', 'comments', 'description', 'tasting notes'],
-  'drinkingWindowStart': ['drinking window start', 'drink after', 'start drinking', 'drink from'],
-  'drinkingWindowEnd': ['drinking window end', 'drink before', 'drink until', 'drink by'],
-  'storageLocation': ['storage', 'location', 'cellar location', 'stored in', 'storage location', 'bin']
+  'type': ['type', 'wine type', 'color', 'style', 'kind'],
+  'grapeVarieties': ['varietal', 'variety', 'grape', 'cepage', 'grape variety', 'grapes', 'grape varieties', 'blend'],
+  // Removed 'appellation' from region to handle special mapping logic
+  'region': ['region', 'growing region', 'area', 'provenance', 'country', 'origin'],
+  'subregion': ['sub region', 'subregion', 'sub-region', 'district'],
+  'purchasePrice': ['purchase price', 'price', 'cost', 'bought for', 'purchase cost', 'price paid'],
+  'currentValue': ['current value', 'value', 'market price', 'current price', 'worth'],
+  'quantity': ['quantity', 'qty', 'bottles', 'count', 'number of bottles', 'bottle count', 'amount'],
+  'notes': ['notes', 'comments', 'description', 'tasting notes', 'review', 'details'],
+  'drinkingWindowStart': ['drinking window start', 'drink after', 'start drinking', 'drink from', 'ready from'],
+  'drinkingWindowEnd': ['drinking window end', 'drink before', 'drink until', 'drink by', 'drink through'],
+  'storageLocation': ['storage', 'location', 'cellar location', 'stored in', 'storage location', 'bin', 'rack'],
+  // New special fields for region mapping logic
+  'appellation': ['appellation', 'ava', 'aoc', 'doc', 'docg', 'ava region'],
+  'subAppellation': ['sub appellation', 'sub-appellation', 'sub ava', 'sub-ava']
 };
 
 /**
@@ -263,7 +268,32 @@ export async function processBatch(
     let storageLocation: string | undefined;
     const missingRequiredFields: string[] = [];
     
-    // Process each field mapping
+    // First pass - collect all field values including special fields
+    const fieldValues: Record<string, any> = {};
+    let hasAppellation = false;
+    let hasSubAppellation = false;
+    let hasRegion = false;
+    
+    for (const mapping of fieldMappings) {
+      if (mapping.field === 'unknown') continue;
+      
+      const value = row[mapping.columnHeader];
+      
+      // Skip empty values but record fields we've encountered
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      
+      // Record all field values for later processing
+      fieldValues[mapping.field] = value;
+      
+      // Track special region-related fields
+      if (mapping.field === 'appellation') hasAppellation = true;
+      if (mapping.field === 'subAppellation') hasSubAppellation = true;
+      if (mapping.field === 'region') hasRegion = true;
+    }
+    
+    // Second pass - process the fields with proper logic
     for (const mapping of fieldMappings) {
       if (mapping.field === 'unknown') continue;
       
@@ -285,6 +315,25 @@ export async function processBatch(
         if (storageLocation) {
           newStorageLocations.add(storageLocation);
         }
+        continue;
+      }
+      
+      // Handle region mapping logic based on what's available
+      // If we have appellation, map it to region
+      if (mapping.field === 'appellation') {
+        mappedData.region = String(value).trim();
+        continue;
+      }
+      
+      // If we have sub-appellation, map it to subregion
+      if (mapping.field === 'subAppellation') {
+        mappedData.subregion = String(value).trim();
+        continue;
+      }
+      
+      // Only map region field if no appellation is present
+      if (mapping.field === 'region' && !hasAppellation) {
+        mappedData.region = String(value).trim();
         continue;
       }
       
@@ -347,6 +396,51 @@ export async function processBatch(
       // Lower confidence if using medium confidence mapping
       if (mapping.confidence === ConfidenceLevel.MEDIUM && overallConfidence === ConfidenceLevel.HIGH) {
         overallConfidence = ConfidenceLevel.MEDIUM;
+      }
+    }
+    
+    // Attempt to intelligently extract producer and wine name
+    // Sometimes the entire wine name might be in a single field with both producer and name
+    if (mappedData.producer && !mappedData.name) {
+      const producerValue = String(mappedData.producer);
+      
+      // Look for common patterns like "2018 Producer Wine Name"
+      const fullNamePattern = /^((?:19|20)\d{2})\s+([A-Za-z\u00C0-\u00FF\s'&]+?)(?:\s+)(.+)$/;
+      const match = producerValue.match(fullNamePattern);
+      
+      if (match) {
+        // Extract vintage, producer and name
+        const [_, vintage, producer, name] = match;
+        mappedData.vintage = parseInt(vintage);
+        mappedData.producer = producer.trim();
+        mappedData.name = name.trim();
+      } else {
+        // Try to extract just producer and name (no vintage)
+        // Look for patterns like "Producer Wine Name" where we can split on the first occurrence of key words
+        const producerNameSplit = producerValue.match(/^([A-Za-z\u00C0-\u00FF\s'&]+?)(?:\s+)((?:Cabernet|Chardonnay|Pinot|Merlot|Sauvignon|Syrah|Vineyard|Cuvée|Estate|Reserve|Grand|Cru|Premier|Clos|Château).+)$/);
+        
+        if (producerNameSplit) {
+          const [_, producer, name] = producerNameSplit;
+          mappedData.producer = producer.trim();
+          mappedData.name = name.trim();
+        }
+      }
+    }
+    
+    // For the Casa Lapostolle example and similar cases
+    // If name contains both producer and wine name, extract correctly
+    if (mappedData.name && !mappedData.producer) {
+      const nameValue = String(mappedData.name);
+      
+      // Look for a pattern like "Casa Lapostolle Le Petit Clos Apalta"
+      // Common producers are 1-3 words
+      const producerNamePattern = /^([A-Za-z\u00C0-\u00FF\s'&]{2,30}?)(?:\s+)([A-Za-z\u00C0-\u00FF\s'&]{3,})$/;
+      const match = nameValue.match(producerNamePattern);
+      
+      if (match) {
+        const [_, producer, name] = match;
+        mappedData.producer = producer.trim();
+        mappedData.name = name.trim();
       }
     }
     
