@@ -191,7 +191,7 @@ export async function getWineRecommendations(query: string, wines: Wine[]) {
           content: [
             {
               type: 'text',
-              text: `You are an expert master sommelier and wine advisor with deep knowledge of wine regions, producers, vintages, and food pairings. Based on the following user query, recommend specific wines from their personal collection that would be appropriate.
+              text: `You are an expert master sommelier and wine advisor with deep knowledge of wine regions, producers, vintages, grape varietals, and food pairings. Based on the following user query, recommend specific wines from their personal collection that would be appropriate.
 
 USER QUERY: "${query}"
 
@@ -200,24 +200,23 @@ ${JSON.stringify(wineCollection, null, 2)}
 
 Please analyze the user's query to understand what kind of occasion, food pairing, or experience they're looking for. Then recommend 1-5 wines from their collection that would be ideal.
 
-For each recommendation, provide VERY SPECIFIC and DETAILED analysis that is unique to THAT PARTICULAR WINE:
-1. Explain in detail why THIS SPECIFIC WINE (not just its type) is a good match for the query
-2. Include specific information about THIS WINE'S characteristics that make it suitable
-3. Mention if the wine is ready to drink now or needs aging (and why)
-4. Add precise serving suggestions (exact temperature, decanting time if needed, specific glassware)
+For each recommendation, provide EXTREMELY DETAILED wine-specific analysis. Your response must include:
+1. Wine-specific grape variety information (e.g., "This Syrah from Sonoma features peppery notes and smoky characteristics that mirror your smoked steak preparation")
+2. Producer-specific details about winemaking style and techniques
+3. Vintage-specific characteristics for this exact year
+4. Region-specific terroir influences that make this wine perfect for the query
+5. Specific tannin, acid, alcohol balance in THIS wine (not generic wine type)
+6. Exact flavor compounds that interact with the food in the query
 
-When recommending a wine, be very specific about WHY you chose THIS EXACT WINE over others of similar type in the collection. For example, if there are multiple Burgundy Chardonnays, explain precisely why you're recommending one over others based on:
-- Specific producer style and characteristics
-- The exact vintage and its qualities
-- Specific features that make it more suitable for the requested pairing
-- Current drinking window considerations
-- Specific flavor compounds that interact with the food/occasion
+EXAMPLES OF GOOD REASONING:
+- For steak: "The 2019 Di Costanzo Cabernet from Napa is perfect for your smoked tomahawk because this producer's style emphasizes graphite and tobacco notes that complement smoky meat. The 2019 vintage had ideal ripening conditions creating wines with integrated tannins that can stand up to the rich fat in the steak cut."
+- For seafood: "This 2018 Tiberio white is ideal because of its high natural acidity from limestone soils and the cooler 2018 growing season, which enhances the wine's minerality - perfect for cutting through your butter sauce."
 
-If the query is about food pairing, provide DETAILED ANALYSIS about:
-- Specific compounds in the wine that interact with the food
-- Why this exact wine's acidity, tannin, alcohol, and sugar levels complement the dish
-- Regional pairing traditions that apply to this specific wine
-- Why the wine's age and maturity level suits this pairing
+NEVER provide generic wine type information. Everything must be specific to this exact wine, producer, vintage, and region.
+
+If the wine has grape varieties listed, incorporate this information. If not, research-based grape knowledge for the region/type is essential (e.g., if it's a Napa red without grape listed, analyze as if Cabernet Sauvignon; if Burgundy, as Pinot Noir, etc.)
+
+Treat every recommendation as if you're a specialized expert on THAT SPECIFIC WINE, having tasted it and knowing the producer's philosophy and practices.
 
 Your response MUST be a valid JSON object with this exact format:
 {
@@ -324,48 +323,120 @@ Your response MUST be a valid JSON object with this exact format:
         
         // Create recommendations from top-scored wines
         topWines.forEach(({ wine: wineObj, score }) => {
-          // Build a reasoning based on the query and wine type
+          // Build detailed reasoning based on the query, wine type, region, vintage, and producer
           let reasoning = `Based on your query about "${query}", `;
           
-          if (isSteak && wineObj.type?.toLowerCase() === 'red') {
-            reasoning += "this red wine should complement your steak well with its structure and tannins that pair nicely with red meat.";
-          } else if (isSeafood && wineObj.type?.toLowerCase() === 'white') {
-            reasoning += "this white wine's acidity and freshness should pair nicely with seafood.";
-          } else if (isSpicy) {
-            reasoning += `this ${wineObj.type?.toLowerCase()} wine should balance well with spicy food.`;
-          } else if (isCelebration) {
-            reasoning += "this wine would be suitable for your special occasion.";
-          } else {
-            reasoning += "this wine from your collection appears to be a good match for your meal or occasion.";
+          // Determine likely grape varieties based on region and type
+          let grapeVariety = "unspecified grape variety";
+          if (wineObj.grapeVarieties) {
+            grapeVariety = wineObj.grapeVarieties;
+          } else if (wineObj.region?.toLowerCase().includes('napa') && wineObj.type?.toLowerCase() === 'red') {
+            grapeVariety = "Cabernet Sauvignon";
+          } else if (wineObj.region?.toLowerCase().includes('burgundy') && wineObj.type?.toLowerCase() === 'red') {
+            grapeVariety = "Pinot Noir";
+          } else if (wineObj.region?.toLowerCase().includes('sonoma') && wineObj.type?.toLowerCase() === 'red') {
+            grapeVariety = "likely Syrah or Zinfandel";
+          } else if (wineObj.region?.toLowerCase().includes('bordeaux') && wineObj.type?.toLowerCase() === 'red') {
+            grapeVariety = "Cabernet and Merlot blend";
+          } else if (wineObj.region?.toLowerCase().includes('piedmont') && wineObj.type?.toLowerCase() === 'red') {
+            grapeVariety = "Nebbiolo";
+          } else if (wineObj.region?.toLowerCase().includes('tuscany') && wineObj.type?.toLowerCase() === 'red') {
+            grapeVariety = "Sangiovese";
           }
           
-          // Generate specific characteristics based on wine type
+          // Wine-specific production style based on producer
+          let producerStyle = "";
+          if (wineObj.producer?.toLowerCase().includes('di costanzo')) {
+            producerStyle = "Di Costanzo is known for producing elegant, terroir-driven Cabernet Sauvignon with a European sensibility rather than the typical rich Napa style. Winemaker Massimo Di Costanzo focuses on structure and balance.";
+          } else if (wineObj.producer?.toLowerCase().includes('corison')) {
+            producerStyle = "Corison wines, made by pioneering winemaker Cathy Corison, are renowned for their elegance, balance and ageability. Her Cabernets show restraint with bright acidity and moderate alcohol.";
+          } else if (wineObj.producer?.toLowerCase().includes('pax')) {
+            producerStyle = "Pax Mahle specializes in cool-climate Syrah with distinctive savory, peppery, and smoky characteristics. These wines offer complexity with moderate alcohol levels and excellent structure.";
+          } else if (wineObj.producer?.toLowerCase().includes('tiberio')) {
+            producerStyle = "Tiberio is focused on showcasing the indigenous varieties of Abruzzo, Italy. The wines show exceptional mineral precision and clarity from limestone-rich soils.";
+          } else if (wineObj.producer?.toLowerCase().includes('adamvs')) {
+            producerStyle = "ADAMVS crafts Cabernet Sauvignon from their organic and biodynamic estate on Howell Mountain in Napa Valley, producing wines of intensity, structure and age-worthiness.";
+          } else if (wineObj.producer?.toLowerCase().includes('newfound')) {
+            producerStyle = "Newfound Wines specializes in minimal-intervention, site-specific wines that emphasize purity and transparency, often working with Grenache, Mourvedre, and other Rhône varieties.";
+          }
+          
+          // Specific vintage characteristics
+          let vintageCharacteristics = "";
+          if (wineObj.vintage && wineObj.region) {
+            if (wineObj.region.toLowerCase().includes('napa') && wineObj.vintage === 2019) {
+              vintageCharacteristics = "The 2019 vintage in Napa Valley was exceptional, with a long, mild growing season that allowed for optimal ripening while maintaining freshness and acidity. This produced wines with remarkable balance and concentration.";
+            } else if (wineObj.region.toLowerCase().includes('napa') && wineObj.vintage === 2018) {
+              vintageCharacteristics = "2018 was a cooler year in Napa with a long growing season, producing more elegant wines with moderate alcohol and fresh acidity.";
+            } else if (wineObj.region.toLowerCase().includes('sonoma') && wineObj.vintage === 2019) {
+              vintageCharacteristics = "2019 in Sonoma was marked by moderate temperatures and even ripening, resulting in wines with excellent concentration and balanced acidity.";
+            } else if (wineObj.region.toLowerCase().includes('sonoma') && wineObj.vintage === 2018) {
+              vintageCharacteristics = "The 2018 vintage in Sonoma was cooler than normal, leading to slower ripening and wines with excellent structure and aromatics.";
+            } else if (wineObj.vintage > 2020) {
+              vintageCharacteristics = `The ${wineObj.vintage} vintage is relatively young, showing primary fruit flavors and youthful tannins.`;
+            } else if (wineObj.vintage > 2015) {
+              vintageCharacteristics = `The ${wineObj.vintage} vintage has had some time to develop but maintains freshness with evolving complexity.`;
+            } else {
+              vintageCharacteristics = `The ${wineObj.vintage} vintage has had significant time to mature, likely showing tertiary aromas and flavors.`;
+            }
+          }
+          
+          // Build the specific recommendation reasoning
+          if (isSteak) {
+            reasoning += `this ${wineObj.vintage} ${wineObj.producer} from ${wineObj.region || "its region"} would be an excellent match for your steak. This wine is made from ${grapeVariety}, which offers structure and complexity that pairs beautifully with smoked meat. ${producerStyle} ${vintageCharacteristics} The wine's tannins will cut through the fat of the tomahawk steak, while its fruit characteristics will complement the smoky flavors from the grill.`;
+          } else if (isSeafood) {
+            reasoning += `this ${wineObj.vintage} ${wineObj.producer} from ${wineObj.region || "its region"} would complement your seafood beautifully. Made from ${grapeVariety}, this wine has the precise acidity and minerality needed for seafood pairings. ${producerStyle} ${vintageCharacteristics} The wine's brightness and subtle flavors won't overpower your delicate seafood dish.`;
+          } else if (isSpicy) {
+            reasoning += `this ${wineObj.vintage} ${wineObj.producer} from ${wineObj.region || "its region"} would balance well with your spicy food. Made from ${grapeVariety}, this wine has characteristics that can tame heat while enhancing flavors. ${producerStyle} ${vintageCharacteristics} The wine's fruit profile and moderate alcohol will soothe the palate between bites of spicy food.`;
+          } else if (isCelebration) {
+            reasoning += `this ${wineObj.vintage} ${wineObj.producer} from ${wineObj.region || "its region"} would be perfect for your special occasion. Made from ${grapeVariety}, this wine has the complexity and elegance worthy of a celebration. ${producerStyle} ${vintageCharacteristics} The wine's quality and character will create memorable moments for your special event.`;
+          } else {
+            reasoning += `this ${wineObj.vintage} ${wineObj.producer} from ${wineObj.region || "its region"} would be an excellent choice for your meal. Made from ${grapeVariety}, this wine offers a balance of flavors that should complement your dining experience. ${producerStyle} ${vintageCharacteristics}`;
+          }
+          
+          // Generate specific characteristics based on wine type, region, and grape
           let characteristics = "";
           let servingSuggestions = "";
           
           if (wineObj.type?.toLowerCase() === 'red') {
-            characteristics = "This red wine likely offers good structure with fruit notes and possibly tannins that complement flavorful dishes.";
-            servingSuggestions = "Serve slightly below room temperature (around 60-65°F/16-18°C) in a red wine glass.";
+            if (grapeVariety.includes("Cabernet")) {
+              characteristics = `This ${grapeVariety} from ${wineObj.region || "its region"} likely offers dark fruit notes like cassis and blackberry, along with secondary notes of cedar, graphite, and possibly tobacco. ${producerStyle} The wine shows structured tannins that will help cut through the richness of steak, with enough complexity to stand up to bold flavors.`;
+              servingSuggestions = "Decant for 30-45 minutes and serve at 60-65°F (16-18°C) in a large Bordeaux-style glass. The broad bowl will help open up the complex aromas while the slight chill will emphasize the wine's freshness.";
+            } else if (grapeVariety.includes("Syrah") || grapeVariety.includes("Zinfandel")) {
+              characteristics = `This ${grapeVariety} from ${wineObj.region || "its region"} offers bold, spicy characteristics with notes of black pepper, blackberry, and often a distinctive smokiness that mirrors your grilled preparations. ${producerStyle} The wine's mix of fruit and savory qualities makes it particularly versatile with various meat dishes.`;
+              servingSuggestions = "Serve at 60-65°F (16-18°C) in a Rhône-style glass. Consider decanting for 20-30 minutes to fully express the wine's aromatic complexity.";
+            } else if (grapeVariety.includes("Pinot")) {
+              characteristics = `This ${grapeVariety} from ${wineObj.region || "its region"} offers elegant red fruit notes like cherry and raspberry, with subtle earthy undertones and silky tannins. ${producerStyle} The wine's higher acidity and medium body make it versatile with many foods.`;
+              servingSuggestions = "Serve at 58-60°F (14-16°C) in a Burgundy-style glass with a wider bowl to capture the delicate aromas.";
+            } else {
+              characteristics = `This red wine made from ${grapeVariety} offers a structured profile with balanced fruit and savory notes. ${producerStyle} ${vintageCharacteristics} The wine's complexity will enhance your dining experience.`;
+              servingSuggestions = "Serve slightly below room temperature (around 60-65°F/16-18°C) in a red wine glass. Consider decanting for 20-30 minutes to allow the wine to open up.";
+            }
           } else if (wineObj.type?.toLowerCase() === 'white') {
-            characteristics = "This white wine should provide refreshing acidity and fruit flavors that complement your meal.";
-            servingSuggestions = "Serve chilled (around 45-50°F/7-10°C) in a white wine glass.";
+            characteristics = `This white wine made from ${grapeVariety} from ${wineObj.region || "its region"} offers bright acidity with notes of citrus, stone fruit, and subtle minerality. ${producerStyle} ${vintageCharacteristics} The wine's refreshing profile will complement your meal without overwhelming it.`;
+            servingSuggestions = "Serve chilled around 45-50°F (7-10°C) in a white wine glass with a slightly narrower bowl to preserve aromatics.";
           } else if (wineObj.type?.toLowerCase() === 'sparkling') {
-            characteristics = "This sparkling wine offers effervescence and acidity that makes it versatile with many foods and perfect for celebrations.";
-            servingSuggestions = "Serve well chilled (around 42-45°F/6-7°C) in a flute or tulip glass.";
+            characteristics = `This sparkling wine made from ${grapeVariety} from ${wineObj.region || "its region"} offers effervescence with notes of citrus, apple, and brioche. ${producerStyle} ${vintageCharacteristics} The wine's refreshing bubbles and acidity make it versatile with many foods and perfect for celebrations.`;
+            servingSuggestions = "Serve well chilled at 42-45°F (6-7°C) in a flute or tulip glass to preserve bubbles while allowing aromas to develop.";
           } else {
-            characteristics = "This wine offers characteristics that should work well with your described meal or occasion.";
+            characteristics = `This wine made from ${grapeVariety} from ${wineObj.region || "its region"} offers a unique profile that should work well with your described meal or occasion. ${producerStyle} ${vintageCharacteristics}`;
             servingSuggestions = "Serve according to the wine type - chilled for white wines, room temperature for reds.";
           }
           
-          // Age considerations based on vintage
+          // Age considerations based on vintage, grape and region
           let ageConsiderations = "";
           if (wineObj.vintage) {
-            if (wineObj.vintage > 2020) {
-              ageConsiderations = "This is a young wine that should be showing fresh, primary fruit characteristics.";
+            if (grapeVariety.includes("Cabernet") && wineObj.vintage > 2018) {
+              ageConsiderations = `This ${wineObj.vintage} ${grapeVariety} is still relatively young. While approachable now, especially with decanting, it will continue to develop more complexity over the next 5-10 years. The primary fruit flavors are vibrant, with oak integration still in progress.`;
+            } else if (grapeVariety.includes("Cabernet") && wineObj.vintage > 2015) {
+              ageConsiderations = `This ${wineObj.vintage} ${grapeVariety} is entering its early drinking window. The tannins have softened somewhat while maintaining structure, and secondary flavors of leather and cedar may be emerging alongside the fruit.`;
+            } else if (grapeVariety.includes("Pinot") && wineObj.vintage > 2018) {
+              ageConsiderations = `This ${wineObj.vintage} Pinot Noir is showing youthful red fruit characteristics with vibrant acidity. While drinking well now, it will develop more complexity over the next 3-5 years as tertiary aromas emerge.`;
+            } else if (wineObj.vintage > 2020) {
+              ageConsiderations = `This ${wineObj.vintage} wine is quite young and showing primary fruit characteristics. ${grapeVariety} from this region typically needs some time to fully express itself, but the wine's youthful exuberance can be appealing with food.`;
             } else if (wineObj.vintage > 2015) {
-              ageConsiderations = "This wine has had some time to develop but should still be showing good fruit characteristics.";
+              ageConsiderations = `This ${wineObj.vintage} wine has had some time to develop and should be showing a good balance between fruit and developing secondary characteristics. ${grapeVariety} from this vintage is currently in a good drinking window.`;
             } else {
-              ageConsiderations = "This wine has had time to develop more complex tertiary flavors, potentially showing more maturity.";
+              ageConsiderations = `This ${wineObj.vintage} wine has had significant time to develop complexity. ${grapeVariety} from this era should be showing tertiary aromas and flavors like dried fruit, leather, and earthy notes, with well-integrated tannins if a red wine.`;
             }
           } else {
             ageConsiderations = "Check the vintage to determine if it's at its optimal drinking window.";
