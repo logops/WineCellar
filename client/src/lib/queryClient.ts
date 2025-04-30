@@ -23,6 +23,21 @@ export async function apiRequest(
   return res;
 }
 
+export async function uploadFile(
+  url: string,
+  formData: FormData,
+): Promise<Response> {
+  const res = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    credentials: "include",
+    // Don't set Content-Type header - the browser will set it automatically with the boundary
+  });
+
+  await throwIfResNotOk(res);
+  return res;
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;

@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Upload, FileSpreadsheet, ArrowRight, Check, X, Ban, AlertTriangle } from "lucide-react";
 import WineImportCard from './WineImportCard';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, uploadFile, queryClient } from '@/lib/queryClient';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Types for the wine data we'll receive from the backend
@@ -90,7 +90,7 @@ const SpreadsheetImport: React.FC = () => {
   // Upload file mutation
   const uploadMutation = useMutation({
     mutationFn: async (fileData: FormData) => {
-      const response = await apiRequest('POST', '/api/spreadsheet/upload', fileData);
+      const response = await uploadFile('/api/spreadsheet/upload', fileData);
       return response.json();
     },
     onSuccess: (data) => {
@@ -121,7 +121,7 @@ const SpreadsheetImport: React.FC = () => {
         formData.append('batchSize', batchSize.toString());
       }
       
-      const response = await apiRequest('POST', '/api/spreadsheet/process-batch', formData);
+      const response = await uploadFile('/api/spreadsheet/process-batch', formData);
       return response.json();
     },
     onSuccess: (data: BatchProcessResult) => {
