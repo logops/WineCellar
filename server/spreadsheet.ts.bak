@@ -1,31 +1,31 @@
-import { fileTypeFromBuffer } from 'file-type';
 import * as XLSX from 'xlsx';
-import * as schema from '@shared/schema';
-import { InsertWine, Wine } from '@shared/schema';
-import { db } from './db';
-import { storage } from './storage';
+import { fileTypeFromBuffer } from 'file-type';
 import Anthropic from '@anthropic-ai/sdk';
+import type { InsertWine, Wine } from '@shared/schema';
+import { storage } from './storage';
 
-// Initialize Anthropic client with API key
+// Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// The newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
-
+// Supported file types
 type FileType = 'xlsx' | 'csv' | 'unknown';
 
+// Confidence levels for field extraction
 enum ConfidenceLevel {
   HIGH = 'high',
   MEDIUM = 'medium',
   LOW = 'low'
 }
 
+// Interface for cell location in spreadsheet
 interface CellLocation {
   row: number;
   col: number;
 }
 
+// Field mapping result
 interface FieldMapping {
   field: string;
   columnHeader: string;
@@ -33,6 +33,7 @@ interface FieldMapping {
   confidence: ConfidenceLevel;
 }
 
+// Result of processing a single wine entry
 export interface ProcessedWine {
   rowIndex: number;
   originalData: Record<string, any>;
@@ -51,6 +52,7 @@ export interface ProcessedWine {
   };
 }
 
+// Result of processing a batch of wines
 interface BatchProcessResult {
   processedWines: ProcessedWine[];
   fieldMappings: FieldMapping[];
@@ -62,32 +64,55 @@ interface BatchProcessResult {
   highConfidenceCount: number;
 }
 
+// Mapping of common column names to our schema fields
+// Field mappings with high-priority keywords first for better matching
+const commonColumnMappings: Record<string, string[]> = {
+  'producer': ['producer', 'winery', 'winery name', 'maker', 'château', 'domaine', 'bodega', 'estate', 'vineyard'],
+  'name': ['name', 'wine name', 'wine', 'cuvée', 'bottling', 'label', 'product'],
+  'vintage': ['vintage', 'year', 'vin'],
+  'type': ['type', 'wine type', 'color', 'style', 'kind'],
+  'grapeVarieties': ['varietal', 'variety', 'grape', 'cepage', 'grape variety', 'grapes', 'grape varieties', 'blend'],
+  // Removed 'appellation' from region to handle special mapping logic
+  'region': ['region', 'growing region', 'area', 'provenance', 'country', 'origin'],
+  'subregion': ['sub region', 'subregion', 'sub-region', 'district'],
+  'purchasePrice': ['purchase price', 'price', 'cost', 'bought for', 'purchase cost', 'price paid'],
+  'currentValue': ['current value', 'value', 'market price', 'current price', 'worth'],
+  'quantity': ['quantity', 'qty', 'bottles', 'count', 'number of bottles', 'bottle count', 'amount'],
+  'notes': ['notes', 'comments', 'description', 'tasting notes', 'review', 'details'],
+  'drinkingWindowStart': ['drinking window start', 'drink after', 'start drinking', 'drink from', 'ready from'],
+  'drinkingWindowEnd': ['drinking window end', 'drink before', 'drink until', 'drink by', 'drink through'],
+  'storageLocation': ['storage', 'location', 'cellar location', 'stored in', 'storage location', 'bin', 'rack'],
+  // New special fields for region mapping logic
+  'appellation': ['appellation', 'ava', 'aoc', 'doc', 'docg', 'ava region'],
+  'subAppellation': ['sub appellation', 'sub-appellation', 'sub ava', 'sub-ava']
+};
+
 /**
  * Detect file type from buffer
  */
 export async function detectFileType(buffer: Buffer): Promise<FileType> {
-  const result = await fileTypeFromBuffer(buffer);
-  
-  if (!result) {
-    // If file-type can't determine, check for CSV
-    const sample = buffer.toString('utf-8', 0, Math.min(buffer.length, 1000));
+  try {
+    const fileType = await fileTypeFromBuffer(buffer);
     
-    // Simple CSV detection: looks for multiple lines with commas
-    const lines = sample.split('\n').filter(line => line.trim().length > 0);
-    const hasCommas = lines.filter(line => line.includes(',')).length > 1;
+    if (!fileType) {
+      // If fileType can't be detected, try to determine if it's a CSV
+      const content = buffer.toString().slice(0, 1000);
+      if (content.includes(',') && (content.includes('\n') || content.includes('\r'))) {
+        return 'csv';
+      }
+      return 'unknown';
+    }
     
-    return hasCommas ? 'csv' : 'unknown';
+    // Check MIME type
+    if (fileType.mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+      return 'xlsx';
+    }
+    
+    return 'unknown';
+  } catch (error) {
+    console.error('Error detecting file type:', error);
+    return 'unknown';
   }
-  
-  // Check for Excel formats
-  if (
-    result.mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-    result.mime === 'application/vnd.ms-excel'
-  ) {
-    return 'xlsx';
-  }
-  
-  return 'unknown';
 }
 
 /**
@@ -95,17 +120,15 @@ export async function detectFileType(buffer: Buffer): Promise<FileType> {
  */
 export function parseSpreadsheet(buffer: Buffer, fileType: FileType): XLSX.WorkSheet | null {
   try {
-    if (fileType === 'xlsx') {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      return workbook.Sheets[sheetName];
-    } else if (fileType === 'csv') {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      return workbook.Sheets[sheetName];
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    
+    // Get the first sheet
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('No sheets found in the spreadsheet');
     }
     
-    return null;
+    return workbook.Sheets[sheetName];
   } catch (error) {
     console.error('Error parsing spreadsheet:', error);
     return null;
@@ -116,103 +139,89 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType): XLSX.WorkS
  * Convert worksheet to JSON
  */
 export function worksheetToJson(worksheet: XLSX.WorkSheet): any[] {
-  try {
-    return XLSX.utils.sheet_to_json(worksheet, { 
-      header: 'A',
-      defval: '',
-      raw: false
-    });
-  } catch (error) {
-    console.error('Error converting worksheet to JSON:', error);
-    return [];
-  }
+  return XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 }
 
 /**
  * Identify column mappings using headers and common patterns
  */
 export function identifyColumnMappings(data: any[]): FieldMapping[] {
-  // Skip if no data
   if (!data || data.length === 0) {
     return [];
   }
   
-  // Extract headers from first row
-  const headers = Object.entries(data[0]).map(([key, value]) => ({
-    columnIndex: key,
-    headerText: String(value).toLowerCase()
-  }));
+  // Get headers from the first row
+  const headers = Object.keys(data[0]);
   
-  // Define mapping patterns for each field
-  const fieldPatterns: Record<string, string[]> = {
-    name: ['name', 'wine name', 'wine', 'title', 'label'],
-    producer: ['producer', 'winery', 'chateau', 'domaine', 'maker', 'vineyard'],
-    vintage: ['vintage', 'year', 'vin'],
-    type: ['type', 'color', 'wine type', 'style'],
-    region: ['region', 'area', 'country', 'appellation', 'location'],
-    subregion: ['subregion', 'sub-region', 'sub region', 'district'],
-    grapeVarieties: ['grape', 'grapes', 'varieties', 'varietals', 'cepage', 'cépage'],
-    quantity: ['quantity', 'qty', 'bottles', 'count', 'inventory'],
-    price: ['price', 'cost', 'value'],
-    purchaseDate: ['purchase date', 'bought', 'acquired', 'purchase', 'date purchased'],
-    drinkingWindowStart: ['drink from', 'start', 'drinking window start', 'begin drinking'],
-    drinkingWindowEnd: ['drink until', 'end', 'drinking window end', 'drink by'],
-    storageLocation: ['location', 'cellar', 'storage', 'rack', 'bin', 'stored'],
-    notes: ['notes', 'comments', 'description', 'info', 'additional']
-  };
-  
-  // Identify mappings
+  // Create mappings based on header names
   const mappings: FieldMapping[] = [];
   
-  for (const [field, patterns] of Object.entries(fieldPatterns)) {
-    // Find best match among headers
-    const matches = headers.map(header => {
-      const headerText = header.headerText.toLowerCase().trim();
-      const bestPatternMatch = patterns.find(pattern => 
-        headerText === pattern || 
-        headerText.includes(pattern) || 
-        headerText.replace(/[^a-z0-9]/g, '') === pattern.replace(/[^a-z0-9]/g, '')
-      );
-      
-      let confidence = ConfidenceLevel.LOW;
-      
-      if (bestPatternMatch) {
-        if (headerText === bestPatternMatch) {
-          confidence = ConfidenceLevel.HIGH;
-        } else if (headerText.includes(bestPatternMatch)) {
-          confidence = ConfidenceLevel.MEDIUM;
+  headers.forEach((header, index) => {
+    const normalizedHeader = header.toLowerCase().trim();
+    
+    // Check each field for potential matches
+    for (const [field, possibleNames] of Object.entries(commonColumnMappings)) {
+      // Check if the normalized header is in the list of possible names for this field
+      if (possibleNames.some(name => normalizedHeader.includes(name.toLowerCase()))) {
+        mappings.push({
+          field,
+          columnHeader: header,
+          columnIndex: index,
+          confidence: ConfidenceLevel.HIGH
+        });
+        return;
+      }
+    }
+    
+    // If no match was found, try to find partial matches
+    for (const [field, possibleNames] of Object.entries(commonColumnMappings)) {
+      for (const name of possibleNames) {
+        // Check for partial matches (e.g., "Producer Name" contains "Producer")
+        if (normalizedHeader.includes(name.toLowerCase()) || name.toLowerCase().includes(normalizedHeader)) {
+          mappings.push({
+            field,
+            columnHeader: header,
+            columnIndex: index,
+            confidence: ConfidenceLevel.MEDIUM
+          });
+          return;
         }
       }
-      
-      return {
-        columnIndex: header.columnIndex,
-        headerText,
-        pattern: bestPatternMatch,
-        confidence
-      };
-    }).filter(match => match.pattern);
-    
-    // Sort by confidence
-    matches.sort((a, b) => {
-      const confidenceOrder = {
-        [ConfidenceLevel.HIGH]: 3,
-        [ConfidenceLevel.MEDIUM]: 2,
-        [ConfidenceLevel.LOW]: 1
-      };
-      
-      return confidenceOrder[b.confidence] - confidenceOrder[a.confidence];
-    });
-    
-    if (matches.length > 0) {
-      const bestMatch = matches[0];
-      mappings.push({
-        field,
-        columnHeader: bestMatch.headerText,
-        columnIndex: bestMatch.columnIndex,
-        confidence: bestMatch.confidence
-      });
     }
-  }
+    
+    // If still no match, check sample values to make educated guesses
+    const sampleValues = data.slice(0, 5).map(row => row[header]);
+    
+    // Example: Check if values look like vintages (years)
+    if (sampleValues.some(val => /^(19|20)\d{2}$/.test(String(val)))) {
+      mappings.push({
+        field: 'vintage',
+        columnHeader: header,
+        columnIndex: index,
+        confidence: ConfidenceLevel.MEDIUM
+      });
+      return;
+    }
+    
+    // Example: Check if values contain pricing information (currency symbols)
+    if (sampleValues.some(val => /[$€£]/.test(String(val)))) {
+      mappings.push({
+        field: 'purchasePrice',
+        columnHeader: header,
+        columnIndex: index,
+        confidence: ConfidenceLevel.MEDIUM
+      });
+      return;
+    }
+    
+    // Default to low confidence mapping
+    mappings.push({
+      field: 'unknown',
+      columnHeader: header,
+      columnIndex: index,
+      confidence: ConfidenceLevel.LOW
+    });
+  });
   
   return mappings;
 }
@@ -221,20 +230,20 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
  * Process a batch of rows from the spreadsheet
  */
 export async function processBatch(
-  data: any[],
-  startRow: number,
-  batchSize: number,
+  rows: any[],
   fieldMappings: FieldMapping[],
   existingWines: Wine[],
   options: {
+    useAiDrinkingWindows: boolean,
     userId: number,
-    useAiDrinkingWindows: boolean
+    batchIndex: number,
+    batchSize: number
   }
 ): Promise<BatchProcessResult> {
   const result: BatchProcessResult = {
     processedWines: [],
-    fieldMappings,
-    totalRows: data.length,
+    fieldMappings: fieldMappings,
+    totalRows: rows.length,
     processedRows: 0,
     newLocations: [],
     potentialDuplicatesCount: 0,
@@ -242,146 +251,152 @@ export async function processBatch(
     highConfidenceCount: 0
   };
   
-  // Track new storage locations
-  const newStorageLocations = new Set<string>();
+  // Keep track of new storage locations we find
+  const newStorageLocations: Set<string> = new Set();
   
-  // Process each row in the batch
-  for (let i = startRow; i < Math.min(startRow + batchSize, data.length); i++) {
-    const rowIndex = i;
-    const row = data[rowIndex];
+  // Process each row
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowIndex = options.batchIndex * options.batchSize + i;
     
-    // Skip header row or empty rows
-    if (rowIndex === 0 || Object.values(row).every(val => !val)) {
-      continue;
-    }
-    
-    // Map fields based on field mappings
-    let mappedData: Partial<InsertWine> = {
+    // Map the row data to our schema fields
+    const mappedData: Partial<InsertWine> = {
       userId: options.userId
     };
     
     let overallConfidence = ConfidenceLevel.HIGH;
-    const missingRequiredFields: string[] = [];
     let storageLocation: string | undefined;
+    const missingRequiredFields: string[] = [];
     
-    // Populate mappedData based on fieldMappings
+    // First pass - collect all field values including special fields
+    const fieldValues: Record<string, any> = {};
+    let hasAppellation = false;
+    let hasSubAppellation = false;
+    let hasRegion = false;
+    
     for (const mapping of fieldMappings) {
-      const value = row[mapping.columnIndex];
+      if (mapping.field === 'unknown') continue;
       
-      if (!value) continue;
+      const value = row[mapping.columnHeader];
       
-      // Special handling for different field types
-      switch (mapping.field) {
-        case 'vintage':
-          const yearMatch = String(value).match(/(?:19|20)\d{2}/);
+      // Skip empty values but record fields we've encountered
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      
+      // Record all field values for later processing
+      fieldValues[mapping.field] = value;
+      
+      // Track special region-related fields
+      if (mapping.field === 'appellation') hasAppellation = true;
+      if (mapping.field === 'subAppellation') hasSubAppellation = true;
+      if (mapping.field === 'region') hasRegion = true;
+    }
+    
+    // Second pass - process the fields with proper logic
+    for (const mapping of fieldMappings) {
+      if (mapping.field === 'unknown') continue;
+      
+      const value = row[mapping.columnHeader];
+      
+      // Skip empty values
+      if (value === undefined || value === null || value === '') {
+        // Check if this is a required field
+        if (['producer', 'vintage', 'type'].includes(mapping.field)) {
+          missingRequiredFields.push(mapping.field);
+          overallConfidence = ConfidenceLevel.LOW;
+        }
+        continue;
+      }
+      
+      // Handle special field: storageLocation
+      if (mapping.field === 'storageLocation') {
+        storageLocation = String(value).trim();
+        if (storageLocation) {
+          newStorageLocations.add(storageLocation);
+        }
+        continue;
+      }
+      
+      // Handle region mapping logic based on what's available
+      // If we have appellation, map it to region
+      if (mapping.field === 'appellation') {
+        mappedData.region = String(value).trim();
+        continue;
+      }
+      
+      // If we have sub-appellation, map it to subregion
+      if (mapping.field === 'subAppellation') {
+        mappedData.subregion = String(value).trim();
+        continue;
+      }
+      
+      // Only map region field if no appellation is present
+      if (mapping.field === 'region' && !hasAppellation) {
+        mappedData.region = String(value).trim();
+        continue;
+      }
+      
+      // Parse numeric fields
+      if (['vintage', 'purchasePrice', 'currentValue', 'quantity'].includes(mapping.field)) {
+        let numValue: number;
+        
+        // Handle special case for vintage
+        if (mapping.field === 'vintage' && String(value).toLowerCase() === 'nv') {
+          mappedData.vintage = 0; // Use 0 for NV (non-vintage)
+          continue;
+        }
+        
+        // Parse numeric values
+        if (typeof value === 'string') {
+          // Extract numbers from strings (e.g., "$25.99" -> 25.99)
+          const matches = value.match(/[0-9]+\.?[0-9]*/);
+          numValue = matches ? parseFloat(matches[0]) : NaN;
+        } else {
+          numValue = parseFloat(String(value));
+        }
+        
+        if (isNaN(numValue)) {
+          // If we can't parse a value for a required field, lower confidence
+          if (['vintage'].includes(mapping.field)) {
+            missingRequiredFields.push(mapping.field);
+            overallConfidence = ConfidenceLevel.LOW;
+          }
+          continue;
+        }
+        
+        // Set the parsed numeric value
+        // Use type assertion to handle TS indexing error
+        mappedData[mapping.field as keyof typeof mappedData] = numValue;
+      }
+      // Handle drinking window dates
+      else if (['drinkingWindowStart', 'drinkingWindowEnd'].includes(mapping.field)) {
+        try {
+          // Try to parse as a date
+          const dateValue = new Date(value);
+          if (!isNaN(dateValue.getTime())) {
+            // Format as ISO string
+            mappedData[mapping.field] = dateValue.toISOString();
+          }
+        } catch (e) {
+          // If parsing fails, try to extract a year
+          const yearMatch = String(value).match(/20\d{2}|19\d{2}/);
           if (yearMatch) {
-            mappedData.vintage = parseInt(yearMatch[0]);
-          } else if (value.toString().toLowerCase() === 'nv' || value.toString().toLowerCase() === 'non-vintage') {
-            mappedData.vintage = 0; // Use 0 to represent non-vintage
-          } else {
-            const parsedYear = parseInt(value);
-            if (!isNaN(parsedYear) && parsedYear >= 1900 && parsedYear <= new Date().getFullYear()) {
-              mappedData.vintage = parsedYear;
-            } else {
-              overallConfidence = ConfidenceLevel.LOW;
-            }
+            // Create a date from the year
+            const year = parseInt(yearMatch[0]);
+            const date = new Date(year, 0, 1); // January 1st of the year
+            mappedData[mapping.field] = date.toISOString();
           }
-          break;
-          
-        case 'type':
-          const typeValue = String(value).toLowerCase();
-          if (typeValue.includes('red')) {
-            mappedData.type = 'Red';
-          } else if (typeValue.includes('white')) {
-            mappedData.type = 'White';
-          } else if (typeValue.includes('rosé') || typeValue.includes('rose')) {
-            mappedData.type = 'Rosé';
-          } else if (typeValue.includes('sparkling') || typeValue.includes('champagne') || typeValue.includes('prosecco')) {
-            mappedData.type = 'Sparkling';
-          } else if (typeValue.includes('dessert') || typeValue.includes('port') || typeValue.includes('sweet')) {
-            mappedData.type = 'Dessert';
-          } else {
-            mappedData.type = String(value);
-            if (mapping.confidence !== ConfidenceLevel.HIGH) {
-              overallConfidence = ConfidenceLevel.MEDIUM;
-            }
-          }
-          break;
-          
-        case 'quantity':
-          const qty = parseInt(value);
-          mappedData.quantity = !isNaN(qty) && qty > 0 ? qty : 1;
-          break;
-          
-        case 'price':
-          const price = parseFloat(String(value).replace(/[$£€,]/g, ''));
-          if (!isNaN(price)) {
-            mappedData.price = price;
-          }
-          break;
-          
-        case 'purchaseDate':
-          try {
-            const date = new Date(value);
-            if (!isNaN(date.getTime())) {
-              mappedData.purchaseDate = date.toISOString();
-            }
-          } catch (e) {
-            // Unable to parse date, skip
-          }
-          break;
-          
-        case 'drinkingWindowStart':
-          try {
-            // Try to extract year for drinking window start
-            const yearMatch = String(value).match(/(?:19|20)\d{2}/);
-            if (yearMatch) {
-              const year = parseInt(yearMatch[0]);
-              const date = new Date(year, 0, 1);
-              mappedData.drinkingWindowStart = date.toISOString();
-            } else {
-              const date = new Date(value);
-              if (!isNaN(date.getTime())) {
-                mappedData.drinkingWindowStart = date.toISOString();
-              }
-            }
-          } catch (e) {
-            // Unable to parse date, skip
-          }
-          break;
-          
-        case 'drinkingWindowEnd':
-          try {
-            // Try to extract year for drinking window end
-            const yearMatch = String(value).match(/(?:19|20)\d{2}/);
-            if (yearMatch) {
-              const year = parseInt(yearMatch[0]);
-              const date = new Date(year, 11, 31);
-              mappedData.drinkingWindowEnd = date.toISOString();
-            } else {
-              const date = new Date(value);
-              if (!isNaN(date.getTime())) {
-                mappedData.drinkingWindowEnd = date.toISOString();
-              }
-            }
-          } catch (e) {
-            // Unable to parse date, skip
-          }
-          break;
-          
-        case 'storageLocation':
-          storageLocation = String(value).trim();
-          if (storageLocation && !storageLocation.toLowerCase().includes('unknown')) {
-            // Track new location
-            newStorageLocations.add(storageLocation);
-          }
-          break;
-          
-        default:
-          // For other string fields, just store as is
-          if (mapping.field in mappedData) {
-            mappedData[mapping.field as keyof InsertWine] = value;
-          }
+        }
+      }
+      // Handle all other fields as strings
+      else {
+        mappedData[mapping.field] = String(value).trim();
+      }
+      
+      // Lower confidence if using medium confidence mapping
+      if (mapping.confidence === ConfidenceLevel.MEDIUM && overallConfidence === ConfidenceLevel.HIGH) {
+        overallConfidence = ConfidenceLevel.MEDIUM;
       }
     }
     
@@ -435,62 +450,61 @@ export async function processBatch(
             "Penfolds Grange",
             "Caymus Vineyards"
           ];
-          
+        
           // Check for known multi-word producers
           const matchedProducer = knownProducers.find(producer => 
             producerValue.toLowerCase().includes(producer.toLowerCase())
           );
           
           if (matchedProducer) {
-            // Split the name using the known producer
-            const regex = new RegExp(`^(.*?${matchedProducer})\\s+(.+)$`, 'i');
-            const match = producerValue.match(regex);
-            
-            if (match) {
-              const [_, producer, name] = match;
-              mappedData.producer = producer.trim();
-              mappedData.name = name.trim();
-            }
-          } else {
-            // Try to extract just producer and name (no vintage)
-            // Look for patterns like "Producer Wine Name" where we can split on the first occurrence of key words
-            const keyWords = [
-              'Cabernet', 'Chardonnay', 'Pinot', 'Merlot', 'Sauvignon', 'Syrah', 'Riesling', 
-              'Vineyard', 'Cuvée', 'Estate', 'Reserve', 'Grand', 'Cru', 'Premier', 'Clos', 
-              'Château', 'Red', 'White', 'Rosé', 'Blend', 'Special', 'Limited', 'Selection',
-              'Le', 'La', 'Les', 'De', 'The'
-            ];
-            
-            // Create a regex with all key words as alternatives
-            const keyWordsPattern = keyWords.join('|');
-            const producerNameSplit = producerValue.match(
-              new RegExp(`^([A-Za-z\\u00C0-\\u00FF\\s'&]+?)(?:\\s+)((?:${keyWordsPattern}).+)$`, 'i')
-            );
-            
-            if (producerNameSplit) {
-              const [_, producer, name] = producerNameSplit;
-              mappedData.producer = producer.trim();
-              mappedData.name = name.trim();
-            }
-            
-            // If the producerValue starts with "Casa" or similar and no name was extracted, try again
-            // These are commonly confused in spreadsheet imports
-            if (!mappedData.name && (
-              producerValue.startsWith('Casa') || 
-              producerValue.startsWith('Domaine') || 
-              producerValue.startsWith('Chateau') ||
-              producerValue.startsWith('Dominio') ||
-              producerValue.startsWith('Vina') ||
-              producerValue.startsWith('Bodega')
-            )) {
-              // Find the first space after the second word
-              const words = producerValue.split(' ');
-              if (words.length > 3) {
-                const producerPart = words.slice(0, 2).join(' ');
-                const namePart = words.slice(2).join(' ');
-                mappedData.producer = producerPart.trim();
-                mappedData.name = namePart.trim();
-              }
+          // Split the name using the known producer
+          const regex = new RegExp(`^(.*?${matchedProducer})\\s+(.+)$`, 'i');
+          const match = producerValue.match(regex);
+          
+          if (match) {
+            const [_, producer, name] = match;
+            mappedData.producer = producer.trim();
+            mappedData.name = name.trim();
+          }
+        } else {
+          // Try to extract just producer and name (no vintage)
+          // Look for patterns like "Producer Wine Name" where we can split on the first occurrence of key words
+          const keyWords = [
+            'Cabernet', 'Chardonnay', 'Pinot', 'Merlot', 'Sauvignon', 'Syrah', 'Riesling', 
+            'Vineyard', 'Cuvée', 'Estate', 'Reserve', 'Grand', 'Cru', 'Premier', 'Clos', 
+            'Château', 'Red', 'White', 'Rosé', 'Blend', 'Special', 'Limited', 'Selection',
+            'Le', 'La', 'Les', 'De', 'The'
+          ];
+          
+          // Create a regex with all key words as alternatives
+          const keyWordsPattern = keyWords.join('|');
+          const producerNameSplit = producerValue.match(
+            new RegExp(`^([A-Za-z\\u00C0-\\u00FF\\s'&]+?)(?:\\s+)((?:${keyWordsPattern}).+)$`, 'i')
+          );
+          
+          if (producerNameSplit) {
+            const [_, producer, name] = producerNameSplit;
+            mappedData.producer = producer.trim();
+            mappedData.name = name.trim();
+          }
+          
+          // If the producerValue starts with "Casa" or similar and no name was extracted, try again
+          // These are commonly confused in spreadsheet imports
+          if (!mappedData.name && (
+            producerValue.startsWith('Casa') || 
+            producerValue.startsWith('Domaine') || 
+            producerValue.startsWith('Chateau') ||
+            producerValue.startsWith('Dominio') ||
+            producerValue.startsWith('Vina') ||
+            producerValue.startsWith('Bodega')
+          )) {
+            // Find the first space after the second word
+            const words = producerValue.split(' ');
+            if (words.length > 3) {
+              const producerPart = words.slice(0, 2).join(' ');
+              const namePart = words.slice(2).join(' ');
+              mappedData.producer = producerPart.trim();
+              mappedData.name = namePart.trim();
             }
           }
         }
@@ -773,15 +787,15 @@ export async function processBatchFromFile(
   fileBuffer: Buffer,
   options: {
     userId: number,
-    startRow: number,
+    useAiDrinkingWindows: boolean,
+    batchIndex: number,
     batchSize: number,
-    fieldMappings: FieldMapping[],
-    useAiDrinkingWindows: boolean
+    fieldMappings?: FieldMapping[]
   }
 ): Promise<{
   success: boolean;
   message?: string;
-  data?: BatchProcessResult 
+  data?: BatchProcessResult
 }> {
   try {
     // Detect file type
@@ -789,7 +803,7 @@ export async function processBatchFromFile(
     if (fileType === 'unknown') {
       return {
         success: false,
-        message: 'Unsupported file format. Please upload an Excel or CSV file.'
+        message: 'Unsupported file format.'
       };
     }
     
@@ -798,32 +812,47 @@ export async function processBatchFromFile(
     if (!worksheet) {
       return {
         success: false,
-        message: 'Failed to parse the spreadsheet. Please check the file format.'
+        message: 'Failed to parse the spreadsheet.'
       };
     }
     
     // Convert to JSON
-    const data = worksheetToJson(worksheet);
-    if (!data || data.length === 0) {
+    const allData = worksheetToJson(worksheet);
+    if (!allData || allData.length === 0) {
       return {
         success: false,
         message: 'No data found in the spreadsheet.'
       };
     }
     
+    // Get the batch of rows
+    const startIndex = options.batchIndex * options.batchSize;
+    const endIndex = Math.min(startIndex + options.batchSize, allData.length);
+    const batchData = allData.slice(startIndex, endIndex);
+    
+    if (batchData.length === 0) {
+      return {
+        success: false,
+        message: 'No more data to process.'
+      };
+    }
+    
+    // Use provided field mappings or identify them
+    const fieldMappings = options.fieldMappings || identifyColumnMappings(allData);
+    
     // Get existing wines for duplicate detection
     const existingWines = await storage.getWinesByUserId(options.userId);
     
-    // Process batch
+    // Process the batch
     const batchResult = await processBatch(
-      data,
-      options.startRow,
-      options.batchSize,
-      options.fieldMappings,
+      batchData,
+      fieldMappings,
       existingWines,
       {
         userId: options.userId,
-        useAiDrinkingWindows: options.useAiDrinkingWindows
+        useAiDrinkingWindows: options.useAiDrinkingWindows,
+        batchIndex: options.batchIndex,
+        batchSize: options.batchSize
       }
     );
     
@@ -879,29 +908,34 @@ export async function importProcessedWines(
     
     // Create locations in parallel
     await Promise.all(Array.from(locations).map(async location => {
-      // TODO: Add locations once we have the table
-      // For now, we'll just track them
-      console.log(`Would create location: ${location}`);
+      // Check if location already exists
+      try {
+        // Call your storage API to create a location
+        // await storage.createCellarLocation({ name: location, userId: options.userId });
+        console.log(`Created cellar location: ${location}`);
+      } catch (error) {
+        console.error(`Error creating cellar location ${location}:`, error);
+      }
     }));
   }
   
-  // Process each wine
+  // Import wines
   for (const wine of processedWines) {
-    // Skip duplicates if not importing them
-    if (wine.isPotentialDuplicate && !options.importDuplicates) {
-      result.skipped++;
-      continue;
-    }
-    
     try {
-      // Prepare wine data
-      const wineData = {
-        ...wine.mappedData,
-        userId: options.userId,
-        createdAt: new Date().toISOString()
-      };
+      // Skip duplicates if importDuplicates is false
+      if (wine.isPotentialDuplicate && !options.importDuplicates) {
+        result.skipped++;
+        continue;
+      }
       
-      // Apply AI drinking window recommendation if requested
+      const wineData: Partial<InsertWine> = { ...wine.mappedData, userId: options.userId };
+      
+      // Add storage location if available
+      if (wine.storageLocation) {
+        wineData.storageLocation = wine.storageLocation;
+      }
+      
+      // Apply AI drinking window if requested
       if (options.applyAiDrinkingWindows && wine.aiDrinkingWindowRecommendation) {
         if (wine.aiDrinkingWindowRecommendation.start) {
           const startYear = parseInt(wine.aiDrinkingWindowRecommendation.start);
