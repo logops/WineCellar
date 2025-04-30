@@ -13,6 +13,7 @@ import Reports from "@/pages/Reports";
 import WishList from "@/pages/WishList";
 import Notes from "@/pages/Notes";
 import Recommendations from "@/pages/Recommendations";
+import Import from "@/pages/Import";
 import AuthPage from "@/pages/auth-page";
 import { useState } from "react";
 import MobileMenu from "@/components/layout/MobileMenu";
@@ -45,6 +46,7 @@ function App() {
                   <ProtectedRoute path="/wishlist" component={WishList} />
                   <ProtectedRoute path="/notes" component={Notes} />
                   <ProtectedRoute path="/recommendations" component={Recommendations} />
+                  <ProtectedRoute path="/import" component={Import} />
                   <Route path="/auth" component={AuthPage} />
                   <Route component={NotFound} />
                 </Switch>
