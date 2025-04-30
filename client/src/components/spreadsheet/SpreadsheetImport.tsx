@@ -10,6 +10,9 @@ import WineImportCard from './WineImportCard';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, uploadFile, queryClient } from '@/lib/queryClient';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Types for the wine data we'll receive from the backend
 interface ProcessedWine {
@@ -85,6 +88,8 @@ const SpreadsheetImport: React.FC = () => {
   const [totalBatches, setTotalBatches] = useState(1);
   const [batchSize, setBatchSize] = useState(100);
   const [importFinished, setImportFinished] = useState(false);
+  const [editingWine, setEditingWine] = useState<ProcessedWine | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Upload file mutation
@@ -286,6 +291,26 @@ const SpreadsheetImport: React.FC = () => {
     setRejectedWines(prev => [...prev, wine]);
     setAllProcessedWines(prev => prev.filter(w => w.rowIndex !== wine.rowIndex));
   };
+  
+  const handleEditWine = (wine: ProcessedWine) => {
+    setEditingWine(wine);
+    // Reset the edited data when opening the dialog
+    setEditedWineData({});
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleSaveEdit = (updatedWine: ProcessedWine) => {
+    setAllProcessedWines(prev => 
+      prev.map(w => w.rowIndex === updatedWine.rowIndex ? updatedWine : w)
+    );
+    setEditingWine(null);
+    setIsEditDialogOpen(false);
+    
+    toast({
+      title: "Wine updated",
+      description: "The wine data has been updated. You can now approve or reject it.",
+    });
+  };
 
   const handleImport = () => {
     if (approvedWines.length === 0) {
@@ -338,8 +363,199 @@ const SpreadsheetImport: React.FC = () => {
     return confidenceOrder[a.confidence] - confidenceOrder[b.confidence];
   });
 
+  // Wine edit dialog state
+  const [editedWineData, setEditedWineData] = useState<Partial<ProcessedWine['mappedData']>>({});
+  
+  // Update edited wine data
+  const handleEditFieldChange = (field: string, value: any) => {
+    setEditedWineData(prev => ({ ...prev, [field]: value }));
+  };
+  
+  // Handle edit dialog save
+  const handleEditSave = () => {
+    if (!editingWine) return;
+    
+    const updatedWine: ProcessedWine = {
+      ...editingWine,
+      mappedData: {
+        ...editingWine.mappedData,
+        ...editedWineData
+      }
+    };
+    
+    handleSaveEdit(updatedWine);
+  };
+  
   return (
     <div className="container mx-auto p-4">
+      {/* Edit Wine Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Wine Data</DialogTitle>
+          </DialogHeader>
+          
+          {editingWine && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <Label htmlFor="producer">Producer</Label>
+                <Input
+                  id="producer"
+                  defaultValue={editingWine.mappedData.producer || ''}
+                  onChange={(e) => handleEditFieldChange('producer', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="name">Wine Name</Label>
+                <Input
+                  id="name"
+                  defaultValue={editingWine.mappedData.name || ''}
+                  onChange={(e) => handleEditFieldChange('name', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="vintage">Vintage</Label>
+                <Input
+                  id="vintage"
+                  defaultValue={editingWine.mappedData.vintage?.toString() || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'NV') {
+                      handleEditFieldChange('vintage', 'NV');
+                    } else if (value === '' || isNaN(parseInt(value))) {
+                      handleEditFieldChange('vintage', undefined);
+                    } else {
+                      handleEditFieldChange('vintage', parseInt(value));
+                    }
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="type">Wine Type</Label>
+                <Select
+                  defaultValue={editingWine.mappedData.type || ''}
+                  onValueChange={(value) => handleEditFieldChange('type', value)}
+                >
+                  <SelectTrigger id="type">
+                    <SelectValue placeholder="Select wine type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="red">Red</SelectItem>
+                    <SelectItem value="white">White</SelectItem>
+                    <SelectItem value="rose">Rosé</SelectItem>
+                    <SelectItem value="sparkling">Sparkling</SelectItem>
+                    <SelectItem value="dessert">Dessert</SelectItem>
+                    <SelectItem value="fortified">Fortified</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="region">Region</Label>
+                <Input
+                  id="region"
+                  defaultValue={editingWine.mappedData.region || ''}
+                  onChange={(e) => handleEditFieldChange('region', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="subregion">Subregion</Label>
+                <Input
+                  id="subregion"
+                  defaultValue={editingWine.mappedData.subregion || ''}
+                  onChange={(e) => handleEditFieldChange('subregion', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="vineyard">Vineyard</Label>
+                <Input
+                  id="vineyard"
+                  defaultValue={editingWine.mappedData.vineyard || ''}
+                  onChange={(e) => handleEditFieldChange('vineyard', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="grapeVarieties">Grape Varieties</Label>
+                <Input
+                  id="grapeVarieties"
+                  defaultValue={editingWine.mappedData.grapeVarieties || ''}
+                  onChange={(e) => handleEditFieldChange('grapeVarieties', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="bottleSize">Bottle Size</Label>
+                <Input
+                  id="bottleSize"
+                  defaultValue={editingWine.mappedData.bottleSize || ''}
+                  onChange={(e) => handleEditFieldChange('bottleSize', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  defaultValue={editingWine.mappedData.quantity?.toString() || '1'}
+                  onChange={(e) => handleEditFieldChange('quantity', parseInt(e.target.value))}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="drinkingWindowStart">Start of Drinking Window</Label>
+                <Input
+                  id="drinkingWindowStart"
+                  type="date"
+                  defaultValue={editingWine.mappedData.drinkingWindowStart || ''}
+                  onChange={(e) => handleEditFieldChange('drinkingWindowStart', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="drinkingWindowEnd">End of Drinking Window</Label>
+                <Input
+                  id="drinkingWindowEnd"
+                  type="date"
+                  defaultValue={editingWine.mappedData.drinkingWindowEnd || ''}
+                  onChange={(e) => handleEditFieldChange('drinkingWindowEnd', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="storageLocation">Storage Location</Label>
+                <Input
+                  id="storageLocation"
+                  defaultValue={editingWine.mappedData.storageLocation || 'Main Cellar'}
+                  onChange={(e) => handleEditFieldChange('storageLocation', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Input
+                  id="notes"
+                  defaultValue={editingWine.mappedData.notes || ''}
+                  onChange={(e) => handleEditFieldChange('notes', e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditSave}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 grid w-full grid-cols-3">
           <TabsTrigger value="upload" disabled={loading}>Upload</TabsTrigger>
@@ -520,11 +736,7 @@ const SpreadsheetImport: React.FC = () => {
                           wine={wine}
                           onApprove={handleApproveWine}
                           onReject={handleRejectWine}
-                          onEdit={() => {
-                            // For now, just approve the wine as is
-                            // In a real implementation, you'd open an edit modal here
-                            handleApproveWine(wine);
-                          }}
+                          onEdit={() => handleEditWine(wine)}
                         />
                       ))}
                     </div>
