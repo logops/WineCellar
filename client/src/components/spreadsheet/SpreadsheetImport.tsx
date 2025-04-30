@@ -124,21 +124,25 @@ const SpreadsheetImport: React.FC = () => {
       const response = await uploadFile('/api/spreadsheet/process-batch', formData);
       return response.json();
     },
-    onSuccess: (data: BatchProcessResult) => {
+    onSuccess: (response: any) => {
+      // Check if the response is wrapped in a data property
+      const data = response.data || response;
       setProcessedBatch(data);
-      setAllProcessedWines(prev => [...prev, ...data.processedWines]);
+      // Ensure processedWines exists and is an array before spreading
+      const wines = data.processedWines || [];
+      setAllProcessedWines(prev => [...prev, ...wines]);
       setCurrentBatchIndex(prev => prev + 1);
       
       if (currentBatchIndex + 1 < totalBatches) {
         toast({
           title: "Batch processed",
-          description: `Processed ${data.processedRows} rows. Processing next batch...`,
+          description: `Processed ${data.processedRows || 0} rows. Processing next batch...`,
         });
         processBatch(currentBatchIndex + 1);
       } else {
         toast({
           title: "Processing complete",
-          description: `Processed ${allProcessedWines.length + data.processedWines.length} wines. Please review before importing.`,
+          description: `Processed ${allProcessedWines.length + (data.processedWines ? data.processedWines.length : 0)} wines. Please review before importing.`,
         });
         setActiveTab('review');
         setLoading(false);

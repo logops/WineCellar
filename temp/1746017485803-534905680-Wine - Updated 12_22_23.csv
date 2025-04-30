@@ -1,0 +1,201 @@
+Owner,Category,Qty,Vintage ,Winery ,Wine (Name),Varietal(s),Country ,State ,Region ,Appelation,Sub App,Vineyard/Cru,Retail Price ,Volume (mL),Drinking Window,Box #,Notes,Drank,Pulled 1,Double Check,Pull 1 To Drink,Ready to Drink
+R,Red,1,1995,Robert Mondavi,Reserve Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Oakville,To Kalon,125,750,Medium,M7,,TRUE,TRUE,FALSE,FALSE,FALSE
+M,White,1,2018,Alice et Olivier De Moor,L'Humeur du Temps,Other,France,,Chablis,,,,40,750,Medium,Domaine Wine Storage ,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Sparkling,1,2008,Domain Chandon,Etoile,Other,USA,CA,Northern CA,,,,65,750,Now,Krug,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,1995,Fonseca Guimaraens,Vintage Port,Other,Portugal,,,,Porto,,$100.00,750,Long,Own Colares Box,Purchased 2022,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Dowsett Family Wines,Heart of the Hill Vineyard Mouvedre,Other,USA,WA,,Columbia Valley,Red Mountain,Heart of the Hill Vineyard,34,750,Now,MA1,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,1997,Taylor's Port,Vintage Port,Other,Portugal,,,,Porto,,$100.00,750,Long,Own Colares Box,Purchased 2022,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Bargetto Wines,Reserve Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Santa Cruz Mountains,,,60,750,Medium,M1,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2002,Bodegas Vega Sicilia,Unico,Other,Spain,,Ribera Del Duero,,,,$500.00,750,Medium,Home Wine Fridge,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2005,Chateau Dufort Vivens,Le Relais de Durfort Vivens,Bordeaux Blend - Left Bank,France,-,Bordeaux,Margaux,,,55,750,Medium,M/S1,,TRUE,TRUE,FALSE,FALSE,TRUE
+R,Red,8,2010,Chateau Dufort Vivens,Le Relais de Durfort Vivens,Bordeaux Blend - Left Bank,France,-,Bordeaux,Margaux,,,$55.00,750,Medium,L7,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2012,Giuseppe Quintarelli,Ca Del Merlo,Other,Italy,,Veneto,,,,$110.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Hall Wines,Jacks Masterpiece ,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,$180.00,750,Medium,M6,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Elio Altare,Barolo - Cerretta Reserva,Nebbiolo,Italy,-,Piedmont,Serralunga d'Alba,Barolo,Cerretta,$140.00,750,Long,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2013,Trinite Estate,Acaibo,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Sonoma County,,,75,750,Medium,M3,,TRUE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2013,Sterling Vineyards,Yates Family Vineyard Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Mt. Veeder,Yates Family Vineyard,$140.00,750,Long,M6,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Sparkling,1,2013,Domaine Carneros,La Reve Rosé,Other,USA,CA,Northern CA,,,,115,750,Short,Krug,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2016,Casa Lapostolle,Le Petit Clos Apalta,Bordeaux Blend - Left Bank,Chile,,Apalta,,,,50,750,Medium,Home Fridge,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Sterling Vineyards,Sleeping Lady Vineyard Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Yountville,Sleeping Lady Vineyard,$140.00,750,Long,M6,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2013,Robert Mondavi,Reseve Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Oakville,To Kalon Vineyard,$120.00,750,Medium,M6,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Giuseppe Quintarelli,Rosso Ca Del Merlo,Other,Italy,,Veneto,,,,$110.00,750,Medium,Home Fridge,,FALSE,FALSE,TRUE,FALSE,FALSE
+R,Red,1,2013,Sterling Vineyards,Planium Select Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,$100.00,750,Short,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Luigi Baudana,Barolo - Cerretta,Nebbiolo,Italy,-,Piedmont,Serralunga d'Alba,Barolo,Cerretta,$99.00,750,Medium,M7,,FALSE,FALSE,TRUE,FALSE,FALSE
+R,Red,1,2013,Sterling Vineyards,Diamond Mountain Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Diamond Mountain District,,120,750,Medium,M3,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Silverado Vineyards,Oakville Station,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Oakville,Oakville Station Vineyard,$90.00,750,Medium,M6,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2013,Hall Wines,1873,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,85,750,Short,S2,,TRUE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2013,Sterling Vineyards,Rutherford,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Rutherford,,$55.00,750,Short,M6,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2013,Pax Wines,Griffins Lair Vineyard - Sonoma Coast,Syrah,USA,CA,Northern CA,Sonoma Coast,,Griffins Lair Vineyard,$50.00,750,Short,M/S2,,TRUE,TRUE,FALSE,TRUE,TRUE
+R,Red,1,2013,Trinite Estate,Acaibo,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Sonoma County,,,75,750,Medium,M1,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2013,Arenae Colares,Vinho Regional Lisboa,Other,Portugal,,,,Colares,,$40.00,500,Medium,Own Case,Purchased 2022,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2005,Domaine Grand Veneur,Chateauneuf Du Pape Blend,Rhone Blend,France,,Southern Rhone,Chateauneuf Du Pape,,,65,1500,Now,MA1,excellent. buy from this producer again April 2022,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2014,Chateau Trotanoy,Grand Vin,Bordeaux Blend - Right Bank,France,,Bordeax,Pomerol,,,$215.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2014,Giuseppe Quintarelli,Rosso del Bepi,Other,Italy,,Veneto,,,,$155.00,750,Medium,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Sparkling,1,2008,Gloria Ferrer,Carneros Cuvee,Other,USA,CA,Northern CA,,,,80,750,Short,Krug ,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2014,Hall Wines,Bergfeld,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,150,750,Medium,M3,,TRUE,TRUE,FALSE,FALSE,TRUE
+R,Red,1,2014,Sterling Vineyards,Diamond Mountain District,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Diamond Mountain District,,120,750,Medium,M3,,TRUE,TRUE,FALSE,FALSE,TRUE
+R+M,Red,1,2014,Corison Winery,Helios Sunbasket Vineyard Cab Franc ,Cabernet Franc,USA,CA,Northern CA,Napa Valley,,Sunbasket Vineyard,300,1500,Medium,MA1,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2010,Chateau Leoville Las Cases,Le Petit Lion,Bordeaux Blend - Left Bank,France,-,Bordeax,Saint Julien,,,90,750,Medium,L5,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Sparkling,1,2012,Domaine Carneros,Estate Cuvee Late Disgorged,Other,USA,CA,Northern CA,,,,57,750,Medium,Krug,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2014,Giuseppe Quintarelli,Rosso Ca Del Merlo,Other,Italy,,Veneto,,,,$110.00,750,Medium,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2014,Sterling Vineyards,Yates Family Vineyard Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Mt. Veeder,Yates Family Vineyard,140,750,Medium,M3,,TRUE,TRUE,FALSE,FALSE,TRUE
+R,Red,2,2014,Andrew Will Winery,Sorella,Bordeaux Blend - Left Bank,USA,WA,Columbia Valley,Horse Heaven Hills,Horse Heaven Hills,Champoux Vineyard ,110,750,Short,Andrew Will OWC,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2014,Trinite Estate,Amaino,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Sonoma County,,,$50.00,750,Short,S2,,FALSE,FALSE,TRUE,FALSE,TRUE
+R,Red,1,2005,Chateau Dufort Vivens,Le Relais de Durfort Vivens,Bordeaux Blend - Left Bank,France,-,Bordeaux,Margaux,,,55,750,Medium,L7,,TRUE,TRUE,FALSE,TRUE,FALSE
+R,Red,1,2014,Trinite Estate,Amaino,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Sonoma County,,,50,750,Short,M/S1,,TRUE,TRUE,FALSE,FALSE,TRUE
+R,Red,1,2014,Trinite Estate,Amaino,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Sonoma,,,$40.00,750,Now,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2014,Grgich Hills,Old Vine Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,150,750,Short,S2,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2015,Duckhorn Vineyards,The Discussion ,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Napa Valley,,,150,750,Medium,M3,,TRUE,TRUE,TRUE,FALSE,FALSE
+R,Red,1,2015,Duckhorn Vineyards,The Discussion,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Napa Valley,,,$300.00,1500,Long,MA1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2015,Rivers-Marie,Cabernet Sauvignon,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Calistoga,,100,750,Medium,M1,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2009,Chateau Dufort Vivens,Le Relais de Durfort Vivens,Bordeaux Blend - Left Bank,France,-,Bordeaux,Margaux,,,55,750,Medium,L7,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2015,AXR Winery,Napa Valley Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,V. Madrone Vineyard,$150.00,750,Medium,L1,,TRUE,FALSE,TRUE,FALSE,TRUE
+R,Red,1,2015,Silverado Vineyards,Solo,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Stags Leap District,,$125.00,750,Medium,M2,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2015,Hall Wines,Kathryn Hall,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,180,750,Medium,M3,,TRUE,TRUE,TRUE,TRUE,FALSE
+R,Red,1,2015,Duckhorn Vineyards,Patzimaro Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,St Helena,Patzimaro Vineyard,121,750,Medium,M/S1,,TRUE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2013,Trinite Estate,Acaibo,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Napa Valley,,,75,750,Short,S2,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2015,Chateau Leoville Las Cases,Le Petit Lion,Bordeaux Blend - Left Bank,France,-,Bordeax,Saint Julien,,,$90.00,750,Medium,L5,,FALSE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2015,Joseph Phelps Winery,Napa Valley Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,80,750,Short,S2,,TRUE,TRUE,FALSE,FALSE,TRUE
+R,Red,1,2015,Goldeneye Winery,Confluence Vineyard,Pinot Noir,USA,CA,Northern CA,Sonoma Coast,,Confluence Vineyad,86,750,Short,S1,,TRUE,FALSE,TRUE,TRUE,TRUE
+R,Red,1,2015,Francesco Rinaldi & Figli,Le Brunate,Other,Italy,,Piedmont,,,Brunate,$85.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2015,Sequoia Grove,Cabernet Sauvignon - Lamoreaux Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Oak Knoll District,Lamoreaux Vineyard,75,750,Medium,M/S1,,TRUE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2014,Hall Wines,Ellie's,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,-,,80,750,Short,S2,,TRUE,TRUE,FALSE,FALSE,FALSE
+R+M,Red,1,2017,Hobel Wines,The Figure,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,110,750,Medium,M4,,TRUE,TRUE,TRUE,TRUE,FALSE
+R,Red,1,2014,Silverado,Geo,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Coombsville,,100,750,Short,S2,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2015,Sterling Vineyards,RRV Pinot Noir,Pinot Noir,USA,CA,Northern CA,Sonoma County,Russivan River Valley,,60,750,Short,S1,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,2,2016,Big Basin Vineyards,Homestead,Rhone Blend,USA,CA,Northern CA,Central Coast,,,25,750,Short,Domaine Leflaive OWC ,,TRUE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2015,Silverado Vineyards,Estate Grown Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,-,,55,750,Short,M/S2,,TRUE,TRUE,FALSE,FALSE,TRUE
+R,Red,1,2016,Poggiarellino,Brunello di Montalcino Riserva,Other,Italty,,Tuscany,,Brunello di Montalcino,,$80.00,750,Medium,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Chateau Leoville Las Cases,Grand Vin De Marquis de Las Cases,Bordeaux Blend - Left Bank,France,-,Bordeaux,Saint Julien,,,$350.00,750,Long,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Hall Wines,Bergfeld,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,St. Helena,,$185.00,750,Medium,M2,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2016,Hall Wines,Diamond Mountain Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Diamond Mountain District,,$185.00,750,Medium,M2,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2016,Hall Wines,Kathryn Hall,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,$180.00,750,Medium,M2,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Hall Wines,Jacks Masterpiece,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,$165.00,750,Medium,M2,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Chateau Pontet Canet,Grand Vin,Bordeaux Blend - Left Bank,France,,Bordeax,Pauillac,,,$150.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Chateau Beaucastel,Chateauneuf du Pape - Rouge,Rhone Blend,France,-,Rhone Valley,Southern Rhone,Chateauneuf du Pape,,$140.00,750,Medium,M7,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Chateau Potelle,Cab Franc Wildcat Mountain Vineyard,Cabernet Franc,USA,CA,Northern CA,Sonoma County,Sonoma Coast,Wildcat Mountain Vineyar,125,750,Medium,M4,,TRUE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2016,Corison Winery,St Helena Cabernet Sauvignon,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,100,750,Medium,L1,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2016,Domaine Carneros,Famous Gate,Pinot Noir,USA,CA,Northern CA,,,,85,750,Short,S1,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Silverado,SLD Merlot,Merlot,USA,CA,Northern CA,Napa Valley,Stags Leap District,,50,750,Medium,M1,,TRUE,TRUE,FALSE,TRUE,FALSE
+R,Red,1,2016,Dowsett Family Wines,Becklin Vineyards Pinot Noir,Pinot Noir,USA,OR,,Willammette Valley,,Becklin Vineyards,33,750,Short,S1,,TRUE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2016,Silverado Vineyards,Solo,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Stags Leap District,,$125.00,750,Medium,M2,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Keenan Winery,Cabernet Franc,Cabernet Franc,USA,CA,Northern CA,Napa Valley,Spring Mountain District,,$120.00,1500,Long,MA1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2016,Andrew Will Winery,Sorella,Bordeaux Blend - Left Bank,USA,WA,Columbia Valley,Horse Heaven Hills,Horse Heaven Hills,Champoux Vineyard ,$110.00,750,Medium,Andrew Will OWC,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2014,Giuseppe Quintarelli,Valpolliciella Supioriore,Other,Italy,,Veneto,,,,121,750,Medium,,,TRUE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2017,Pride Mountain Vineyards,Reserve Claret,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Napa Valley,,,170,750,Medium,M4,,TRUE,TRUE,TRUE,TRUE,FALSE
+R,Red,1,2016,Andrew Will Winery,Sorella,Bordeaux Blend - Left Bank,USA,WA,Columbia Valley,Horse Heaven Hills,Horse Heaven Hills,Champoux Vineyard ,$110.00,750,Medium,MA1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Hall Wines,Ellie's,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,-,,80,750,Medium,M1,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2016,Chateau Potelle,Terrior Collection Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,St. Helena,,150,750,Medium,M4,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2016,Saxum,Bone Rock,Syrah,USA,CA,Central Coast,Paso Robles,,Bone Rock Vineyard,$110.00,750,Medium,L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2015,Hall Wines,1873,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,85,750,Medium,M3,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Sparkling,1,2016,Goldeneye Winery,Brut Rosé,Other,USA,CA,Northern CA,,,,65,750,Now,Krug,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,2,2016,Silverado Vineyards,Geo,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Napa Valley,Coombsville,Mt. George Vinyeard,100,750,Medium,M2,,TRUE,TRUE,FALSE,TRUE,TRUE
+R,Red,1,2017,Chateau Potelle,GSC,Rhone Blend,USA,CA,Northern CA,Sonoma County,Fountaingrove District,,95,750,Medium,M7,,TRUE,TRUE,TRUE,TRUE,FALSE
+R,Red,1,2016,Force Majure,SJR Vineyard,Syrah,USA,OR,Columbia Valley,Walla Walla Valley,The Rocks,SJR Vineyard,$97.00,750,Medium,M7,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2016,Livio Sassetti,Pertimali  - Brunello Di Montalcino,Other,Italy,,Tuscany,Brunello di Montalcino,,,$90.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Luigi Baudana,Barolo - Cerretta,Nebbiolo,Italy,,Piedmont,Serralunga d'Alba,Barolo,Cerretta,$90.00,750,Medium,,,FALSE,FALSE,TRUE,FALSE,FALSE
+R,Red,2,2016,Cavallotto,Bricco Boschis,Other,Italy,,Piedmont,Barolo,,Bricco Boschis,$88.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Chateau Des Tours,Cotes Du Rhone,Rhone Blend,France,-,Rhone Valley,Cotes Du Rhone,,,$80.00,750,Medium,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Giovanni Rosso,Barolo - Cerretta,Nebbiolo,Italy,-,Piedmont,Barolo,Serralunga d'Alba,Cerreta,$80.00,750,Medium,M7,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2016,Joseph Phelps Winery,Napa Valley Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,$80.00,750,Medium,M2,,FALSE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2016,Trinite Estate,Acaibo,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Sonoma County,,,$75.00,750,Medium,M/S1,,TRUE,TRUE,FALSE,TRUE,TRUE
+R,Red,1,2016,Hall Wines,Coeur,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,70,750,Medium,M4,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2016,Domaine Carneros,Dijon 777 Clone,Pinot Noir,USA,CA,Northern CA,Napa Valley,Carneros,,60,750,Short,S1,,TRUE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2013,Sterling Vineyards,Planium Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,85,750,Short,M6,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2016,Hall Wines,Terra Secca,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,$70.00,750,Medium,M4,,TRUE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2016,Sequoia Grove,Winemakers Series Cabernet Franc,Cabernet Franc,USA,CA,Northern CA,Napa Valley,,,50,750,Medium,M1,,TRUE,FALSE,TRUE,FALSE,TRUE
+R,Red,1,2016,Pax Wines,Griffin's Lair Vineyard ,Syrah,USA,CA,Northern CA,Sonoma Coast,,Griffin's Lair,$60.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Big Basin Vineyards,Terraces Syrah,Syrah,USA,CA,Northern CA,Central Coast,,Rattlesnake Vineyard,$55.00,750,Medium,M/S1,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,2016,Silverado Vineyards,Estate Grown Cab Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,-,,$55.00,750,Medium,M2,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,GC Lurton,Sonoma Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Sonoma County,,,50,750,Short,S2,,TRUE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2007,Marcarini,Brunate,Other,Italy,,Piedmont,,,Brunate,58,50,Now,Domaine Wine Storage ,excellent. buy producer and vineyard again,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2016,Silverado Vineyards,Mt. George Cab Franc,Cabernet Franc,USA,CA,Northern CA,Napa Valley,Mt. George,,$50.00,750,Medium,M4,,FALSE,FALSE,FALSE,FALSE,TRUE
+R+M,Red,1,2016,White Rock Vineyards,Laureate ,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,100,750,Short,M9,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2012,Pax Wines,James Berry Vineyard - Paso Robles,Syrah,USA,CA,Central Coast,Paso Robles,,James Berry Vineyard,40,750,Now,Domaine Leflaive OWC ,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2016,Pax Wines,Griffins Lair Vineyard,Syrah,USA,CA,Northern CA,Sonoma Coast,,Griffins Lair Vineyard,$50.00,750,Medium,M/S1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2011,Mayacamas Vineyards,Mt. Veeder Cabernet ,Cabernet Sauvignon,USA,CA,Northern CA,Mt. Veeder,,,171,750,Medium,Home Wine Fridge,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2017,Big Basin Vineyards,Homestead,Other,USA,CA,Northern CA,Central Coast,,,35,750,Short,M/S1,,TRUE,TRUE,FALSE,TRUE,FALSE
+R,Red,1,2012,Chateau Dufort Vivens,Grand Vin,Bordeaux Blend - Left Bank,France,-,Bordeaux,Margaux,,,55,750,Medium,M8,,TRUE,FALSE,FALSE,TRUE,FALSE
+R+M,Red,1,2017,Castello Di Ama,San Lorenzo Chianti Classico Gran Selezione ,Other,Italy,,Tuscany,Chianti Classico,,,75,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2017,Corison Winery,Kronos Vineyard Cabernet Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,Kronos Vineyard,225,750,Medium,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2017,Corison Winery,Kronos Vineyard Cabernet Sauv 1.5L,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,Kronos Vineyard,450,1500,Long,MA1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Domaine Carneros,La Ciel Serein,Pinot Noir,USA,CA,Northern CA,Napa Valley,Carneros,,59,750,Short,S1,,TRUE,TRUE,FALSE,TRUE,FALSE
+R+M,Red,1,2017,Keenan Winery,Reserve Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Spring Mountain District,,120,750,Medium,M4,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2017,Pride Mountain Vineyards,Reserve Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,155,750,Medium,M4,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,3,2017,Vina Almaviva,Vina Almaviva Puente Alto,Bordeaux Blend - Left Bank,Chile,,Maipo Valley,Puente Alto,,,$150.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2016,Walt Wines,Sierra Mar,Pinot Noir,USA,CA,Northern CA,Central Coast,Santa Lucia Highlands,Sierra Mar Vineyard,75,750,Short,S1,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,4,2017,Chāo Rijo,Ramisco - Colares Vinho Tinto,Other,Portugal,,,,Colares,,$40.00,750,Medium,Own Colares Box,Purchased 2022,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2018,Livio Sassetti,La Querciolina,Other,Italy,,Tuscany,Montecucco Rosso,,,$20.00,750,Medium,R/M1,,FALSE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2018,Domaine de la Vieille Julienne,lieu-dit Clavin,Rhone Blend,France,,Southern Rhone,Côtes-du-Rhone,,,$60.00,1500,Medium,MA1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2018,Bure Family Wines,Majesty,Cabernet Franc,USA,CA,Northern CA,Napa Valley,St Helena,Beckstoffer To Kalon,225,750,Medium,OWC ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2018,Chapellett Winery,Pritchard Hill Cabernet Sauvingnon,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,255,750,Long,L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2018,Snowden Vineyards,Napa Valley Cabernet Franc,Cabernet Franc,USA,CA,Napa Valley,,,Melchior Kemper Vineyard,$75.00,750,Medium,M4,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,White,1,2018,Saison Winery,Wirz Vineyard Riesling,Other,USA,CA,Northern CA,Cienga Valley,,Wirz Vineyard,???,750,Short,M/S1,,TRUE,FALSE,FALSE,TRUE,FALSE
+R+M,Red,1,2018,Chapellett Winery,Cabernet Franc,Cabernet Franc,USA,CA,Northern CA,Napa Valley,,,80,750,Medium,L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,4,2018,Corison Winery,St. Helena Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,St Helena,,100,750,Medium,L1,,FALSE,FALSE,FALSE,TRUE,TRUE
+R,Red,2,2018,Joseph Phelps Winery,Insignia,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,$315.00,750,Long,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2018,Corison Winery,Helios Sunbasket Vineyard Cab Franc ,Cabernet Franc,USA,CA,Northern CA,Napa Valley,St. Helena,Sunbasket Vineyard,100,750,Medium,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,3,2018,Corison Winery,Kronos Vineyard Cabernet Sauv,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,Kronos Vineyard,220,750,Long,M9,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2018,Di Costanzo,Montecillo Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Moon Mountain,Montecillo Vineyard,100,750,Medium,R/M1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,3,2018,Di Costanzo,Farella Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Coombsville ,Farella Vineyard,110,750,Medium,M4,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Joseph Phelps Winery,Freestone Vineyard,Pinot Noir,USA,CA,Sonoma Coast,,,Freestone Vineyard,45,750,Now,M7,,TRUE,FALSE,TRUE,TRUE,FALSE
+R,Red,1,2018,Chateau Leoville Las Cases,Grand Vin De Marquis de Las Cases,Bordeaux Blend - Left Bank,France,-,Bordeax,Saint Julien,,,$300.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2017,Phillips Hill,Oppenlander Vineyard ,Pinot Noir,USA,CA,Northern CA,Mendocino County,Anderson Valley,Oppenlander Vineyard,40,750,Short,S1,,TRUE,FALSE,FALSE,TRUE,TRUE
+R,Red,1,2018,Robert Mondavi,The Reseve Cabernet,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Oakville,To Kalon Vineyard,$215.00,750,Long,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Chateau Canon,Grand Vin,Bordeaux Blend - Left Bank,France,-,Bordeax,Saint Emilion,,,$145.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2018,Gallica Wine,Estate Cabernet Sauvingnon,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Oakville,,185,750,Long,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2018,Fait Main Wines,Beckstoffer Missour Hopper Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,Beckstoffer Missour Hopper Vineyard,$125.00,750,Medium,L1,,FALSE,FALSE,FALSE,FALSE,TRUE
+R+M,Red,1,2018,Matthiasson Winery,Phoenix Vineyard,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Napa Valley,,,110,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2018,Matthiasson Winery,Michael Mara Vineyard Chardonnay,Chardonnay,USA,CA,Northern CA,Sonoma Coast,,Michael Mara Vineyard,40,750,Now,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Domaine de Chevalier,Grand Vin ,Bordeaux Blend - Left Bank,France,-,Bordeaux,Pessac-Leognan,,,$110.00,750,Medium,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2018,Perchance Estates,Beckstoffer Georges III Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,Beckstoffer Georges III Vineyard,210,750,Medium,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,2,2018,White Rock Vineyards,East Bench,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,120,750,Long,M9,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,White,1,2018,White Rock Vineyards,Breccia,Chardonnay,USA,CA,Northern CA,Napa Valley,,,85,750,Short,M9,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,2,2018,Ridge Vineyards,Monte Bello,Cabernet Sauvignon,USA,CA,Northern CA,Santa Cruz Mountains,,Monte Bello Vineyard,???,750,Long,,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Chateau Beaucastel,Chateauneuf du Pape - Rouge,Rhone Blend,France,-,Rhone Valley,Southern Rhone,Chateauneuf du Pape,,$80.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,White Rock Vineyards,Merlot,Merlot,USA,CA,Northern CA,Napa Valley,,,80,750,Medium,Krug Box,,TRUE,FALSE,FALSE,FALSE,TRUE
+R+M,Red,1,2018,White Rock Vineyards,Cave Hill,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,???,750,Long,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Sparkling,1,2018,Ultramarine,Keefer Ranch Blanc de Blancs,Chardonnay,USA,CA,Sonoma Coast,,,Keefer Ranch,$80.00,750,Short,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2019,Di Costanzo,DI CO,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,65,750,Short,S2,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,2,2018,Dominus,Napanook,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,Napanook Vineyard,$75.00,750,Medium,L5,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Penfolds,Bin 389 - Cabernet Shiraz,Other,,,Australia,,,,$60.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Force Majure,Parabellum Coulee,Rhone Blend,USA,WA,,,,,57,750,Short,M/S1,,TRUE,FALSE,FALSE,FALSE,TRUE
+R+M,Red,2,2019,Bure Family Wines,Majesty,Cabernet Franc,USA,CA,Northern CA,Napa Valley,St Helena,Beckstoffer To Kalon,225,750,Medium,R/M1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Guy Farge,Cornas - Reynard,Syrah,France,,Northern Rhone,Cornas,,Reynard,$67.00,750,Medium,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,2,2019,Di Costanzo,Caldwell Vineyard,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,Coombsville ,Caldwell Vineyard,115,750,Medium,R/M1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,2,2019,Di Costanzo,DI CO,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,65,750,Short,R/M1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,GC Lurton,Cabernet Franc,Cabernet Franc,USA,CA,Northern CA,Sonoma County,,,45,750,Short,M/S1,,TRUE,TRUE,FALSE,FALSE,TRUE
+R,Red,2,2019,Domaine de la Vieille Julienne,les Trois Sources,Rhone Blend,France,,Southern Rhone,Châteauneuf-du-Pape,,,$80.00,750,Medium,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Domaine de la Vieille Julienne,lieu-dit Clavin,Rhone Blend,France,,Southern Rhone,Côtes-du-Rhone,,,$30.00,750,Short,Loose,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2019,Ridge Vineyards,Estate Cabernet Sauvignon,Cabernet Sauvignon,USA,CA,Northern CA,Santa Cruz Mountains,,Monte Bello Vineyard,75,750,Medium,Krug Box,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2019,Ridge Vineyards,Estate Cabernet Sauvignon,Cabernet Sauvignon,USA,CA,Northern CA,Santa Cruz Mountains,,Monte Bello Vineyard,75,1500,Long,None,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Raen Vineyards,Royal St. Robert - Sonoma Coast,Pinot Noir,USA,CA,Northern CA,Sonoma Coast,,,60,750,Short,M/S2,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,Red,1,2019,Matthiasson Winery,Phoenix Vineyard Merlot,Merlot,USA,CA,Napa Valley,,,Phoenix Vineyard,$70.00,750,Short,M4,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Ridge Vineyards,Monte Bello,Bordeaux Blend - Left Bank,USA,CA,Northern CA,Santa Cruz Mountains,,,$240.00,750,Long,M/L1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Ridge Vineyards,Estate Cabernet Sauvignon,Bordeaux Blend - Left Bank,USA,CA,Northern CA,,,,$100.00,750,Medium,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Chateau Beaucastel,Chateauneuf du Pape - Rouge,Rhone Blend,France,-,Rhone Valley,Southern Rhone,Chateauneuf du Pape,,$80.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,3,2019,Raen Vineyards,Royal St. Robert - Sonoma Coast,Pinot Noir,USA,CA,Northern CA,Sonoma Coast,,,$60.00,750,Medium,M7,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2015,Grgich Hills,Old Vine Zinfandel,Zinfandel,USA,CA,Northern CA,Napa Valley,Rutherford,,125,750,Short,S2,,TRUE,TRUE,FALSE,TRUE,FALSE
+R,Red,1,2019,Joseph Phelps Winery,Freestone Vineyard,Pinot Noir,USA,CA,Sonoma Coast,,,Freestone Vineyard,$45.00,750,Now,M/S1,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Sparkling,1,-,Domaine Carneros,Blanc de Noir,Other,USA,CA,Northern CA,,,,40,750,Short,Krug,,TRUE,TRUE,FALSE,FALSE,FALSE
+R,White,3,2019,Arenae Colares,Malvasia Colares Vinho Branco,Other,Portugal,,,,Colares,,$30.00,500,Short,Own Colares Box,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,2,2020,Di Costanzo,DI CO,Cabernet Sauvignon,USA,CA,Northern CA,Napa Valley,,,65,750,Short,R/M1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,White,1,2020,Pierre-Yves Colin-Morey,Pernand-Verglesses - Sous Frétilles 1er Cru,Chardonnay,France,,Burgundy,Pernand-Verglesses 1er Cru,,,???,750,Medium,Krug Box,,TRUE,FALSE,FALSE,FALSE,FALSE
+R,White,1,2020,Saison Winery,Regan Vineyard Chardonnay,Chardonnay,USA,CA,Northern CA,Santa Cruz Mountains,,Regan Vineyards,$35.00,750,Short,M/S1,,TRUE,FALSE,TRUE,TRUE,TRUE
+R,White,2,2022,Clos Cibonne,Tibouren,Other,France,Southern France,Cotes de Provence,,,,$30.00,,Short,M/S1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R+M,Red,1,2020,Gallica Wine,Heritage Vineyard Albarino,Other,USA,CA,Northern CA,Sierra Foothills,Calaveras County,Rorick Heritage Vineyard,30,750,Now,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,TRUE
+R,Red,1,NV,V. Sattui Winery,Madeira,Other,USA,CA,Napa Valley,,,,$40.00,750,Long,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Leeuwin Estate,Art Series Cabernet,Cabernet Sauvignon,Australia,Western Australia,Margaret River,,,,$40.00,750,Medium,M/S1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2019,Corazon Del Sol,Malbec,Other,Chile,,Uco Valley,Los Chacayes,,,$40.00,750,Short,M/S1,,FALSE,FALSE,FALSE,TRUE,FALSE
+R,Red,1,2018,Chapellett Winery,Hideaway Vineyard Cabernet,Cabernet Sauvignon,USA,CA,Napa Valley,Pritchard Hill,,Hideaway Vineyard,$195.00,750,Medium,M/S1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,White,1,2022,Emmanuel Rouget,Bourgogne Aligote,Other,France,,Burgundy,,,,$55.00,750,Medium,M/S1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2021,Giacomo Conterno,Vigna Cerretta,Barbera ,Italy,Piedmont,Alba,Barolo,,Cerretta,$80.00,750,Medium,Loose,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2022,Comm G.B Burlotto,Aves,Barbera ,Italy,Piedmont,Alba,Barolo,,,$45.00,750,Medium,Loose,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Newfound,Scaggs Vineyard Counoise,Other,USA,CA,Northern CA,Napa Valley,Mt. Veeder,Scaggs Vineyard,$60.00,750,Medium,M/S1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2022,Birichino Vineyard,Old Vine Grenache,Other,USA,CA,Santa Cruz Mountains,,,Besson Vineyard,$30.00,750,Short,M/S1,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2022,Birichino Vineyard,Old Vine Grenache,Other,USA,CA,Santa Cruz Mountains,,,Besson Vineyard,$30.00,750,Short,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2022,Justine Vigne,Ultreia - Grenache,Rhone Blend,France,,Rhone,Southern Rhone,,,$60.00,750,Medium,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,2,2020,Chiara Condello,Predappio,Sangiovese,Italy,N/A,Emiliga-Romagna,,,,$30.00,750,Medium,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Sparkling,1,2018,Schramsberg,Caminante Del Cielo Vineyard,Other,USA,CA,Marin County,,,Caminante Del Cielo Vineyard,$60.00,750,Short,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,White,1,2022,Patrick Piuze,La Grande Vallee,Chardonnay,France,,Burgundy,Chablis,La Grane Valle,,$40.00,750,Short,M3,,FALSE,FALSE,FALSE,FALSE,FALSE
+R,Red,1,2018,Powel & Son,Loechel Vineyard Shiraz,Syrah,Australia,South Australia,Eden Valley,,,Loechel Vineyard,$110.00,750,Medium,Domaine Wine Storage ,,FALSE,FALSE,FALSE,FALSE,FALSE
