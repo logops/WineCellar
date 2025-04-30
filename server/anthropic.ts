@@ -289,8 +289,8 @@ Your response MUST be a valid JSON object with this exact format:
         const isDessert = queryLower.includes('dessert') || queryLower.includes('sweet') || queryLower.includes('chocolate');
         const isCelebration = queryLower.includes('celebration') || queryLower.includes('anniversary') || queryLower.includes('special');
         
-        // Scoring function to rank wines for this specific query
-        function scoreWineForQuery(wine: any): number {
+        // Scoring function to rank wines for this specific query - use arrow function to avoid strict mode issue
+        const scoreWineForQuery = (wine: any): number => {
           let score = 0.5; // Start with neutral score
           
           // Type matching for food pairing
@@ -323,16 +323,16 @@ Your response MUST be a valid JSON object with this exact format:
         const topWines = scoredWines.slice(0, Math.min(3, scoredWines.length));
         
         // Create recommendations from top-scored wines
-        topWines.forEach(({ wine, score }) => {
+        topWines.forEach(({ wine: wineObj, score }) => {
           // Build a reasoning based on the query and wine type
           let reasoning = `Based on your query about "${query}", `;
           
-          if (isSteak && wine.wine.type?.toLowerCase() === 'red') {
+          if (isSteak && wineObj.type?.toLowerCase() === 'red') {
             reasoning += "this red wine should complement your steak well with its structure and tannins that pair nicely with red meat.";
-          } else if (isSeafood && wine.wine.type?.toLowerCase() === 'white') {
+          } else if (isSeafood && wineObj.type?.toLowerCase() === 'white') {
             reasoning += "this white wine's acidity and freshness should pair nicely with seafood.";
           } else if (isSpicy) {
-            reasoning += `this ${wine.wine.type?.toLowerCase()} wine should balance well with spicy food.`;
+            reasoning += `this ${wineObj.type?.toLowerCase()} wine should balance well with spicy food.`;
           } else if (isCelebration) {
             reasoning += "this wine would be suitable for your special occasion.";
           } else {
@@ -343,13 +343,13 @@ Your response MUST be a valid JSON object with this exact format:
           let characteristics = "";
           let servingSuggestions = "";
           
-          if (wine.wine.type?.toLowerCase() === 'red') {
+          if (wineObj.type?.toLowerCase() === 'red') {
             characteristics = "This red wine likely offers good structure with fruit notes and possibly tannins that complement flavorful dishes.";
             servingSuggestions = "Serve slightly below room temperature (around 60-65°F/16-18°C) in a red wine glass.";
-          } else if (wine.wine.type?.toLowerCase() === 'white') {
+          } else if (wineObj.type?.toLowerCase() === 'white') {
             characteristics = "This white wine should provide refreshing acidity and fruit flavors that complement your meal.";
             servingSuggestions = "Serve chilled (around 45-50°F/7-10°C) in a white wine glass.";
-          } else if (wine.wine.type?.toLowerCase() === 'sparkling') {
+          } else if (wineObj.type?.toLowerCase() === 'sparkling') {
             characteristics = "This sparkling wine offers effervescence and acidity that makes it versatile with many foods and perfect for celebrations.";
             servingSuggestions = "Serve well chilled (around 42-45°F/6-7°C) in a flute or tulip glass.";
           } else {
@@ -359,10 +359,10 @@ Your response MUST be a valid JSON object with this exact format:
           
           // Age considerations based on vintage
           let ageConsiderations = "";
-          if (wine.wine.vintage) {
-            if (wine.wine.vintage > 2020) {
+          if (wineObj.vintage) {
+            if (wineObj.vintage > 2020) {
               ageConsiderations = "This is a young wine that should be showing fresh, primary fruit characteristics.";
-            } else if (wine.wine.vintage > 2015) {
+            } else if (wineObj.vintage > 2015) {
               ageConsiderations = "This wine has had some time to develop but should still be showing good fruit characteristics.";
             } else {
               ageConsiderations = "This wine has had time to develop more complex tertiary flavors, potentially showing more maturity.";
@@ -372,8 +372,8 @@ Your response MUST be a valid JSON object with this exact format:
           }
           
           fallbackRecs.push({
-            wineId: wine.wine.id,
-            wine: `${wine.wine.vintage || 'NV'} ${wine.wine.producer} ${wine.wine.name || ''}`.trim(),
+            wineId: wineObj.id,
+            wine: `${wineObj.vintage || 'NV'} ${wineObj.producer} ${wineObj.name || ''}`.trim(),
             reasoning,
             characteristics,
             servingSuggestions,
