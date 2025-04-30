@@ -415,14 +415,74 @@ export async function processBatch(
         mappedData.producer = producer.trim();
         mappedData.name = name.trim();
       } else {
-        // Try to extract just producer and name (no vintage)
-        // Look for patterns like "Producer Wine Name" where we can split on the first occurrence of key words
-        const producerNameSplit = producerValue.match(/^([A-Za-z\u00C0-\u00FF\s'&]+?)(?:\s+)((?:Cabernet|Chardonnay|Pinot|Merlot|Sauvignon|Syrah|Vineyard|Cuvée|Estate|Reserve|Grand|Cru|Premier|Clos|Château).+)$/);
+        // Check for known multi-word producers first
+        const knownProducers = [
+          "Casa Lapostolle",
+          "Domaine Serene",
+          "Chateau Margaux",
+          "Silver Oak",
+          "Opus One",
+          "Stag's Leap",
+          "Penfolds Grange",
+          "Caymus Vineyards"
+        ];
         
-        if (producerNameSplit) {
-          const [_, producer, name] = producerNameSplit;
-          mappedData.producer = producer.trim();
-          mappedData.name = name.trim();
+        // Check for known multi-word producers
+        const matchedProducer = knownProducers.find(producer => 
+          producerValue.toLowerCase().includes(producer.toLowerCase())
+        );
+        
+        if (matchedProducer) {
+          // Split the name using the known producer
+          const regex = new RegExp(`^(.*?${matchedProducer})\\s+(.+)$`, 'i');
+          const match = producerValue.match(regex);
+          
+          if (match) {
+            const [_, producer, name] = match;
+            mappedData.producer = producer.trim();
+            mappedData.name = name.trim();
+          }
+        } else {
+          // Try to extract just producer and name (no vintage)
+          // Look for patterns like "Producer Wine Name" where we can split on the first occurrence of key words
+          const keyWords = [
+            'Cabernet', 'Chardonnay', 'Pinot', 'Merlot', 'Sauvignon', 'Syrah', 'Riesling', 
+            'Vineyard', 'Cuvée', 'Estate', 'Reserve', 'Grand', 'Cru', 'Premier', 'Clos', 
+            'Château', 'Red', 'White', 'Rosé', 'Blend', 'Special', 'Limited', 'Selection',
+            'Le', 'La', 'Les', 'De', 'The'
+          ];
+          
+          // Create a regex with all key words as alternatives
+          const keyWordsPattern = keyWords.join('|');
+          const producerNameSplit = producerValue.match(
+            new RegExp(`^([A-Za-z\\u00C0-\\u00FF\\s'&]+?)(?:\\s+)((?:${keyWordsPattern}).+)$`, 'i')
+          );
+          
+          if (producerNameSplit) {
+            const [_, producer, name] = producerNameSplit;
+            mappedData.producer = producer.trim();
+            mappedData.name = name.trim();
+          }
+          
+          // If the producerValue starts with "Casa" or similar and no name was extracted, try again
+          // These are commonly confused in spreadsheet imports
+          if (!mappedData.name && (
+            producerValue.startsWith('Casa') || 
+            producerValue.startsWith('Domaine') || 
+            producerValue.startsWith('Chateau') ||
+            producerValue.startsWith('Dominio') ||
+            producerValue.startsWith('Vina') ||
+            producerValue.startsWith('Bodega')
+          )) {
+            // Find the first space after the second word
+            const words = producerValue.split(' ');
+            if (words.length > 3) {
+              const producerPart = words.slice(0, 2).join(' ');
+              const namePart = words.slice(2).join(' ');
+              mappedData.producer = producerPart.trim();
+              mappedData.name = namePart.trim();
+            }
+          }
         }
       }
     }
@@ -432,15 +492,44 @@ export async function processBatch(
     if (mappedData.name && !mappedData.producer) {
       const nameValue = String(mappedData.name);
       
-      // Look for a pattern like "Casa Lapostolle Le Petit Clos Apalta"
-      // Common producers are 1-3 words
-      const producerNamePattern = /^([A-Za-z\u00C0-\u00FF\s'&]{2,30}?)(?:\s+)([A-Za-z\u00C0-\u00FF\s'&]{3,})$/;
-      const match = nameValue.match(producerNamePattern);
+      // Look for known multi-word producers first
+      const knownProducers = [
+        "Casa Lapostolle",
+        "Domaine Serene",
+        "Chateau Margaux",
+        "Silver Oak",
+        "Opus One",
+        "Stag's Leap",
+        "Penfolds Grange",
+        "Caymus Vineyards"
+      ];
       
-      if (match) {
-        const [_, producer, name] = match;
-        mappedData.producer = producer.trim();
-        mappedData.name = name.trim();
+      // Check for known multi-word producers
+      const matchedProducer = knownProducers.find(producer => 
+        nameValue.toLowerCase().includes(producer.toLowerCase())
+      );
+      
+      if (matchedProducer) {
+        // Split the name using the known producer
+        const regex = new RegExp(`^(.*?${matchedProducer})\\s+(.+)$`, 'i');
+        const match = nameValue.match(regex);
+        
+        if (match) {
+          const [_, producer, name] = match;
+          mappedData.producer = producer.trim();
+          mappedData.name = name.trim();
+        }
+      } else {
+        // Look for a pattern like "Casa Lapostolle Le Petit Clos Apalta"
+        // Common producers are typically 1-3 words
+        const producerNamePattern = /^([A-Za-z\u00C0-\u00FF\s'&]{2,30}?)(?:\s+)([A-Za-z\u00C0-\u00FF\s'&]{3,})$/;
+        const match = nameValue.match(producerNamePattern);
+        
+        if (match) {
+          const [_, producer, name] = match;
+          mappedData.producer = producer.trim();
+          mappedData.name = name.trim();
+        }
       }
     }
     
@@ -568,20 +657,22 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
         // Parse the recommendation
         try {
           // The response format has changed in Claude-3-7-sonnet
-          const response = result.content[0].text;
-          const recommendation = JSON.parse(response);
+          const content = result.content[0];
+          if ('text' in content) {
+            const recommendation = JSON.parse(content.text);
           
-          // Add the recommendation to the wine
-          wine.aiDrinkingWindowRecommendation = {
-            start: recommendation.start,
-            end: recommendation.end,
-            confidence: recommendation.confidence === 'high' 
-              ? ConfidenceLevel.HIGH 
-              : recommendation.confidence === 'medium'
-                ? ConfidenceLevel.MEDIUM
-                : ConfidenceLevel.LOW,
-            reasoning: recommendation.reasoning
-          };
+            // Add the recommendation to the wine
+            wine.aiDrinkingWindowRecommendation = {
+              start: recommendation.start,
+              end: recommendation.end,
+              confidence: recommendation.confidence === 'high' 
+                ? ConfidenceLevel.HIGH 
+                : recommendation.confidence === 'medium'
+                  ? ConfidenceLevel.MEDIUM
+                  : ConfidenceLevel.LOW,
+              reasoning: recommendation.reasoning
+            };
+          }
         } catch (parseError) {
           console.error('Error parsing AI recommendation:', parseError);
         }
