@@ -362,9 +362,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let wishlistItems: Wishlist[] = [];
       
       try {
-        wines = await storage.getWinesByUserId(userId);
-        consumptions = await storage.getConsumptionsByUserId(userId);
-        wishlistItems = await storage.getWishlistItemsByUserId(userId);
+        wines = await dbStorage.getWinesByUserId(userId);
+        consumptions = await dbStorage.getConsumptionsByUserId(userId);
+        wishlistItems = await dbStorage.getWishlistItemsByUserId(userId);
       } catch (queryError) {
         console.error('Error fetching data:', queryError);
         // If queries fail, return simplified statistics
