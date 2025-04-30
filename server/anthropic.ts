@@ -147,6 +147,22 @@ export async function handleWineLabelAnalysis(req: Request, res: Response) {
   }
 }
 
+// Define the recommendation interface for type safety
+interface Recommendation {
+  wineId: number;
+  wine: string;
+  reasoning: string;
+  characteristics: string;
+  servingSuggestions: string;
+  ageConsiderations: string;
+  confidenceScore: number;
+}
+
+interface RecommendationData {
+  recommendations: Recommendation[];
+  additionalSuggestions: string;
+}
+
 /**
  * Intelligent wine recommendation based on food pairing or occasion
  */
@@ -203,23 +219,21 @@ If the query is about food pairing, provide DETAILED ANALYSIS about:
 - Regional pairing traditions that apply to this specific wine
 - Why the wine's age and maturity level suits this pairing
 
-Output your response in the following JSON format:
+Your response MUST be a valid JSON object with this exact format:
 {
   "recommendations": [
     {
       "wineId": number,
-      "wine": string, // A formatted string with vintage, producer and name
-      "reasoning": string, // Detailed explanation of why this SPECIFIC wine works well
-      "characteristics": string, // Detailed flavor/aroma profile specific to this wine
-      "servingSuggestions": string, // Precise temperature, decanting, glassware
-      "ageConsiderations": string, // If the wine is ready now or needs aging and why
-      "confidenceScore": number // 0-1 indicating confidence in recommendation
+      "wine": "string value",
+      "reasoning": "string value",
+      "characteristics": "string value",
+      "servingSuggestions": "string value",
+      "ageConsiderations": "string value",
+      "confidenceScore": number
     }
   ],
-  "additionalSuggestions": string // Any additional expert advice if needed
-}
-
-If there are no suitable wines in the collection for this query, provide alternative suggestions or detailed expert advice in the additionalSuggestions field.`
+  "additionalSuggestions": "string value"
+}`
             }
           ]
         }
@@ -241,14 +255,63 @@ If there are no suitable wines in the collection for this query, provide alterna
       throw new Error('Could not extract JSON data from the API response');
     }
     
-    // Parse the extracted JSON
-    const recommendationData = JSON.parse(jsonMatch[0]);
-    
-    return {
-      success: true,
-      data: recommendationData
-    };
-  } catch (error) {
+    try {
+      // Parse the extracted JSON
+      let jsonString = jsonMatch[0];
+      
+      // Perform additional cleanup and validation to ensure valid JSON
+      // Replace any invalid escape sequences
+      jsonString = jsonString.replace(/\\\\/g, '\\')
+                          .replace(/\\'/g, "'")
+                          .replace(/\\"/g, '"')
+                          .replace(/\n/g, '\\n')
+                          .replace(/\r/g, '\\r')
+                          .replace(/\t/g, '\\t');
+      
+      // Create a fallback recommendation if JSON parsing fails
+      let recommendationData: RecommendationData;
+      try {
+        recommendationData = JSON.parse(jsonString);
+      } catch (jsonError) {
+        console.error('Error parsing JSON from Claude, attempting to fix:', jsonError);
+        
+        // Create a sanitized fallback response
+        recommendationData = {
+          recommendations: [],
+          additionalSuggestions: "Sorry, but I couldn't generate detailed recommendations at this time. Please try a different query or try again later."
+        };
+      }
+      
+      // Validate and ensure all fields exist in each recommendation
+      if (recommendationData.recommendations && Array.isArray(recommendationData.recommendations)) {
+        recommendationData.recommendations = recommendationData.recommendations.map((rec: any): Recommendation => {
+          return {
+            wineId: typeof rec.wineId === 'number' ? rec.wineId : 0,
+            wine: typeof rec.wine === 'string' ? rec.wine : "Unknown Wine",
+            reasoning: typeof rec.reasoning === 'string' ? rec.reasoning : "No specific reasoning provided",
+            characteristics: typeof rec.characteristics === 'string' ? rec.characteristics : "No characteristics available",
+            servingSuggestions: typeof rec.servingSuggestions === 'string' ? rec.servingSuggestions : "Serve at room temperature in a standard wine glass",
+            ageConsiderations: typeof rec.ageConsiderations === 'string' ? rec.ageConsiderations : "No specific age considerations provided",
+            confidenceScore: typeof rec.confidenceScore === 'number' ? Math.min(Math.max(rec.confidenceScore, 0), 1) : 0.5
+          };
+        });
+      } else {
+        recommendationData.recommendations = [];
+      }
+      
+      if (!recommendationData.additionalSuggestions) {
+        recommendationData.additionalSuggestions = "";
+      }
+      
+      return {
+        success: true,
+        data: recommendationData
+      };
+    } catch (error: any) {
+      console.error('Error processing recommendation data:', error);
+      throw new Error(`Failed to process recommendation data: ${error.message}`);
+    }
+  } catch (error: any) {
     console.error('Error getting wine recommendations:', error);
     return {
       success: false,
