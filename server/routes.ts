@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage as dbStorage } from "./storage";
 import { 
   insertWineSchema, 
   insertConsumptionSchema, 
@@ -24,9 +24,9 @@ import { Buffer } from 'buffer';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer for file uploads
-  const storage = multer.memoryStorage();
+  const multerStorage = multer.memoryStorage();
   const upload = multer({ 
-    storage,
+    storage: multerStorage,
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
   });
   // Set up authentication
@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const consumedStatus = req.query.consumedStatus as string || 'in_cellar';
       
       try {
-        const wines = await storage.getWinesByUserId(req.user.id);
+        const wines = await dbStorage.getWinesByUserId(req.user.id);
         
         // Filter wines based on consumedStatus
         const filteredWines = wines.filter(wine => {
@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'User not authenticated' });
       }
       
-      const wine = await storage.getWine(Number(req.params.id));
+      const wine = await dbStorage.getWine(Number(req.params.id));
       if (!wine) {
         return res.status(404).json({ message: 'Wine not found' });
       }
@@ -121,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const validatedData = insertWineSchema.parse(wineData);
-      const wine = await storage.createWine(validatedData);
+      const wine = await dbStorage.createWine(validatedData);
       res.status(201).json(wine);
     } catch (err) {
       handleZodError(err, res);
@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = Number(req.params.id);
       
       // Get the wine to check ownership
-      const wine = await storage.getWine(id);
+      const wine = await dbStorage.getWine(id);
       if (!wine) {
         return res.status(404).json({ message: 'Wine not found' });
       }
@@ -187,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = Number(req.params.id);
       
       // Get the wine to check ownership
-      const wine = await storage.getWine(id);
+      const wine = await dbStorage.getWine(id);
       if (!wine) {
         return res.status(404).json({ message: 'Wine not found' });
       }
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Verify that the wine belongs to the current user
-      const wine = await storage.getWine(consumptionData.wineId);
+      const wine = await dbStorage.getWine(consumptionData.wineId);
       if (!wine) {
         return res.status(404).json({ message: 'Wine not found' });
       }
