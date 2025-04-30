@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import fs from "fs";
 import { storage as dbStorage } from "./storage";
 import { 
   insertWineSchema, 
@@ -24,9 +25,18 @@ import { Buffer } from 'buffer';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer for file uploads
-  const multerStorage = multer.memoryStorage();
+  const fileStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'temp/'); // Store files in 'temp' directory
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + '-' + file.originalname);
+    }
+  });
+
   const upload = multer({ 
-    storage: multerStorage,
+    storage: fileStorage,
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
   });
   // Set up authentication
@@ -553,7 +563,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const fileBuffer = req.file.buffer;
+      // Read the file from disk
+      const fileBuffer = fs.readFileSync(req.file.path);
       const useAiDrinkingWindows = req.body.useAiDrinkingWindows === 'true';
 
       // Process the uploaded spreadsheet
@@ -586,7 +597,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const fileBuffer = req.file.buffer;
+      // Read the file from disk
+      const fileBuffer = fs.readFileSync(req.file.path);
       const batchIndex = parseInt(req.body.batchIndex || '0');
       const batchSize = parseInt(req.body.batchSize || '100');
       const useAiDrinkingWindows = req.body.useAiDrinkingWindows === 'true';
