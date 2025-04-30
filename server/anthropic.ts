@@ -175,7 +175,7 @@ export async function getWineRecommendations(query: string, wines: Wine[]) {
           content: [
             {
               type: 'text',
-              text: `You are an expert sommelier and wine advisor. Based on the following user query, recommend wines from their personal collection that would be appropriate.
+              text: `You are an expert master sommelier and wine advisor with deep knowledge of wine regions, producers, vintages, and food pairings. Based on the following user query, recommend specific wines from their personal collection that would be appropriate.
 
 USER QUERY: "${query}"
 
@@ -184,16 +184,24 @@ ${JSON.stringify(wineCollection, null, 2)}
 
 Please analyze the user's query to understand what kind of occasion, food pairing, or experience they're looking for. Then recommend 1-5 wines from their collection that would be ideal.
 
-For each recommendation:
-1. Briefly explain why this wine is a good match
-2. Include any relevant information about the wine's characteristics
-3. Add serving suggestions (temperature, decanting, glassware)
+For each recommendation, provide VERY SPECIFIC and DETAILED analysis that is unique to THAT PARTICULAR WINE:
+1. Explain in detail why THIS SPECIFIC WINE (not just its type) is a good match for the query
+2. Include specific information about THIS WINE'S characteristics that make it suitable
+3. Mention if the wine is ready to drink now or needs aging (and why)
+4. Add precise serving suggestions (exact temperature, decanting time if needed, specific glassware)
 
-If the query is about food pairing, please pay attention to:
-- Type of food (meat, fish, vegetarian, spicy, etc.)
-- Cooking method (grilled, roasted, raw, etc.)
-- Sauce or seasoning
-- Cultural cuisine context
+When recommending a wine, be very specific about WHY you chose THIS EXACT WINE over others of similar type in the collection. For example, if there are multiple Burgundy Chardonnays, explain precisely why you're recommending one over others based on:
+- Specific producer style and characteristics
+- The exact vintage and its qualities
+- Specific features that make it more suitable for the requested pairing
+- Current drinking window considerations
+- Specific flavor compounds that interact with the food/occasion
+
+If the query is about food pairing, provide DETAILED ANALYSIS about:
+- Specific compounds in the wine that interact with the food
+- Why this exact wine's acidity, tannin, alcohol, and sugar levels complement the dish
+- Regional pairing traditions that apply to this specific wine
+- Why the wine's age and maturity level suits this pairing
 
 Output your response in the following JSON format:
 {
@@ -201,16 +209,17 @@ Output your response in the following JSON format:
     {
       "wineId": number,
       "wine": string, // A formatted string with vintage, producer and name
-      "reasoning": string, // Why this wine works well
-      "characteristics": string, // Key flavor/aroma profiles
-      "servingSuggestions": string,
+      "reasoning": string, // Detailed explanation of why this SPECIFIC wine works well
+      "characteristics": string, // Detailed flavor/aroma profile specific to this wine
+      "servingSuggestions": string, // Precise temperature, decanting, glassware
+      "ageConsiderations": string, // If the wine is ready now or needs aging and why
       "confidenceScore": number // 0-1 indicating confidence in recommendation
     }
   ],
-  "additionalSuggestions": string // Any additional advice if you don't have perfect matches
+  "additionalSuggestions": string // Any additional expert advice if needed
 }
 
-If there are no suitable wines in the collection for this query, provide alternative suggestions or general advice in the additionalSuggestions field.`
+If there are no suitable wines in the collection for this query, provide alternative suggestions or detailed expert advice in the additionalSuggestions field.`
             }
           ]
         }

@@ -29,6 +29,7 @@ interface WineRecommendationResult {
     reasoning: string;
     characteristics: string;
     servingSuggestions: string;
+    ageConsiderations: string;
     confidenceScore: number;
   }[];
   additionalSuggestions: string;
@@ -550,6 +551,11 @@ export default function Search() {
                             <div>
                               <h4 className="text-sm font-medium mb-1">Serving Suggestions:</h4>
                               <p className="text-sm text-gray-600">{rec.servingSuggestions}</p>
+                            </div>
+
+                            <div className="mt-3">
+                              <h4 className="text-sm font-medium mb-1">Age Considerations:</h4>
+                              <p className="text-sm text-gray-600">{rec.ageConsiderations}</p>
                             </div>
                           </div>
                         </div>
