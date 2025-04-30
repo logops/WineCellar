@@ -366,7 +366,8 @@ export async function processBatch(
         }
         
         // Set the parsed numeric value
-        mappedData[mapping.field] = numValue;
+        // Use type assertion to handle TS indexing error
+        mappedData[mapping.field as keyof typeof mappedData] = numValue;
       }
       // Handle drinking window dates
       else if (['drinkingWindowStart', 'drinkingWindowEnd'].includes(mapping.field)) {
@@ -405,16 +406,39 @@ export async function processBatch(
       const producerValue = String(mappedData.producer);
       
       // Look for common patterns like "2018 Producer Wine Name"
-      const fullNamePattern = /^((?:19|20)\d{2})\s+([A-Za-z\u00C0-\u00FF\s'&]+?)(?:\s+)(.+)$/;
-      const match = producerValue.match(fullNamePattern);
+      // Add special handling for state abbreviations like "CA" in the name
+      const stateAbbreviations = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'];
+
+      // First check if there's a state abbreviation in the value that should be extracted
+      const statePattern = new RegExp(`^((?:19|20)\\d{2})\\s+(${stateAbbreviations.join('|')})\\s+(.+)$`);
+      const stateMatch = producerValue.match(statePattern);
       
-      if (match) {
-        // Extract vintage, producer and name
-        const [_, vintage, producer, name] = match;
+      if (stateMatch) {
+        // Extract vintage, state abbreviation (as region), and remaining part
+        const [_, vintage, stateAbbr, remainingName] = stateMatch;
         mappedData.vintage = parseInt(vintage);
-        mappedData.producer = producer.trim();
-        mappedData.name = name.trim();
+        mappedData.region = stateAbbr;
+        
+        // Now parse the remaining part to extract producer and name
+        const remainingParts = remainingName.split(/\s+(?=[A-Z][a-z]+|[A-Z]{2,})/, 2);
+        if (remainingParts.length > 1) {
+          mappedData.producer = remainingParts[0].trim();
+          mappedData.name = remainingParts[1].trim();
+        } else {
+          mappedData.name = remainingName.trim();
+        }
       } else {
+        // Use the original pattern for cases without state abbreviations
+        const fullNamePattern = /^((?:19|20)\d{2})\s+([A-Za-z\u00C0-\u00FF\s'&]+?)(?:\s+)(.+)$/;
+        const match = producerValue.match(fullNamePattern);
+        
+        if (match) {
+          // Extract vintage, producer and name
+          const [_, vintage, producer, name] = match;
+          mappedData.vintage = parseInt(vintage);
+          mappedData.producer = producer.trim();
+          mappedData.name = name.trim();
+        } else {
         // Check for known multi-word producers first
         const knownProducers = [
           "Casa Lapostolle",
