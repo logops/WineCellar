@@ -275,60 +275,112 @@ Your response MUST be a valid JSON object with this exact format:
       } catch (jsonError) {
         console.error('Error parsing JSON from Claude, attempting to fix:', jsonError);
         
-        // Create a fallback response with actual wines from the collection
-        // Rather than showing no recommendations, we'll select the most versatile wines
-        // from the user's collection as fallbacks
-        const redWines = wineCollection.filter(w => w.type?.toLowerCase() === 'red');
-        const whiteWines = wineCollection.filter(w => w.type?.toLowerCase() === 'white');
+        // Create a fallback response based on query analysis
+        // We'll analyze the query to provide relevant recommendations rather than
+        // making assumptions about wine types
         
-        // Add generic recommendations prioritizing reds for most food pairings
-        // but include a white option if available
         const fallbackRecs: Recommendation[] = [];
+        const queryLower = query.toLowerCase();
         
-        // Add red wine recommendations if available (most versatile for many pairings)
-        if (redWines.length > 0) {
-          // Sort by vintage (newer first as they're generally more approachable)
-          const sortedReds = [...redWines].sort((a, b) => 
-            (b.vintage || 2020) - (a.vintage || 2000)
-          );
+        // Basic query keyword analysis
+        const isSteak = queryLower.includes('steak') || queryLower.includes('beef') || queryLower.includes('tomahawk');
+        const isSeafood = queryLower.includes('fish') || queryLower.includes('seafood') || queryLower.includes('salmon');
+        const isSpicy = queryLower.includes('spicy') || queryLower.includes('hot') || queryLower.includes('chili');
+        const isDessert = queryLower.includes('dessert') || queryLower.includes('sweet') || queryLower.includes('chocolate');
+        const isCelebration = queryLower.includes('celebration') || queryLower.includes('anniversary') || queryLower.includes('special');
+        
+        // Scoring function to rank wines for this specific query
+        function scoreWineForQuery(wine: any): number {
+          let score = 0.5; // Start with neutral score
           
-          // Add the top 1-2 red wine recommendations
-          const topReds = sortedReds.slice(0, Math.min(2, sortedReds.length));
+          // Type matching for food pairing
+          if (isSteak && wine.type?.toLowerCase() === 'red') score += 0.15;
+          if (isSeafood && wine.type?.toLowerCase() === 'white') score += 0.15;
+          if (isSpicy && (wine.type?.toLowerCase() === 'white' || wine.type?.toLowerCase() === 'rosé')) score += 0.1;
+          if (isDessert && (wine.type?.toLowerCase() === 'dessert' || wine.type?.toLowerCase() === 'sparkling')) score += 0.15;
+          if (isCelebration && wine.type?.toLowerCase() === 'sparkling') score += 0.15;
           
-          topReds.forEach(wine => {
-            fallbackRecs.push({
-              wineId: wine.id,
-              wine: `${wine.vintage || 'NV'} ${wine.producer} ${wine.name || ''}`.trim(),
-              reasoning: "This red wine should complement your meal well. Red wines generally pair nicely with rich, flavorful dishes.",
-              characteristics: "Red wines typically offer fruit-forward flavors with varying levels of tannins and acidity that help cut through rich foods.",
-              servingSuggestions: "Serve slightly below room temperature (around 60-65°F/16-18°C) in a standard red wine glass.",
-              ageConsiderations: wine.vintage && wine.vintage > 2018 ? 
-                "This is a relatively young wine that should be showing fresh, vibrant characteristics." : 
-                "This wine has had some time to develop more complex flavors.",
-              confidenceScore: 0.7
-            });
-          });
+          // Special region considerations
+          if (isSteak && wine.region?.toLowerCase().includes('bordeaux')) score += 0.05;
+          if (isSteak && wine.region?.toLowerCase().includes('napa')) score += 0.05;
+          if (isSeafood && wine.region?.toLowerCase().includes('burgundy')) score += 0.05;
+          if (isSeafood && wine.region?.toLowerCase().includes('loire')) score += 0.05;
+          
+          // Vintage considerations (newer wines may be more approachable)
+          if (wine.vintage && wine.vintage > 2018) score += 0.05;
+          
+          // Limit maximum score
+          return Math.min(score, 0.85);
         }
         
-        // Add a white wine recommendation if available (for versatility)
-        if (whiteWines.length > 0) {
-          const newestWhite = whiteWines.reduce((newest, current) => 
-            (current.vintage || 0) > (newest.vintage || 0) ? current : newest, 
-            whiteWines[0]
-          );
+        // Score and sort all wines based on the query
+        const scoredWines = wineCollection.map(wine => ({
+          wine,
+          score: scoreWineForQuery(wine)
+        })).sort((a, b) => b.score - a.score);
+        
+        // Take the top 2-3 wines as recommendations
+        const topWines = scoredWines.slice(0, Math.min(3, scoredWines.length));
+        
+        // Create recommendations from top-scored wines
+        topWines.forEach(({ wine, score }) => {
+          // Build a reasoning based on the query and wine type
+          let reasoning = `Based on your query about "${query}", `;
+          
+          if (isSteak && wine.wine.type?.toLowerCase() === 'red') {
+            reasoning += "this red wine should complement your steak well with its structure and tannins that pair nicely with red meat.";
+          } else if (isSeafood && wine.wine.type?.toLowerCase() === 'white') {
+            reasoning += "this white wine's acidity and freshness should pair nicely with seafood.";
+          } else if (isSpicy) {
+            reasoning += `this ${wine.wine.type?.toLowerCase()} wine should balance well with spicy food.`;
+          } else if (isCelebration) {
+            reasoning += "this wine would be suitable for your special occasion.";
+          } else {
+            reasoning += "this wine from your collection appears to be a good match for your meal or occasion.";
+          }
+          
+          // Generate specific characteristics based on wine type
+          let characteristics = "";
+          let servingSuggestions = "";
+          
+          if (wine.wine.type?.toLowerCase() === 'red') {
+            characteristics = "This red wine likely offers good structure with fruit notes and possibly tannins that complement flavorful dishes.";
+            servingSuggestions = "Serve slightly below room temperature (around 60-65°F/16-18°C) in a red wine glass.";
+          } else if (wine.wine.type?.toLowerCase() === 'white') {
+            characteristics = "This white wine should provide refreshing acidity and fruit flavors that complement your meal.";
+            servingSuggestions = "Serve chilled (around 45-50°F/7-10°C) in a white wine glass.";
+          } else if (wine.wine.type?.toLowerCase() === 'sparkling') {
+            characteristics = "This sparkling wine offers effervescence and acidity that makes it versatile with many foods and perfect for celebrations.";
+            servingSuggestions = "Serve well chilled (around 42-45°F/6-7°C) in a flute or tulip glass.";
+          } else {
+            characteristics = "This wine offers characteristics that should work well with your described meal or occasion.";
+            servingSuggestions = "Serve according to the wine type - chilled for white wines, room temperature for reds.";
+          }
+          
+          // Age considerations based on vintage
+          let ageConsiderations = "";
+          if (wine.wine.vintage) {
+            if (wine.wine.vintage > 2020) {
+              ageConsiderations = "This is a young wine that should be showing fresh, primary fruit characteristics.";
+            } else if (wine.wine.vintage > 2015) {
+              ageConsiderations = "This wine has had some time to develop but should still be showing good fruit characteristics.";
+            } else {
+              ageConsiderations = "This wine has had time to develop more complex tertiary flavors, potentially showing more maturity.";
+            }
+          } else {
+            ageConsiderations = "Check the vintage to determine if it's at its optimal drinking window.";
+          }
           
           fallbackRecs.push({
-            wineId: newestWhite.id,
-            wine: `${newestWhite.vintage || 'NV'} ${newestWhite.producer} ${newestWhite.name || ''}`.trim(),
-            reasoning: "This white wine would provide a refreshing contrast to your meal and appeals to guests who prefer white wines.",
-            characteristics: "White wines typically offer bright acidity and fruit flavors that can complement a variety of dishes.",
-            servingSuggestions: "Serve chilled (around 45-50°F/7-10°C) in a standard white wine glass.",
-            ageConsiderations: newestWhite.vintage && newestWhite.vintage > 2020 ? 
-              "This young white wine should be fresh and vibrant with primary fruit flavors." : 
-              "This white wine has had time to develop more complexity while maintaining freshness.",
-            confidenceScore: 0.65
+            wineId: wine.wine.id,
+            wine: `${wine.wine.vintage || 'NV'} ${wine.wine.producer} ${wine.wine.name || ''}`.trim(),
+            reasoning,
+            characteristics,
+            servingSuggestions,
+            ageConsiderations,
+            confidenceScore: score
           });
-        }
+        });
         
         // If no wines were added (unlikely), add a generic recommendation using the first wine
         if (fallbackRecs.length === 0 && wineCollection.length > 0) {
@@ -368,44 +420,98 @@ Your response MUST be a valid JSON object with this exact format:
       }
       
       // If we still have empty recommendations after all processing, 
-      // create fallback recommendations based on the wine collection
+      // create query-relevant fallback recommendations based on the wine collection
       if (recommendationData.recommendations.length === 0 && wineCollection.length > 0) {
-        console.log("No recommendations were generated, creating fallbacks from collection");
-        // Find red wines in the collection (most versatile for food pairings)
-        const redWines = wineCollection.filter(w => w.type?.toLowerCase() === 'red');
+        console.log("No recommendations were generated, creating query-specific fallbacks from collection");
         
-        // If we have red wines, use the first one
-        if (redWines.length > 0) {
-          const fallbackWine = redWines[0];
-          recommendationData.recommendations.push({
-            wineId: fallbackWine.id,
-            wine: `${fallbackWine.vintage || 'NV'} ${fallbackWine.producer} ${fallbackWine.name || ''}`.trim(),
-            reasoning: "This red wine should complement your meal. Red wines generally pair well with a variety of dishes.",
-            characteristics: "Red wines typically offer good structure and complex flavors that enhance the dining experience.",
-            servingSuggestions: "Serve slightly below room temperature in a red wine glass.",
-            ageConsiderations: "Check the vintage to determine if it's at its optimal drinking window.",
-            confidenceScore: 0.6
-          });
-        } 
-        // Otherwise use the first wine in the collection
-        else if (wineCollection.length > 0) {
-          const fallbackWine = wineCollection[0];
-          recommendationData.recommendations.push({
-            wineId: fallbackWine.id,
-            wine: `${fallbackWine.vintage || 'NV'} ${fallbackWine.producer} ${fallbackWine.name || ''}`.trim(),
-            reasoning: "This wine from your collection should be a reasonable choice for your meal or occasion.",
-            characteristics: "Given the details of your query, this wine offers characteristics that should work well.",
-            servingSuggestions: "Serve according to the wine type - chilled for white wines, room temperature for reds.",
-            ageConsiderations: "Check the vintage to determine if it's at its optimal drinking window.",
-            confidenceScore: 0.5
-          });
+        // Analyze query for context
+        const queryLower = query.toLowerCase();
+        
+        // Create a simple scoring system based on the query
+        const scoreWineForQueryClosure = (wine: any): number => {
+          let score = 0.5; // Base score
+          
+          // Look for keywords in the query
+          if ((queryLower.includes('steak') || queryLower.includes('beef') || queryLower.includes('meat')) 
+              && wine.type?.toLowerCase() === 'red') {
+            score += 0.15;
+          }
+          if ((queryLower.includes('fish') || queryLower.includes('seafood')) 
+              && wine.type?.toLowerCase() === 'white') {
+            score += 0.15;
+          }
+          if ((queryLower.includes('dessert') || queryLower.includes('sweet')) 
+              && (wine.type?.toLowerCase() === 'dessert' || wine.type?.toLowerCase() === 'sparkling')) {
+            score += 0.15;
+          }
+          if ((queryLower.includes('celebration') || queryLower.includes('anniversary') || queryLower.includes('special')) 
+              && wine.type?.toLowerCase() === 'sparkling') {
+            score += 0.15;
+          }
+          
+          return Math.min(score, 0.75);
+        };
+        
+        let scoredWines = wineCollection.map(wine => {
+          return { wine, score: scoreWineForQueryClosure(wine) };
+        });
+        
+        // Sort by score and take the top one
+        scoredWines.sort((a, b) => b.score - a.score);
+        const topWineObj = scoredWines[0]; // This contains { wine, score }
+        const wine = topWineObj.wine; // Extract just the wine
+        
+        // Create appropriate reasoning based on the query and wine
+        let reasoning, characteristics, servingSuggestions, ageConsiderations;
+        
+        // Generate reasoning based on query
+        if (queryLower.includes('steak') || queryLower.includes('beef')) {
+          reasoning = `Based on your query about "${query}", this ${wine.type || ''} wine should complement your meal well.`;
+        } else if (queryLower.includes('celebration') || queryLower.includes('anniversary')) {
+          reasoning = `For your ${queryLower.includes('anniversary') ? 'anniversary' : 'celebration'}, this ${wine.type || ''} wine should be a good choice.`;
+        } else {
+          reasoning = `Based on your query about "${query}", this wine appears to be a reasonable match from your collection.`;
         }
         
-        // Add a more helpful message
-        if (!recommendationData.additionalSuggestions || recommendationData.additionalSuggestions.includes("couldn't generate detailed recommendations")) {
-          recommendationData.additionalSuggestions = 
-            "Based on your query, I've selected a wine from your collection that should work reasonably well. For more tailored recommendations, try providing more details about your meal, flavor preferences, or the occasion.";
+        // Generate characteristics based on wine type
+        if (wine.type?.toLowerCase() === 'red') {
+          characteristics = "This red wine offers structure and flavors that should work well with your described meal.";
+          servingSuggestions = "Serve slightly below room temperature (around a cool 60-65°F/16-18°C) in a red wine glass.";
+        } else if (wine.type?.toLowerCase() === 'white') {
+          characteristics = "This white wine offers freshness and acidity that should complement your meal.";
+          servingSuggestions = "Serve chilled (around 45-50°F/7-10°C) in a white wine glass.";
+        } else {
+          characteristics = "This wine offers characteristics that should work reasonably well with your described meal or occasion.";
+          servingSuggestions = "Serve according to the wine type - chilled for white wines, room temperature for reds.";
         }
+        
+        // Age considerations based on vintage
+        if (wine.vintage && wine.vintage > 2020) {
+          ageConsiderations = "This is a relatively young wine that should be showing fresh characteristics.";
+        } else if (wine.vintage && wine.vintage > 2015) {
+          ageConsiderations = "This wine has had some time to develop balance while maintaining freshness.";
+        } else if (wine.vintage) {
+          ageConsiderations = "This wine has had time to develop more complexity and secondary characteristics.";
+        } else {
+          ageConsiderations = "Check the vintage to determine if it's at its optimal drinking window.";
+        }
+        
+        // Add the recommendation
+        recommendationData.recommendations.push({
+          wineId: wine.id,
+          wine: `${wine.vintage || 'NV'} ${wine.producer} ${wine.name || ''}`.trim(),
+          reasoning,
+          characteristics,
+          servingSuggestions,
+          ageConsiderations,
+          confidenceScore: topWineObj.score
+        });
+      }
+      
+      // Add a more helpful message
+      if (!recommendationData.additionalSuggestions || recommendationData.additionalSuggestions.includes("couldn't generate detailed recommendations")) {
+        recommendationData.additionalSuggestions = 
+          "Based on your query, I've selected a wine from your collection that should work reasonably well. For more tailored recommendations, try providing more details about your meal, flavor preferences, or the occasion.";
       }
       
       if (!recommendationData.additionalSuggestions) {
