@@ -161,54 +161,46 @@ export default function WineRecommendations() {
         <div className="mt-8">
           <h3 className="text-lg font-medium text-gray-800 mb-4">Your Personalized Recommendations</h3>
           
-          {recommendationResults.recommendations.length > 0 ? (
-            <div className="space-y-4">
-              {recommendationResults.recommendations.map((rec, index) => {
-                const wine = getWineDetails(rec.wineId);
-                return (
-                  <Card key={index} className="border-burgundy-100">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between">
-                        <div>
-                          <CardTitle className="text-burgundy-700">{rec.wine}</CardTitle>
-                          <CardDescription>
-                            {wine?.region && `${wine.region}`}
-                            {wine?.vintage && wine.region && ` • `}
-                            {wine?.vintage === 0 ? "NV" : wine?.vintage}
-                          </CardDescription>
-                        </div>
-                        <div>
-                          {getConfidenceBadge(rec.confidenceScore)}
-                        </div>
+          <div className="space-y-4">
+            {recommendationResults.recommendations.map((rec, index) => {
+              const wine = getWineDetails(rec.wineId);
+              return (
+                <Card key={index} className="border-burgundy-100">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between">
+                      <div>
+                        <CardTitle className="text-burgundy-700">{rec.wine}</CardTitle>
+                        <CardDescription>
+                          {wine?.region && `${wine.region}`}
+                          {wine?.vintage && wine.region && ` • `}
+                          {wine?.vintage === 0 ? "NV" : wine?.vintage}
+                        </CardDescription>
                       </div>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      <h4 className="text-sm font-medium mb-1 flex items-center">
-                        <WineIcon className="h-4 w-4 mr-1 text-burgundy-600" />
-                        Perfect Match Because:
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-3">{rec.reasoning}</p>
-                      
-                      <h4 className="text-sm font-medium mb-1">Flavor Profile:</h4>
-                      <p className="text-sm text-gray-600 mb-3">{rec.characteristics}</p>
-                      
-                      <h4 className="text-sm font-medium mb-1">Serving Suggestions:</h4>
-                      <p className="text-sm text-gray-600 mb-3">{rec.servingSuggestions}</p>
-                      
-                      <h4 className="text-sm font-medium mb-1">Age Considerations:</h4>
-                      <p className="text-sm text-gray-600">{rec.ageConsiderations}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-gray-500">No specific recommendations found for your query.</p>
-              </CardContent>
-            </Card>
-          )}
+                      <div>
+                        {getConfidenceBadge(rec.confidenceScore)}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-3">
+                    <h4 className="text-sm font-medium mb-1 flex items-center">
+                      <WineIcon className="h-4 w-4 mr-1 text-burgundy-600" />
+                      {rec.confidenceScore > 0.7 ? "Perfect Match Because:" : "Recommended Because:"}
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-3">{rec.reasoning}</p>
+                    
+                    <h4 className="text-sm font-medium mb-1">Flavor Profile:</h4>
+                    <p className="text-sm text-gray-600 mb-3">{rec.characteristics}</p>
+                    
+                    <h4 className="text-sm font-medium mb-1">Serving Suggestions:</h4>
+                    <p className="text-sm text-gray-600 mb-3">{rec.servingSuggestions}</p>
+                    
+                    <h4 className="text-sm font-medium mb-1">Age Considerations:</h4>
+                    <p className="text-sm text-gray-600">{rec.ageConsiderations}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
           
           {recommendationResults.additionalSuggestions && (
             <div className="mt-6">
