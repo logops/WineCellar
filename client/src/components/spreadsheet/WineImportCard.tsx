@@ -1,264 +1,329 @@
-import { useState } from 'react';
-import { 
-  Card, 
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter
-} from "@/components/ui/card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import React, { useState } from 'react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { formatDate } from "@/lib/utils";
-import { AlertCircle, Wine, CheckCircle2, ShieldAlert, Clock } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Check, X, AlertCircle, Edit } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ConfirmDialog } from '@/components/ui/dialog-confirm';
 
-// Interface for the wine data
-interface WineImportCardProps {
-  wine: {
-    rowIndex: number;
-    originalData: Record<string, any>;
-    mappedData: any;
-    confidence: 'high' | 'medium' | 'low';
-    missingRequiredFields: string[];
-    isPotentialDuplicate: boolean;
-    duplicateId?: number;
-    needsVerification: boolean;
+interface WineData {
+  rowIndex: number;
+  originalData: Record<string, any>;
+  mappedData: {
+    name?: string;
+    producer?: string;
+    vintage?: number | 'NV';
+    type?: string;
+    vineyard?: string;
+    region?: string;
+    subregion?: string;
+    grapeVarieties?: string;
+    bottleSize?: string;
+    quantity?: number;
+    purchasePrice?: number;
+    currentValue?: number;
+    purchaseDate?: string;
+    purchaseLocation?: string;
+    drinkingWindowStart?: string;
+    drinkingWindowEnd?: string;
+    drinkingStatus?: string;
     storageLocation?: string;
-    aiDrinkingWindowRecommendation?: {
-      start?: string;
-      end?: string;
-      confidence: 'high' | 'medium' | 'low';
-      reasoning: string;
-    };
+    notes?: string;
+    rating?: number;
+    binNumber?: string;
   };
-  viewMode: 'interpreted' | 'original';
+  confidence: 'high' | 'medium' | 'low';
+  missingRequiredFields: string[];
+  isPotentialDuplicate: boolean;
+  duplicateId?: number;
+  needsVerification: boolean;
+  storageLocation?: string;
+  aiDrinkingWindowRecommendation?: {
+    start?: string;
+    end?: string;
+    confidence: 'high' | 'medium' | 'low';
+    reasoning: string;
+  };
 }
 
-export default function WineImportCard({ wine, viewMode }: WineImportCardProps) {
-  const [expanded, setExpanded] = useState(wine.needsVerification);
-  
-  // Format the wine information for display
-  const formatWineInfo = () => {
-    const { mappedData } = wine;
-    
-    const vintage = mappedData.vintage === 0 ? 'NV' : mappedData.vintage;
-    const producer = mappedData.producer || '';
-    const name = mappedData.name || '';
-    const type = mappedData.type || '';
-    const region = mappedData.region ? `, ${mappedData.region}` : '';
-    
-    return {
-      title: `${vintage} ${producer} ${name}`.trim(),
-      subtitle: `${type}${region}`.trim()
-    };
-  };
-  
-  const { title, subtitle } = formatWineInfo();
-  
-  // Determine the card status coloring
-  const getCardStatus = () => {
-    if (wine.isPotentialDuplicate) {
-      return {
-        borderColor: 'border-blue-200',
-        icon: <ShieldAlert className="text-blue-500 h-5 w-5" />,
-        text: 'Potential Duplicate',
-        textColor: 'text-blue-700',
-        bgColor: 'bg-blue-50'
-      };
+interface WineImportCardProps {
+  wine: WineData;
+  onApprove: (wine: WineData, useAiRecommendation?: boolean) => void;
+  onReject: (wine: WineData) => void;
+  onEdit: (wine: WineData) => void;
+  editable?: boolean;
+}
+
+const WineImportCard: React.FC<WineImportCardProps> = ({
+  wine,
+  onApprove,
+  onReject,
+  onEdit,
+  editable = true
+}) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [aiRecommendationDialogOpen, setAiRecommendationDialogOpen] = useState(false);
+
+  const getConfidenceBadgeColor = (confidence: string) => {
+    switch (confidence) {
+      case 'high':
+        return 'bg-green-100 text-green-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
-    
-    if (wine.needsVerification) {
-      return {
-        borderColor: 'border-yellow-200',
-        icon: <AlertCircle className="text-yellow-500 h-5 w-5" />,
-        text: 'Needs Verification',
-        textColor: 'text-yellow-700',
-        bgColor: 'bg-yellow-50'
-      };
-    }
-    
-    return {
-      borderColor: 'border-green-200',
-      icon: <CheckCircle2 className="text-green-500 h-5 w-5" />,
-      text: 'Ready to Import',
-      textColor: 'text-green-700',
-      bgColor: 'bg-green-50'
-    };
   };
-  
-  const status = getCardStatus();
-  
-  // Format drinking window display
-  const formatDrinkingWindow = () => {
-    const { mappedData } = wine;
-    
-    if (mappedData.drinkingWindowStart || mappedData.drinkingWindowEnd) {
-      const start = mappedData.drinkingWindowStart ? new Date(mappedData.drinkingWindowStart).getFullYear() : 'Now';
-      const end = mappedData.drinkingWindowEnd ? new Date(mappedData.drinkingWindowEnd).getFullYear() : 'Unknown';
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Not set';
+    try {
+      // If dateString is already in YYYY-MM-DD format, return it
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
       
-      return `${start} - ${end}`;
+      // Otherwise try to convert it to a date
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    } catch (e) {
+      return 'Invalid date';
     }
-    
-    if (wine.aiDrinkingWindowRecommendation?.start || wine.aiDrinkingWindowRecommendation?.end) {
-      const start = wine.aiDrinkingWindowRecommendation.start || 'Now';
-      const end = wine.aiDrinkingWindowRecommendation.end || 'Unknown';
-      
-      return (
-        <span className="flex items-center">
-          <Wine className="text-purple-500 h-4 w-4 mr-1" />
-          {start} - {end} (AI Recommended)
-        </span>
-      );
-    }
-    
-    return 'Not specified';
   };
-  
+
   return (
-    <Card className={`overflow-hidden border-l-4 ${status.borderColor}`}>
+    <Card className={`mb-4 ${wine.needsVerification ? 'border-amber-500' : ''}`}>
       <CardHeader className="pb-2">
-        <div className="flex justify-between">
+        <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{title}</CardTitle>
-            <CardDescription>{subtitle}</CardDescription>
+            <CardTitle className="text-lg">
+              {wine.mappedData.vintage && wine.mappedData.vintage !== 'NV' 
+                ? wine.mappedData.vintage 
+                : wine.mappedData.vintage === 'NV' 
+                  ? 'NV'
+                  : 'Unknown Vintage'} {wine.mappedData.producer || 'Unknown Producer'} {wine.mappedData.name || 'Unknown Wine'}
+            </CardTitle>
+            <div className="text-sm text-muted-foreground mt-1">
+              {wine.mappedData.type || 'Unknown Type'} {wine.mappedData.region ? `• ${wine.mappedData.region}` : ''}
+            </div>
           </div>
-          <Badge variant="outline" className={`flex items-center ${status.bgColor} ${status.textColor} border-0`}>
-            {status.icon}
-            <span className="ml-1">{status.text}</span>
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge className={getConfidenceBadgeColor(wine.confidence)}>
+              {wine.confidence.charAt(0).toUpperCase() + wine.confidence.slice(1)} confidence
+            </Badge>
+            {wine.isPotentialDuplicate && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge variant="outline" className="border-amber-500 text-amber-700">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Potential duplicate
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This wine may already exist in your collection (ID: {wine.duplicateId})</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
       </CardHeader>
-      
-      <CardContent className="pb-2">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div className="text-sm font-medium text-gray-500">Quantity</div>
-            <div>{wine.mappedData.quantity || 1}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm font-medium text-gray-500">Storage</div>
-            <div>{wine.storageLocation || 'Main Cellar'}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm font-medium text-gray-500">Purchase Price</div>
-            <div>
-              {wine.mappedData.purchasePrice 
-                ? `$${wine.mappedData.purchasePrice.toFixed(2)}` 
-                : 'Not specified'}
+            <h4 className="text-sm font-medium mb-2">Wine Details</h4>
+            <div className="space-y-1 text-sm">
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Grape(s):</span>
+                <span className="col-span-2">{wine.mappedData.grapeVarieties || 'Unknown'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Vineyard:</span>
+                <span className="col-span-2">{wine.mappedData.vineyard || 'Unknown'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Subregion:</span>
+                <span className="col-span-2">{wine.mappedData.subregion || 'Unknown'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Bottle Size:</span>
+                <span className="col-span-2">{wine.mappedData.bottleSize || '750ml'}</span>
+              </div>
             </div>
           </div>
-          
           <div>
-            <div className="text-sm font-medium text-gray-500">Drinking Window</div>
-            <div>{formatDrinkingWindow()}</div>
+            <h4 className="text-sm font-medium mb-2">Purchase Information</h4>
+            <div className="space-y-1 text-sm">
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Quantity:</span>
+                <span className="col-span-2">{wine.mappedData.quantity || 1}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Price:</span>
+                <span className="col-span-2">
+                  {typeof wine.mappedData.purchasePrice === 'number' 
+                    ? `$${wine.mappedData.purchasePrice.toFixed(2)}` 
+                    : 'Unknown'}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Date:</span>
+                <span className="col-span-2">{formatDate(wine.mappedData.purchaseDate)}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-muted-foreground">Location:</span>
+                <span className="col-span-2">{wine.mappedData.purchaseLocation || 'Unknown'}</span>
+              </div>
+            </div>
           </div>
         </div>
-        
+
+        <div className="mt-4">
+          <h4 className="text-sm font-medium mb-2">Drinking Window</h4>
+          <div className="space-y-1 text-sm">
+            <div className="grid grid-cols-6 gap-1">
+              <span className="text-muted-foreground col-span-2">Current:</span>
+              <span className="col-span-4">
+                {formatDate(wine.mappedData.drinkingWindowStart)} - {formatDate(wine.mappedData.drinkingWindowEnd)}
+              </span>
+            </div>
+            
+            {wine.aiDrinkingWindowRecommendation && (
+              <div className="grid grid-cols-6 gap-1">
+                <span className="text-muted-foreground col-span-2">AI Suggested:</span>
+                <div className="col-span-4 flex items-center">
+                  <span>
+                    {formatDate(wine.aiDrinkingWindowRecommendation.start)} - {formatDate(wine.aiDrinkingWindowRecommendation.end)}
+                  </span>
+                  <Badge className={`ml-2 ${getConfidenceBadgeColor(wine.aiDrinkingWindowRecommendation.confidence)}`}>
+                    {wine.aiDrinkingWindowRecommendation.confidence}
+                  </Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="ml-2 h-6 px-2"
+                    onClick={() => setAiRecommendationDialogOpen(true)}
+                  >
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <AlertCircle className="h-4 w-4" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View AI recommendation reasoning</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {wine.missingRequiredFields.length > 0 && (
-          <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-            <div className="flex items-center text-yellow-700 text-sm font-medium">
-              <AlertCircle className="h-4 w-4 mr-1" />
-              Missing required fields: {wine.missingRequiredFields.join(', ')}
-            </div>
+          <div className="mt-4 p-2 bg-red-50 border border-red-200 rounded-md">
+            <h4 className="text-sm font-medium text-red-800 mb-1">Missing required fields:</h4>
+            <ul className="list-disc list-inside text-sm text-red-700">
+              {wine.missingRequiredFields.map((field) => (
+                <li key={field}>{field}</li>
+              ))}
+            </ul>
           </div>
         )}
-        
-        {wine.isPotentialDuplicate && (
-          <div className="mt-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center text-blue-700 text-sm font-medium">
-              <ShieldAlert className="h-4 w-4 mr-1" />
-              Potential duplicate of wine ID: {wine.duplicateId}
-            </div>
+
+        {wine.needsVerification && (
+          <div className="mt-4 p-2 bg-amber-50 border border-amber-200 rounded-md">
+            <h4 className="text-sm font-medium text-amber-800 mb-1">Needs verification</h4>
+            <p className="text-sm text-amber-700">
+              This wine information needs manual verification before import.
+            </p>
           </div>
         )}
-        
-        <Accordion type="single" collapsible className="mt-4" value={expanded ? 'details' : ''} onValueChange={(val) => setExpanded(val === 'details')}>
-          <AccordionItem value="details" className="border-b-0">
-            <AccordionTrigger className="py-2">
-              {viewMode === 'interpreted' ? 'Interpreted Data' : 'Original Data'}
-            </AccordionTrigger>
-            <AccordionContent>
-              {viewMode === 'interpreted' ? (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  {Object.entries(wine.mappedData).map(([key, value]) => {
-                    if (key === 'userId') return null;
-                    
-                    // Format the value for display
-                    let displayValue: string | React.ReactNode = '';
-                    
-                    if (value === null || value === undefined) {
-                      displayValue = '-';
-                    } else if (key.includes('date') || key.includes('window')) {
-                      displayValue = value ? formatDate(new Date(value as string)) : '-';
-                    } else if (typeof value === 'boolean') {
-                      displayValue = value ? 'Yes' : 'No';
-                    } else {
-                      displayValue = String(value);
-                    }
-                    
-                    return (
-                      <div key={key} className="py-1">
-                        <div className="text-gray-500 font-medium">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</div>
-                        <div>{displayValue}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  {Object.entries(wine.originalData).map(([key, value]) => (
-                    <div key={key} className="py-1">
-                      <div className="text-gray-500 font-medium">{key}</div>
-                      <div>{value !== null && value !== undefined ? String(value) : '-'}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {wine.aiDrinkingWindowRecommendation && (
-                <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-md">
-                  <div className="text-purple-700 text-sm font-medium flex items-center mb-2">
-                    <Wine className="h-4 w-4 mr-1" />
-                    AI Drinking Window Recommendation
-                  </div>
-                  <div className="text-sm">
-                    <div className="font-medium">Recommendation: {wine.aiDrinkingWindowRecommendation.start || 'Now'} - {wine.aiDrinkingWindowRecommendation.end || 'Unknown'}</div>
-                    <div className="text-gray-600 mt-1">{wine.aiDrinkingWindowRecommendation.reasoning}</div>
-                    <div className="mt-2 flex items-center">
-                      <span className="text-xs text-gray-500">Confidence:</span>
-                      <Badge 
-                        variant="outline" 
-                        className={`ml-2 text-xs ${
-                          wine.aiDrinkingWindowRecommendation.confidence === 'high' 
-                            ? 'bg-green-50 text-green-700' 
-                            : wine.aiDrinkingWindowRecommendation.confidence === 'medium'
-                              ? 'bg-yellow-50 text-yellow-700'
-                              : 'bg-red-50 text-red-700'
-                        }`}
-                      >
-                        {wine.aiDrinkingWindowRecommendation.confidence}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
       </CardContent>
+      
+      {editable && (
+        <CardFooter className="pt-2 flex justify-between">
+          <div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mr-2"
+              onClick={() => onEdit(wine)}
+            >
+              <Edit className="mr-1 h-4 w-4" />
+              Edit
+            </Button>
+          </div>
+          <div>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="mr-2"
+              onClick={() => setDialogOpen(true)}
+            >
+              <X className="mr-1 h-4 w-4" />
+              Skip
+            </Button>
+            {wine.aiDrinkingWindowRecommendation ? (
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => onApprove(wine)}
+              >
+                <Check className="mr-1 h-4 w-4" />
+                Import as is
+              </Button>
+            ) : (
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => onApprove(wine)}
+              >
+                <Check className="mr-1 h-4 w-4" />
+                Import
+              </Button>
+            )}
+          </div>
+        </CardFooter>
+      )}
+
+      <ConfirmDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title="Skip this wine?"
+        description="Are you sure you want to skip importing this wine? This action cannot be undone."
+        confirmText="Skip"
+        cancelText="Cancel"
+        onConfirm={() => {
+          onReject(wine);
+          setDialogOpen(false);
+        }}
+      />
+
+      {wine.aiDrinkingWindowRecommendation && (
+        <ConfirmDialog
+          open={aiRecommendationDialogOpen}
+          onOpenChange={setAiRecommendationDialogOpen}
+          title="AI Drinking Window Recommendation"
+          description={
+            <div className="space-y-2">
+              <p>Suggested drinking window: {formatDate(wine.aiDrinkingWindowRecommendation.start)} - {formatDate(wine.aiDrinkingWindowRecommendation.end)}</p>
+              <p className="text-sm">{wine.aiDrinkingWindowRecommendation.reasoning}</p>
+              <p className="text-sm font-medium mt-4">Would you like to use this AI-recommended drinking window?</p>
+            </div>
+          }
+          confirmText="Use AI Recommendation"
+          cancelText="Keep Original"
+          onConfirm={() => {
+            onApprove(wine, true);
+            setAiRecommendationDialogOpen(false);
+          }}
+        />
+      )}
     </Card>
   );
-}
+};
+
+export default WineImportCard;

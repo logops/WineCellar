@@ -162,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Updating wine with fields:", updateFields);
       
-      const updatedWine = await storage.updateWine(id, updateFields);
+      const updatedWine = await dbStorage.updateWine(id, updateFields);
       
       if (!updatedWine) {
         return res.status(500).json({ message: 'Failed to update wine - no wine returned' });
@@ -197,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
       
-      const result = await storage.deleteWine(id);
+      const result = await dbStorage.deleteWine(id);
       res.status(204).send();
     } catch (err) {
       res.status(500).json({ message: 'Failed to delete wine' });
@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        const consumptions = await storage.getConsumptionsByUserId(req.user.id);
+        const consumptions = await dbStorage.getConsumptionsByUserId(req.user.id);
         res.json(consumptions);
       } catch (queryError) {
         console.error('Error fetching consumptions:', queryError);
@@ -254,20 +254,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create the consumption record
       const validatedData = insertConsumptionSchema.parse(consumptionData);
-      const consumption = await storage.createConsumption(validatedData);
+      const consumption = await dbStorage.createConsumption(validatedData);
       
       // Update the wine quantity and status based on remaining quantity
       if (remainingQuantity === 0) {
         // If no bottles remain, mark as consumed
         console.log(`Updating wine with fields: { quantity: 0, consumedStatus: 'consumed' }`);
-        await storage.updateWine(wine.id, {
+        await dbStorage.updateWine(wine.id, {
           quantity: 0,
           consumedStatus: 'consumed'
         });
       } else {
         // Otherwise just update the quantity
         console.log(`Updating wine with fields: { quantity: ${remainingQuantity}, consumedStatus: 'in_cellar' }`);
-        await storage.updateWine(wine.id, {
+        await dbStorage.updateWine(wine.id, {
           quantity: remainingQuantity,
           consumedStatus: 'in_cellar'
         });
@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        const wishlistItems = await storage.getWishlistItemsByUserId(req.user.id);
+        const wishlistItems = await dbStorage.getWishlistItemsByUserId(req.user.id);
         res.json(wishlistItems);
       } catch (queryError) {
         console.error('Error fetching wishlist items:', queryError);
@@ -314,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const validatedData = insertWishlistSchema.parse(wishlistData);
-      const wishlistItem = await storage.createWishlistItem(validatedData);
+      const wishlistItem = await dbStorage.createWishlistItem(validatedData);
       res.status(201).json(wishlistItem);
     } catch (err) {
       handleZodError(err, res);
@@ -330,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = Number(req.params.id);
       
       // Get the wishlist item to check ownership
-      const wishlistItem = await storage.getWishlistItem(id);
+      const wishlistItem = await dbStorage.getWishlistItem(id);
       if (!wishlistItem) {
         return res.status(404).json({ message: 'Wishlist item not found' });
       }
@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
       
-      const result = await storage.deleteWishlistItem(id);
+      const result = await dbStorage.deleteWishlistItem(id);
       res.status(204).send();
     } catch (err) {
       res.status(500).json({ message: 'Failed to delete wishlist item' });
@@ -503,7 +503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Record the feedback in the database
-      await storage.recordLabelAnalytics(
+      await dbStorage.recordLabelAnalytics(
         req.user.id,
         imageHash,
         originalPrediction,

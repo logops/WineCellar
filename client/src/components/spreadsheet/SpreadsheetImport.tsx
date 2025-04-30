@@ -1,29 +1,43 @@
-import { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Loader2, Upload, FileSpreadsheet, Check, AlertCircle, Info } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Upload, FileSpreadsheet, ArrowRight, Check, X, Ban, AlertTriangle } from "lucide-react";
 import WineImportCard from './WineImportCard';
-import { apiRequest } from '@/lib/queryClient';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Interface for field mapping
-interface FieldMapping {
-  field: string;
-  columnHeader: string;
-  columnIndex: number;
-  confidence: 'high' | 'medium' | 'low';
-}
-
-// Interface for processed wine data
+// Types for the wine data we'll receive from the backend
 interface ProcessedWine {
   rowIndex: number;
   originalData: Record<string, any>;
-  mappedData: any;
+  mappedData: Partial<{
+    name: string;
+    producer: string;
+    vintage: number | 'NV';
+    type: string;
+    vineyard?: string;
+    region?: string;
+    subregion?: string;
+    grapeVarieties?: string;
+    bottleSize?: string;
+    quantity?: number;
+    purchasePrice?: number;
+    currentValue?: number;
+    purchaseDate?: string;
+    purchaseLocation?: string;
+    drinkingWindowStart?: string;
+    drinkingWindowEnd?: string;
+    drinkingStatus?: string;
+    storageLocation?: string;
+    notes?: string;
+    rating?: number;
+    binNumber?: string;
+  }>;
   confidence: 'high' | 'medium' | 'low';
   missingRequiredFields: string[];
   isPotentialDuplicate: boolean;
@@ -38,7 +52,13 @@ interface ProcessedWine {
   };
 }
 
-// Interface for batch processing result
+interface FieldMapping {
+  field: string;
+  columnHeader: string;
+  columnIndex: number;
+  confidence: 'high' | 'medium' | 'low';
+}
+
 interface BatchProcessResult {
   processedWines: ProcessedWine[];
   fieldMappings: FieldMapping[];
@@ -50,549 +70,533 @@ interface BatchProcessResult {
   highConfidenceCount: number;
 }
 
-// Interface for import result
-interface ImportResult {
-  imported: number;
-  skipped: number;
-  errors: any[];
-  importedWines: any[];
-}
-
-export default function SpreadsheetImport() {
+const SpreadsheetImport: React.FC = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('upload');
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [processedBatch, setProcessedBatch] = useState<BatchProcessResult | null>(null);
+  const [allProcessedWines, setAllProcessedWines] = useState<ProcessedWine[]>([]);
+  const [approvedWines, setApprovedWines] = useState<ProcessedWine[]>([]);
+  const [rejectedWines, setRejectedWines] = useState<ProcessedWine[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
+  const [totalBatches, setTotalBatches] = useState(1);
+  const [batchSize, setBatchSize] = useState(100);
+  const [importFinished, setImportFinished] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // State for managing file and import process
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [useAiDrinkingWindows, setUseAiDrinkingWindows] = useState(true);
-  const [viewMode, setViewMode] = useState<'interpreted' | 'original'>('interpreted');
-  
-  // State for import data
-  const [totalRows, setTotalRows] = useState(0);
-  const [processedRows, setProcessedRows] = useState(0);
-  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
-  const [processedWines, setProcessedWines] = useState<ProcessedWine[]>([]);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  
-  // Settings for import
-  const [importDuplicates, setImportDuplicates] = useState(false);
-  const [createLocations, setCreateLocations] = useState(true);
-  const [applyAiDrinkingWindows, setApplyAiDrinkingWindows] = useState(true);
-  
-  // State for tracking import stage
-  const [importStage, setImportStage] = useState<'upload' | 'verification' | 'complete'>('upload');
-  const [activeTab, setActiveTab] = useState<'all' | 'verification' | 'duplicates'>('all');
-  
-  // Function to handle file selection
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) {
-      // Check file type
-      const fileType = selectedFile.name.split('.').pop()?.toLowerCase();
-      if (fileType !== 'csv' && fileType !== 'xlsx' && fileType !== 'xls') {
-        toast({
-          title: "Unsupported file type",
-          description: "Please upload a CSV or Excel file",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      setFile(selectedFile);
-      
-      // Reset states when a new file is selected
-      setImportStage('upload');
-      setProcessedWines([]);
-      setFieldMappings([]);
-      setTotalRows(0);
-      setProcessedRows(0);
-      setImportResult(null);
-    }
-  };
-  
-  // Function to trigger file input click
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-  
-  // Function to upload and analyze file
-  const uploadFile = async () => {
-    if (!file) return;
-    
-    setIsUploading(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('useAiDrinkingWindows', useAiDrinkingWindows.toString());
-      
-      const response = await fetch('/api/spreadsheet/upload', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
+  // Upload file mutation
+  const uploadMutation = useMutation({
+    mutationFn: async (fileData: FormData) => {
+      const response = await apiRequest('POST', '/api/spreadsheet/upload', fileData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "File uploaded successfully",
+        description: `${data.rowCount} rows detected. Starting processing...`,
       });
-      
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to upload file');
-      }
-      
-      setFieldMappings(result.data.fieldMappings);
-      setTotalRows(result.data.totalRows);
-      
-      // Start processing the batches
-      await processBatches();
-    } catch (error) {
-      console.error('Error uploading file:', error);
+      setTotalBatches(Math.ceil(data.rowCount / batchSize));
+      processBatch(0);
+    },
+    onError: (error: Error) => {
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive"
+        description: error.message,
+        variant: "destructive",
       });
-    } finally {
-      setIsUploading(false);
+      setLoading(false);
     }
-  };
-  
-  // Function to process batches
-  const processBatches = async () => {
-    if (!file) return;
-    
-    setIsProcessing(true);
-    setProcessedWines([]);
-    setProcessedRows(0);
-    
-    try {
-      const batchSize = 100;
-      let currentBatch = 0;
-      let hasMoreData = true;
-      
-      // Process batches until all rows are processed
-      while (hasMoreData) {
-        const formData = new FormData();
+  });
+
+  // Process batch mutation
+  const processBatchMutation = useMutation({
+    mutationFn: async ({ index }: { index: number }) => {
+      const formData = new FormData();
+      if (file) {
         formData.append('file', file);
-        formData.append('batchIndex', currentBatch.toString());
+        formData.append('batchIndex', index.toString());
         formData.append('batchSize', batchSize.toString());
-        formData.append('useAiDrinkingWindows', useAiDrinkingWindows.toString());
-        
-        // Include field mappings from the initial upload
-        if (fieldMappings.length > 0) {
-          formData.append('fieldMappings', JSON.stringify(fieldMappings));
-        }
-        
-        const response = await fetch('/api/spreadsheet/process-batch', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
-        });
-        
-        const result = await response.json();
-        
-        if (!result.success) {
-          if (result.message === 'No more data to process') {
-            hasMoreData = false;
-          } else {
-            throw new Error(result.message || 'Failed to process batch');
-          }
-        } else {
-          const batchResult: BatchProcessResult = result.data;
-          
-          // Update processed rows count
-          setProcessedRows(prev => prev + batchResult.processedRows);
-          
-          // Add processed wines to state
-          setProcessedWines(prev => [...prev, ...batchResult.processedWines]);
-          
-          // Check if we have more data to process
-          hasMoreData = batchResult.processedRows === batchSize;
-          
-          // Increment batch index
-          currentBatch++;
-        }
       }
       
-      // All batches processed, move to verification stage
-      setImportStage('verification');
-    } catch (error) {
-      console.error('Error processing batches:', error);
+      const response = await apiRequest('POST', '/api/spreadsheet/process-batch', formData);
+      return response.json();
+    },
+    onSuccess: (data: BatchProcessResult) => {
+      setProcessedBatch(data);
+      setAllProcessedWines(prev => [...prev, ...data.processedWines]);
+      setCurrentBatchIndex(prev => prev + 1);
+      
+      if (currentBatchIndex + 1 < totalBatches) {
+        toast({
+          title: "Batch processed",
+          description: `Processed ${data.processedRows} rows. Processing next batch...`,
+        });
+        processBatch(currentBatchIndex + 1);
+      } else {
+        toast({
+          title: "Processing complete",
+          description: `Processed ${allProcessedWines.length + data.processedWines.length} wines. Please review before importing.`,
+        });
+        setActiveTab('review');
+        setLoading(false);
+      }
+    },
+    onError: (error: Error) => {
       toast({
         title: "Processing failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive"
+        description: error.message,
+        variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
-  };
-  
-  // Function to import verified wines
-  const importWines = async () => {
-    // Get the wines to import based on user selection
-    const winesToImport = activeTab === 'all' 
-      ? processedWines 
-      : activeTab === 'verification' 
-        ? processedWines.filter(wine => wine.needsVerification && !wine.isPotentialDuplicate)
-        : processedWines.filter(wine => wine.isPotentialDuplicate);
-    
-    setIsImporting(true);
-    
-    try {
-      const response = await apiRequest('POST', '/api/spreadsheet/import', {
-        wines: winesToImport,
-        createLocations,
-        applyAiDrinkingWindows,
-        importDuplicates
-      });
-      
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to import wines');
-      }
-      
-      setImportResult(result.data);
-      setImportStage('complete');
-      
+  });
+
+  // Import wines mutation
+  const importWinesMutation = useMutation({
+    mutationFn: async (wines: ProcessedWine[]) => {
+      const response = await apiRequest('POST', '/api/spreadsheet/import', wines);
+      return response.json();
+    },
+    onSuccess: (data) => {
       toast({
         title: "Import successful",
-        description: `Imported ${result.data.imported} wines. Skipped ${result.data.skipped} wines.`,
-        variant: "default"
+        description: `${data.importedCount} wines have been added to your collection.`,
       });
-    } catch (error) {
-      console.error('Error importing wines:', error);
+      setImportFinished(true);
+      setActiveTab('complete');
+      queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+    },
+    onError: (error: Error) => {
       toast({
         title: "Import failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive"
+        description: error.message,
+        variant: "destructive",
       });
-    } finally {
-      setIsImporting(false);
+    }
+  });
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileSelect(e.dataTransfer.files[0]);
     }
   };
-  
-  // Reset the import process
-  const resetImport = () => {
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileSelect(e.target.files[0]);
+    }
+  };
+
+  const handleFileSelect = (selectedFile: File) => {
+    // Check if file type is acceptable (Excel or CSV)
+    const allowedTypes = [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+      'application/csv',
+    ];
+    
+    if (!allowedTypes.includes(selectedFile.type) && 
+        !selectedFile.name.endsWith('.csv') && 
+        !selectedFile.name.endsWith('.xlsx') && 
+        !selectedFile.name.endsWith('.xls')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an Excel spreadsheet (.xlsx, .xls) or CSV file (.csv)",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setFile(selectedFile);
+  };
+
+  const handleUpload = () => {
+    if (!file) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    setUploadProgress(0);
+    
+    // Create FormData and upload
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Start the upload simulation
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 95) {
+          clearInterval(interval);
+          return 95;
+        }
+        return prev + 5;
+      });
+    }, 100);
+    
+    uploadMutation.mutate(formData);
+  };
+
+  const processBatch = (batchIndex: number) => {
+    processBatchMutation.mutate({ index: batchIndex });
+  };
+
+  const handleApproveWine = (wine: ProcessedWine, useAiRecommendation = false) => {
+    // If we want to use AI recommendation, update the wine data
+    if (useAiRecommendation && wine.aiDrinkingWindowRecommendation) {
+      wine = {
+        ...wine,
+        mappedData: {
+          ...wine.mappedData,
+          drinkingWindowStart: wine.aiDrinkingWindowRecommendation.start,
+          drinkingWindowEnd: wine.aiDrinkingWindowRecommendation.end,
+        }
+      };
+    }
+    
+    setApprovedWines(prev => [...prev, wine]);
+    setAllProcessedWines(prev => prev.filter(w => w.rowIndex !== wine.rowIndex));
+  };
+
+  const handleRejectWine = (wine: ProcessedWine) => {
+    setRejectedWines(prev => [...prev, wine]);
+    setAllProcessedWines(prev => prev.filter(w => w.rowIndex !== wine.rowIndex));
+  };
+
+  const handleImport = () => {
+    if (approvedWines.length === 0) {
+      toast({
+        title: "No wines to import",
+        description: "Please approve at least one wine to import.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    importWinesMutation.mutate(approvedWines);
+  };
+
+  const handleReset = () => {
     setFile(null);
-    setImportStage('upload');
-    setProcessedWines([]);
-    setFieldMappings([]);
-    setTotalRows(0);
-    setProcessedRows(0);
-    setImportResult(null);
+    setUploadProgress(0);
+    setProcessedBatch(null);
+    setAllProcessedWines([]);
+    setApprovedWines([]);
+    setRejectedWines([]);
+    setLoading(false);
+    setIsDragOver(false);
+    setCurrentBatchIndex(0);
+    setTotalBatches(1);
+    setImportFinished(false);
+    setActiveTab('upload');
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
-  
-  // Get counts for each category
-  const needsVerificationCount = processedWines.filter(wine => wine.needsVerification && !wine.isPotentialDuplicate).length;
-  const duplicatesCount = processedWines.filter(wine => wine.isPotentialDuplicate).length;
-  const highConfidenceCount = processedWines.filter(wine => !wine.needsVerification).length;
-  
-  // Get wines based on active tab
-  const filteredWines = useCallback(() => {
-    if (activeTab === 'all') return processedWines;
-    if (activeTab === 'verification') return processedWines.filter(wine => wine.needsVerification && !wine.isPotentialDuplicate);
-    if (activeTab === 'duplicates') return processedWines.filter(wine => wine.isPotentialDuplicate);
-    return processedWines;
-  }, [activeTab, processedWines]);
-  
-  // Render upload stage
-  const renderUploadStage = () => (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>Import Wines from Spreadsheet</CardTitle>
-        <CardDescription>
-          Upload a CSV or Excel file to import your wine collection.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-md hover:border-gray-400 transition-all cursor-pointer" onClick={triggerFileInput}>
-          <input 
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          
-          {file ? (
-            <div className="flex flex-col items-center">
-              <FileSpreadsheet size={48} className="text-primary mb-2" />
-              <p className="text-lg font-medium">{file.name}</p>
-              <p className="text-sm text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <Upload size={48} className="text-gray-400 mb-2" />
-              <p className="text-lg font-medium">Click to select a file</p>
-              <p className="text-sm text-gray-500">or drag and drop</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="use-ai">Use AI for drinking windows</Label>
-              <p className="text-sm text-gray-500">Generate drinking window recommendations for wines that don't have them</p>
-            </div>
-            <Switch 
-              id="use-ai"
-              checked={useAiDrinkingWindows}
-              onCheckedChange={setUseAiDrinkingWindows}
-            />
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={resetImport}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={uploadFile} 
-          disabled={!file || isUploading || isProcessing}
-        >
-          {(isUploading || isProcessing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isUploading ? 'Uploading...' : isProcessing ? 'Processing...' : 'Upload and Analyze'}
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-  
-  // Render verification stage
-  const renderVerificationStage = () => (
-    <Card className="w-full mx-auto">
-      <CardHeader>
-        <CardTitle>Verify and Import Wines</CardTitle>
-        <CardDescription>
-          Review the wines extracted from your spreadsheet before importing them.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-medium">Import Summary</h3>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">View:</span>
-              <div className="border rounded-md p-1">
-                <Button 
-                  variant={viewMode === 'interpreted' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setViewMode('interpreted')}
-                  className="rounded-r-none"
-                >
-                  Interpreted
-                </Button>
-                <Button 
-                  variant={viewMode === 'original' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setViewMode('original')}
-                  className="rounded-l-none"
-                >
-                  Original
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-4 gap-4 mb-4">
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <div className="text-sm text-gray-500">Total Wines</div>
-              <div className="text-2xl font-semibold">{processedWines.length}</div>
-            </div>
-            <div className="bg-green-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-500">Ready to Import</div>
-              <div className="text-2xl font-semibold text-green-600">{highConfidenceCount}</div>
-            </div>
-            <div className="bg-yellow-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-500">Needs Verification</div>
-              <div className="text-2xl font-semibold text-yellow-600">{needsVerificationCount}</div>
-            </div>
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-500">Potential Duplicates</div>
-              <div className="text-2xl font-semibold text-blue-600">{duplicatesCount}</div>
-            </div>
-          </div>
-          
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="create-locations">Create storage locations</Label>
-                <p className="text-sm text-gray-500">Automatically create storage locations from the spreadsheet</p>
-              </div>
-              <Switch 
-                id="create-locations"
-                checked={createLocations}
-                onCheckedChange={setCreateLocations}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="ai-drinking-windows">Apply AI drinking windows</Label>
-                <p className="text-sm text-gray-500">Use AI-recommended drinking windows when available</p>
-              </div>
-              <Switch 
-                id="ai-drinking-windows"
-                checked={applyAiDrinkingWindows}
-                onCheckedChange={setApplyAiDrinkingWindows}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="import-duplicates">Import potential duplicates</Label>
-                <p className="text-sm text-gray-500">Import wines that appear to be duplicates of existing entries</p>
-              </div>
-              <Switch 
-                id="import-duplicates"
-                checked={importDuplicates}
-                onCheckedChange={setImportDuplicates}
-              />
-            </div>
-          </div>
-        </div>
-        
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">
-              All Wines
-              <Badge variant="outline" className="ml-2">{processedWines.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="verification">
-              Needs Verification
-              <Badge variant="outline" className="ml-2">{needsVerificationCount}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="duplicates">
-              Potential Duplicates
-              <Badge variant="outline" className="ml-2">{duplicatesCount}</Badge>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all" className="mt-4">
-            <div className="space-y-4">
-              {filteredWines().length > 0 ? (
-                filteredWines().map((wine) => (
-                  <WineImportCard 
-                    key={wine.rowIndex} 
-                    wine={wine} 
-                    viewMode={viewMode}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-500">No wines to display</div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="verification" className="mt-4">
-            <div className="space-y-4">
-              {filteredWines().length > 0 ? (
-                filteredWines().map((wine) => (
-                  <WineImportCard 
-                    key={wine.rowIndex} 
-                    wine={wine} 
-                    viewMode={viewMode}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-500">No wines need verification</div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="duplicates" className="mt-4">
-            <div className="space-y-4">
-              {filteredWines().length > 0 ? (
-                filteredWines().map((wine) => (
-                  <WineImportCard 
-                    key={wine.rowIndex} 
-                    wine={wine} 
-                    viewMode={viewMode}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-500">No potential duplicates found</div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={resetImport}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={importWines} 
-          disabled={isImporting || processedWines.length === 0}
-        >
-          {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isImporting ? 'Importing...' : 'Import Wines'}
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-  
-  // Render completion stage
-  const renderCompletionStage = () => (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>Import Complete</CardTitle>
-        <CardDescription>
-          Your wines have been successfully imported.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center p-6">
-          <Check size={64} className="text-green-500 mb-4" />
-          
-          <h3 className="text-xl font-medium">Import Summary</h3>
-          
-          <div className="grid grid-cols-2 gap-4 mt-4 w-full max-w-md">
-            <div className="bg-green-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-500">Imported</div>
-              <div className="text-2xl font-semibold text-green-600">{importResult?.imported || 0}</div>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-500">Skipped</div>
-              <div className="text-2xl font-semibold text-gray-600">{importResult?.skipped || 0}</div>
-            </div>
-          </div>
-          
-          {importResult?.errors && importResult.errors.length > 0 && (
-            <div className="mt-6 w-full">
-              <h4 className="text-lg font-medium mb-2">Errors</h4>
-              <div className="border rounded-md p-3 bg-red-50 max-h-40 overflow-auto">
-                {importResult.errors.map((error, index) => (
-                  <div key={index} className="text-sm text-red-700 mb-1">
-                    {error.error}: {error.wine.producer} {error.wine.name} {error.wine.vintage}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button onClick={resetImport}>
-          Import More Wines
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-  
-  // Render the appropriate stage
+
+  // Get wines with issues first
+  const prioritizedWines = [...allProcessedWines].sort((a, b) => {
+    // Wines missing required fields come first
+    if (a.missingRequiredFields.length > 0 && b.missingRequiredFields.length === 0) return -1;
+    if (a.missingRequiredFields.length === 0 && b.missingRequiredFields.length > 0) return 1;
+    
+    // Then wines that need verification
+    if (a.needsVerification && !b.needsVerification) return -1;
+    if (!a.needsVerification && b.needsVerification) return 1;
+    
+    // Then potential duplicates
+    if (a.isPotentialDuplicate && !b.isPotentialDuplicate) return -1;
+    if (!a.isPotentialDuplicate && b.isPotentialDuplicate) return 1;
+    
+    // Then sort by confidence (low to high)
+    const confidenceOrder = { low: 0, medium: 1, high: 2 };
+    return confidenceOrder[a.confidence] - confidenceOrder[b.confidence];
+  });
+
   return (
-    <div className="w-full p-4">
-      {importStage === 'upload' && renderUploadStage()}
-      {importStage === 'verification' && renderVerificationStage()}
-      {importStage === 'complete' && renderCompletionStage()}
+    <div className="container mx-auto p-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6 grid w-full grid-cols-3">
+          <TabsTrigger value="upload" disabled={loading}>Upload</TabsTrigger>
+          <TabsTrigger 
+            value="review" 
+            disabled={allProcessedWines.length === 0 && approvedWines.length === 0 && rejectedWines.length === 0}
+          >
+            Review & Import
+          </TabsTrigger>
+          <TabsTrigger value="complete" disabled={!importFinished}>Complete</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upload" className="mt-0">
+          <div className="space-y-6">
+            <div 
+              className={`border-2 border-dashed rounded-lg p-8 text-center ${isDragOver ? 'border-primary bg-primary/5' : 'border-border'}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <div className="flex flex-col items-center justify-center">
+                <FileSpreadsheet className="h-12 w-12 mb-4 text-muted-foreground" />
+                <h3 className="font-medium text-lg mb-2">Upload a spreadsheet</h3>
+                <p className="text-muted-foreground mb-4">Drag and drop your Excel or CSV file here, or click to browse</p>
+                
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                  accept=".xlsx,.xls,.csv"
+                />
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Browse Files
+                </Button>
+              </div>
+            </div>
+            
+            {file && (
+              <div className="p-4 bg-card rounded-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <FileSpreadsheet className="h-8 w-8 mr-3 text-primary" />
+                    <div>
+                      <p className="font-medium">{file.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setFile(null)} 
+                    disabled={loading}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {uploadProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label>Upload Progress</Label>
+                      <span className="text-xs text-muted-foreground">{uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} />
+                  </div>
+                )}
+                
+                <div className="mt-4 flex justify-end">
+                  <Button 
+                    onClick={handleUpload} 
+                    disabled={loading || !file}
+                  >
+                    {loading ? (
+                      <>Uploading...</>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload & Process
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {currentBatchIndex > 0 && (
+              <div className="p-4 bg-card rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label>Processing Batches</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {currentBatchIndex} of {totalBatches} batches
+                    </span>
+                  </div>
+                  <Progress value={(currentBatchIndex / totalBatches) * 100} />
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="review" className="mt-0">
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 justify-between">
+              <div>
+                <h3 className="text-lg font-medium mb-1">Review & Import Wines</h3>
+                <p className="text-muted-foreground">
+                  Review the extracted wine data and approve or reject each entry.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleReset}
+                  disabled={loading}
+                >
+                  <Ban className="mr-1 h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={handleImport}
+                  disabled={loading || approvedWines.length === 0}
+                >
+                  <ArrowRight className="mr-1 h-4 w-4" />
+                  Import {approvedWines.length} Wine{approvedWines.length !== 1 ? 's' : ''}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 mb-6">
+              <div className="bg-card p-2 rounded-md flex items-center">
+                <div className="bg-blue-100 text-blue-800 rounded-full px-2 py-1 text-xs font-medium mr-2">
+                  {prioritizedWines.length}
+                </div>
+                <span className="text-sm">Pending Review</span>
+              </div>
+              
+              <div className="bg-card p-2 rounded-md flex items-center">
+                <div className="bg-green-100 text-green-800 rounded-full px-2 py-1 text-xs font-medium mr-2">
+                  {approvedWines.length}
+                </div>
+                <span className="text-sm">Approved</span>
+              </div>
+              
+              <div className="bg-card p-2 rounded-md flex items-center">
+                <div className="bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-medium mr-2">
+                  {rejectedWines.length}
+                </div>
+                <span className="text-sm">Rejected</span>
+              </div>
+            </div>
+            
+            {prioritizedWines.length === 0 && approvedWines.length === 0 && rejectedWines.length === 0 ? (
+              <div className="text-center p-12 border border-dashed rounded-lg">
+                <p className="text-muted-foreground">No wine data to review yet. Upload a spreadsheet to get started.</p>
+              </div>
+            ) : (
+              <>
+                {prioritizedWines.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Wines Pending Review ({prioritizedWines.length})</h4>
+                    <div className="space-y-4">
+                      {prioritizedWines.map((wine) => (
+                        <WineImportCard
+                          key={wine.rowIndex}
+                          wine={wine}
+                          onApprove={handleApproveWine}
+                          onReject={handleRejectWine}
+                          onEdit={() => {
+                            // For now, just approve the wine as is
+                            // In a real implementation, you'd open an edit modal here
+                            handleApproveWine(wine);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {approvedWines.length > 0 && (
+                  <div className="space-y-4 mt-8">
+                    <h4 className="font-medium">Approved Wines ({approvedWines.length})</h4>
+                    <div className="space-y-4">
+                      {approvedWines.map((wine) => (
+                        <WineImportCard
+                          key={wine.rowIndex}
+                          wine={wine}
+                          onApprove={() => {}}
+                          onReject={() => {
+                            // Move wine back to pending
+                            setAllProcessedWines(prev => [...prev, wine]);
+                            setApprovedWines(prev => prev.filter(w => w.rowIndex !== wine.rowIndex));
+                          }}
+                          onEdit={() => {}}
+                          editable={false}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {rejectedWines.length > 0 && (
+                  <div className="space-y-4 mt-8">
+                    <h4 className="font-medium">Rejected Wines ({rejectedWines.length})</h4>
+                    <div className="space-y-4">
+                      {rejectedWines.map((wine) => (
+                        <WineImportCard
+                          key={wine.rowIndex}
+                          wine={wine}
+                          onApprove={() => {
+                            // Move wine to approved
+                            setApprovedWines(prev => [...prev, wine]);
+                            setRejectedWines(prev => prev.filter(w => w.rowIndex !== wine.rowIndex));
+                          }}
+                          onReject={() => {}}
+                          onEdit={() => {}}
+                          editable={false}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="complete" className="mt-0">
+          <div className="space-y-6 text-center p-8">
+            <div className="mx-auto bg-green-100 text-green-800 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+              <Check className="h-8 w-8" />
+            </div>
+            
+            <h3 className="text-xl font-medium">Import Complete!</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              {approvedWines.length} wines have been successfully added to your collection.
+            </p>
+            
+            <div className="pt-6">
+              <Button onClick={handleReset}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import Another Spreadsheet
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
-}
+};
+
+export default SpreadsheetImport;

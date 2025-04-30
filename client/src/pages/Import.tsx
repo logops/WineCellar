@@ -1,24 +1,30 @@
-import { PageHeader } from "@/components/ui/page-header";
+import PageHeader from "@/components/ui/page-header";
 import SpreadsheetImport from "@/components/spreadsheet/SpreadsheetImport";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect, useLocation } from "wouter";
+import { Redirect } from "wouter";
+import { Loader2 } from "lucide-react";
 
 export default function Import() {
   const { user, isLoading } = useAuth();
-  const [location] = useLocation();
-  
-  // Redirect to auth page if not logged in
-  if (!isLoading && !user) {
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Redirect to="/auth" />;
   }
-  
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <PageHeader
-        heading="Import Your Collection"
-        subheading="Upload a spreadsheet to import your wines"
+    <div className="container mx-auto px-4 py-8">
+      <PageHeader 
+        title="Import Wine Collection" 
+        description="Upload your spreadsheet to import your wine collection"
       />
-      
       <SpreadsheetImport />
     </div>
   );
