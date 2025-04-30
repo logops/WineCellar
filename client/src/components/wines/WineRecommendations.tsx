@@ -18,6 +18,7 @@ interface WineRecommendationResult {
     reasoning: string;
     characteristics: string;
     servingSuggestions: string;
+    ageConsiderations: string;
     confidenceScore: number;
   }[];
   additionalSuggestions: string;
@@ -192,7 +193,10 @@ export default function WineRecommendations() {
                       <p className="text-sm text-gray-600 mb-3">{rec.characteristics}</p>
                       
                       <h4 className="text-sm font-medium mb-1">Serving Suggestions:</h4>
-                      <p className="text-sm text-gray-600">{rec.servingSuggestions}</p>
+                      <p className="text-sm text-gray-600 mb-3">{rec.servingSuggestions}</p>
+                      
+                      <h4 className="text-sm font-medium mb-1">Age Considerations:</h4>
+                      <p className="text-sm text-gray-600">{rec.ageConsiderations}</p>
                     </CardContent>
                   </Card>
                 );
