@@ -13,8 +13,22 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { handleWineLabelAnalysis, handleWineRecommendations } from './anthropic';
+import { 
+  processSpreadsheetFile, 
+  processBatchFromFile, 
+  importProcessedWines,
+  ProcessedWine
+} from './spreadsheet';
+import multer from 'multer';
+import { Buffer } from 'buffer';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up multer for file uploads
+  const storage = multer.memoryStorage();
+  const upload = multer({ 
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  });
   // Set up authentication
   setupAuth(app);
 
@@ -520,6 +534,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         error: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
+    }
+  });
+
+  // Spreadsheet import endpoints
+  // Step 1: Initial upload and analysis
+  app.post('/api/spreadsheet/upload', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No file uploaded' 
+        });
+      }
+
+      const fileBuffer = req.file.buffer;
+      const useAiDrinkingWindows = req.body.useAiDrinkingWindows === 'true';
+
+      // Process the uploaded spreadsheet
+      const result = await processSpreadsheetFile(fileBuffer, {
+        userId: req.user.id,
+        useAiDrinkingWindows
+      });
+
+      return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      console.error('Error uploading spreadsheet:', error);
+      res.status(500).json({ 
+        success: false,
+        message: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
+    }
+  });
+
+  // Step 2: Process a batch of rows
+  app.post('/api/spreadsheet/process-batch', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No file uploaded' 
+        });
+      }
+
+      const fileBuffer = req.file.buffer;
+      const batchIndex = parseInt(req.body.batchIndex || '0');
+      const batchSize = parseInt(req.body.batchSize || '100');
+      const useAiDrinkingWindows = req.body.useAiDrinkingWindows === 'true';
+      
+      // Field mappings are optional - if provided, use them, otherwise detect automatically
+      let fieldMappings;
+      if (req.body.fieldMappings) {
+        try {
+          fieldMappings = JSON.parse(req.body.fieldMappings);
+        } catch (e) {
+          console.error('Error parsing field mappings:', e);
+        }
+      }
+
+      // Process the batch
+      const result = await processBatchFromFile(fileBuffer, {
+        userId: req.user.id,
+        useAiDrinkingWindows,
+        batchIndex,
+        batchSize,
+        fieldMappings
+      });
+
+      return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      console.error('Error processing spreadsheet batch:', error);
+      res.status(500).json({ 
+        success: false,
+        message: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
+    }
+  });
+
+  // Step 3: Import verified wines
+  app.post('/api/spreadsheet/import', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      if (!req.body.wines || !Array.isArray(req.body.wines)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No wines provided for import' 
+        });
+      }
+
+      const wines = req.body.wines;
+      const createLocations = req.body.createLocations === true;
+      const applyAiDrinkingWindows = req.body.applyAiDrinkingWindows === true;
+      const importDuplicates = req.body.importDuplicates === true;
+
+      // Import the wines
+      const result = await importProcessedWines(wines, {
+        userId: req.user.id,
+        createLocations,
+        applyAiDrinkingWindows,
+        importDuplicates
+      });
+
+      return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      console.error('Error importing wines:', error);
+      res.status(500).json({ 
+        success: false,
+        message: error instanceof Error ? error.message : 'An unknown error occurred'
       });
     }
   });

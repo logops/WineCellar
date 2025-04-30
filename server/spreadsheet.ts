@@ -1,8 +1,13 @@
 import * as XLSX from 'xlsx';
 import { fileTypeFromBuffer } from 'file-type';
-import { anthropic } from './anthropic';
+import Anthropic from '@anthropic-ai/sdk';
 import type { InsertWine, Wine } from '@shared/schema';
 import { storage } from './storage';
+
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 // Supported file types
 type FileType = 'xlsx' | 'csv' | 'unknown';
@@ -29,7 +34,7 @@ interface FieldMapping {
 }
 
 // Result of processing a single wine entry
-interface ProcessedWine {
+export interface ProcessedWine {
   rowIndex: number;
   originalData: Record<string, any>;
   mappedData: Partial<InsertWine>;
@@ -65,9 +70,9 @@ const commonColumnMappings: Record<string, string[]> = {
   'name': ['name', 'wine name', 'wine', 'cuvée', 'bottling'],
   'vintage': ['vintage', 'year', 'vin'],
   'type': ['type', 'wine type', 'color'],
-  'varietal': ['varietal', 'variety', 'grape', 'cepage', 'grape variety'],
+  'grapeVarieties': ['varietal', 'variety', 'grape', 'cepage', 'grape variety', 'grapes', 'grape varieties'],
   'region': ['region', 'appellation', 'ava', 'growing region'],
-  'country': ['country', 'origin'],
+  'subregion': ['sub region', 'subregion', 'sub-region'],
   'purchasePrice': ['purchase price', 'price', 'cost', 'bought for', 'purchase cost'],
   'currentValue': ['current value', 'value', 'market price', 'current price'],
   'quantity': ['quantity', 'qty', 'bottles', 'count', 'number of bottles'],
@@ -436,7 +441,7 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
     // Process each wine in the batch
     await Promise.all(batch.map(async (wine) => {
       try {
-        const wineInfo = `${wine.mappedData.vintage || 'NV'} ${wine.mappedData.producer} ${wine.mappedData.name || ''} ${wine.mappedData.varietal || ''}`.trim();
+        const wineInfo = `${wine.mappedData.vintage || 'NV'} ${wine.mappedData.producer} ${wine.mappedData.name || ''} ${wine.mappedData.grapeVarieties || ''}`.trim();
         
         // Use Claude to get drinking window recommendation
         const result = await anthropic.messages.create({
@@ -456,8 +461,8 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
               content: `Please recommend a drinking window for this wine: ${wineInfo}
               Wine Type: ${wine.mappedData.type}
               Region: ${wine.mappedData.region || 'unknown'}
-              Country: ${wine.mappedData.country || 'unknown'}
-              Varietal: ${wine.mappedData.varietal || 'unknown'}
+              Sub-Region: ${wine.mappedData.subregion || 'unknown'}
+              Grape Varieties: ${wine.mappedData.grapeVarieties || 'unknown'}
               
               Today's date is ${new Date().toISOString().split('T')[0]}.
               
@@ -468,6 +473,7 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
         
         // Parse the recommendation
         try {
+          // The response format has changed in Claude-3-7-sonnet
           const response = result.content[0].text;
           const recommendation = JSON.parse(response);
           
