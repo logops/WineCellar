@@ -3,7 +3,8 @@ import {
   wines, type Wine, type InsertWine,
   consumptions, type Consumption, type InsertConsumption,
   wishlist, type Wishlist, type InsertWishlist,
-  labelAnalytics
+  labelAnalytics,
+  recommendationHistory, type RecommendationHistory, type InsertRecommendationHistory
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -39,6 +40,11 @@ export interface IStorage {
   getWishlistItem(id: number): Promise<Wishlist | undefined>;
   createWishlistItem(item: InsertWishlist): Promise<Wishlist>;
   deleteWishlistItem(id: number): Promise<boolean>;
+  
+  // Recommendation history operations
+  getRecommendationHistory(userId: number): Promise<RecommendationHistory[]>;
+  getRecommendationById(id: number): Promise<RecommendationHistory | undefined>;
+  createRecommendationHistory(history: InsertRecommendationHistory): Promise<RecommendationHistory>;
   
   // Label recognition analytics
   recordLabelAnalytics(userId: number, imageHash: string, originalPrediction: any, userCorrection: any | null, wasAccurate: boolean, drinkingWindowAccepted?: boolean): Promise<void>;

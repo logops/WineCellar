@@ -97,6 +97,24 @@ export type InsertConsumption = z.infer<typeof insertConsumptionSchema>;
 export type Wishlist = typeof wishlist.$inferSelect;
 export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
 
+// Recommendation History table
+export const recommendationHistory = pgTable("recommendation_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  query: text("query").notNull(),
+  recommendations: jsonb("recommendations").notNull(),
+  additionalSuggestions: text("additional_suggestions"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRecommendationHistorySchema = createInsertSchema(recommendationHistory).omit({
+  id: true,
+  createdAt: true
+});
+
+export type RecommendationHistory = typeof recommendationHistory.$inferSelect;
+export type InsertRecommendationHistory = z.infer<typeof insertRecommendationHistorySchema>;
+
 // Define a table for recording label recognition feedback
 export const labelAnalytics = pgTable("label_analytics", {
   id: serial("id").primaryKey(),
