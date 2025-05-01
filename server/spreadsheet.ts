@@ -66,28 +66,98 @@ interface BatchProcessResult {
  * Detect file type from buffer
  */
 export async function detectFileType(buffer: Buffer): Promise<FileType> {
-  const result = await fileTypeFromBuffer(buffer);
+  console.log('Detecting file type for uploaded file');
   
-  if (!result) {
-    // If file-type can't determine, check for CSV
-    const sample = buffer.toString('utf-8', 0, Math.min(buffer.length, 1000));
+  try {
+    const result = await fileTypeFromBuffer(buffer);
+    console.log('File type detection result:', result);
     
-    // Simple CSV detection: looks for multiple lines with commas
-    const lines = sample.split('\n').filter(line => line.trim().length > 0);
-    const hasCommas = lines.filter(line => line.includes(',')).length > 1;
+    if (!result) {
+      console.log('No file type detected, checking for CSV or Excel signature');
+      // If file-type can't determine, check for CSV
+      const sample = buffer.toString('utf-8', 0, Math.min(buffer.length, 1000));
+      
+      // Simple CSV detection: looks for multiple lines with commas
+      const lines = sample.split('\n').filter(line => line.trim().length > 0);
+      const hasCommas = lines.filter(line => line.includes(',')).length > 1;
+      
+      // Check for Excel file signature (PK zip file header for .xlsx)
+      const hasExcelSignature = buffer.length > 4 && 
+                               buffer[0] === 0x50 && 
+                               buffer[1] === 0x4B && 
+                               buffer[2] === 0x03 && 
+                               buffer[3] === 0x04;
+      
+      // Check for old Excel format (.xls) signature
+      const hasOldExcelSignature = buffer.length > 8 && 
+                                  buffer[0] === 0xD0 && 
+                                  buffer[1] === 0xCF && 
+                                  buffer[2] === 0x11 && 
+                                  buffer[3] === 0xE0;
+      
+      if (hasExcelSignature || hasOldExcelSignature) {
+        console.log('Excel signature detected');
+        return 'xlsx';
+      }
+      
+      if (hasCommas) {
+        console.log('CSV detected');
+        return 'csv';
+      }
+      
+      console.log('Unknown file type');
+      return 'unknown';
+    }
     
-    return hasCommas ? 'csv' : 'unknown';
+    // Check for Excel formats
+    if (
+      result.mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      result.mime === 'application/vnd.ms-excel' ||
+      result.mime === 'application/zip' // Some Excel files are detected as zip
+    ) {
+      console.log('Excel format detected');
+      return 'xlsx';
+    }
+    
+    // Check for CSV formats
+    if (
+      result.mime === 'text/csv' ||
+      result.mime === 'text/plain'
+    ) {
+      console.log('CSV format detected');
+      return 'csv';
+    }
+    
+    console.log('Unknown MIME type:', result.mime);
+    return 'unknown';
+  } catch (error) {
+    console.error('Error detecting file type:', error);
+    // Try a simple check as fallback
+    try {
+      // Try parsing as XLSX anyway
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      if (workbook && workbook.SheetNames && workbook.SheetNames.length > 0) {
+        console.log('Successfully parsed as Excel despite detection failure');
+        return 'xlsx';
+      }
+    } catch (xlsxError) {
+      // Not an Excel file, try CSV
+      try {
+        const sample = buffer.toString('utf-8', 0, Math.min(buffer.length, 1000));
+        const lines = sample.split('\n').filter(line => line.trim().length > 0);
+        const hasCommas = lines.filter(line => line.includes(',')).length > 1;
+        
+        if (hasCommas) {
+          console.log('Fallback CSV detection succeeded');
+          return 'csv';
+        }
+      } catch (csvError) {
+        // Ignore
+      }
+    }
+    
+    return 'unknown';
   }
-  
-  // Check for Excel formats
-  if (
-    result.mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-    result.mime === 'application/vnd.ms-excel'
-  ) {
-    return 'xlsx';
-  }
-  
-  return 'unknown';
 }
 
 /**
@@ -95,17 +165,39 @@ export async function detectFileType(buffer: Buffer): Promise<FileType> {
  */
 export function parseSpreadsheet(buffer: Buffer, fileType: FileType): XLSX.WorkSheet | null {
   try {
-    if (fileType === 'xlsx') {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      return workbook.Sheets[sheetName];
-    } else if (fileType === 'csv') {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      return workbook.Sheets[sheetName];
+    console.log(`Parsing spreadsheet file as ${fileType}`);
+    let readOptions: XLSX.ParsingOptions = { type: 'buffer' };
+    
+    // Add specific options for different file types
+    if (fileType === 'csv') {
+      readOptions = { 
+        ...readOptions,
+        raw: false,
+        cellText: true,
+        cellDates: true,
+        dateNF: 'yyyy-mm-dd'
+      };
     }
     
-    return null;
+    // Read the workbook
+    const workbook = XLSX.read(buffer, readOptions);
+    
+    // Check if workbook was parsed successfully
+    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+      console.error('Failed to parse workbook or no sheets found');
+      return null;
+    }
+    
+    console.log(`Found sheets: ${workbook.SheetNames.join(', ')}`);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    
+    if (!sheet) {
+      console.error(`Sheet ${sheetName} not found in workbook`);
+      return null;
+    }
+    
+    return sheet;
   } catch (error) {
     console.error('Error parsing spreadsheet:', error);
     return null;
@@ -117,11 +209,61 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType): XLSX.WorkS
  */
 export function worksheetToJson(worksheet: XLSX.WorkSheet): any[] {
   try {
-    return XLSX.utils.sheet_to_json(worksheet, { 
-      header: 'A',
-      defval: '',
-      raw: false
+    console.log('Converting worksheet to JSON');
+    
+    // Check if there's data in the worksheet
+    if (!worksheet || !worksheet['!ref']) {
+      console.error('Worksheet is empty or invalid');
+      return [];
+    }
+    
+    // Log the range of data in the worksheet
+    console.log(`Worksheet range: ${worksheet['!ref']}`);
+    
+    // Get the number of rows in the worksheet
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    const numRows = range.e.r - range.s.r + 1;
+    console.log(`Number of rows in worksheet: ${numRows}`);
+    
+    // Convert to JSON with options for more reliable parsing
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 'A',       // Use column letters as keys
+      defval: '',        // Default empty string for missing cells
+      raw: false,        // Don't use raw values
+      dateNF: 'yyyy-mm-dd', // Date format
+      blankrows: false   // Skip blank rows
     });
+    
+    console.log(`Converted ${jsonData.length} rows to JSON`);
+    
+    // If no data was extracted, try another approach
+    if (jsonData.length === 0 && numRows > 1) {
+      console.log('Trying alternative approach for extracting data');
+      // Try with different options
+      const alternativeData = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,      // Use row 0 as headers
+        raw: true,      // Use raw values
+        blankrows: false
+      });
+      
+      // Convert array format to object format with column letters
+      if (alternativeData.length > 0) {
+        console.log(`Alternative approach extracted ${alternativeData.length} rows`);
+        return alternativeData.map((row, rowIndex) => {
+          const rowObj: Record<string, any> = {};
+          if (Array.isArray(row)) {
+            row.forEach((cell, colIndex) => {
+              // Convert column index to letter (0 = A, 1 = B, etc.)
+              const colLetter = String.fromCharCode(65 + colIndex); // A-Z for first 26 columns
+              rowObj[colLetter] = cell === undefined ? '' : cell;
+            });
+          }
+          return rowObj;
+        });
+      }
+    }
+    
+    return jsonData;
   } catch (error) {
     console.error('Error converting worksheet to JSON:', error);
     return [];

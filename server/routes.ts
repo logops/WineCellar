@@ -599,7 +599,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Read the file from disk
-      const fileBuffer = fs.readFileSync(req.file.path);
+      console.log('Processing uploaded file:', req.file.originalname, 'size:', req.file.size, 'bytes', 'path:', req.file.path);
+      try {
+        const fileExists = fs.existsSync(req.file.path);
+        console.log('File exists check:', fileExists);
+        
+        const stats = fs.statSync(req.file.path);
+        console.log('File stats:', stats.size, 'bytes');
+      } catch (error) {
+        console.error('Error checking file:', error);
+      }
+      
+      // Read file buffer
+      let fileBuffer;
+      try {
+        fileBuffer = fs.readFileSync(req.file.path);
+        console.log('Successfully read file buffer, size:', fileBuffer.length, 'bytes');
+      } catch (readError) {
+        console.error('Error reading file buffer:', readError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error reading uploaded file'
+        });
+      }
       const batchIndex = parseInt(req.body.batchIndex || '0');
       const batchSize = parseInt(req.body.batchSize || '100');
       const useAiDrinkingWindows = req.body.useAiDrinkingWindows === 'true';
