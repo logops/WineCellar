@@ -31,6 +31,16 @@ export function ConfirmDialog({
   confirmText = "Continue",
   children,
 }: ConfirmDialogProps) {
+  // Add event listener to handle custom close events
+  React.useEffect(() => {
+    const handleCloseEvent = () => {
+      if (open) onOpenChange(false);
+    };
+    
+    document.addEventListener('close-dialog', handleCloseEvent);
+    return () => document.removeEventListener('close-dialog', handleCloseEvent);
+  }, [open, onOpenChange]);
+  
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>

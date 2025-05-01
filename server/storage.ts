@@ -59,10 +59,12 @@ export class MemStorage implements IStorage {
   private wines: Map<number, Wine>;
   private consumptions: Map<number, Consumption>;
   private wishlistItems: Map<number, Wishlist>;
+  private recommendationHistoryItems: Map<number, RecommendationHistory>;
   private userId: number;
   private wineId: number;
   private consumptionId: number;
   private wishlistId: number;
+  private recommendationHistoryId: number;
   sessionStore: session.Store;
 
   constructor() {
@@ -70,10 +72,12 @@ export class MemStorage implements IStorage {
     this.wines = new Map();
     this.consumptions = new Map();
     this.wishlistItems = new Map();
+    this.recommendationHistoryItems = new Map();
     this.userId = 1;
     this.wineId = 1;
     this.consumptionId = 1;
     this.wishlistId = 1;
+    this.recommendationHistoryId = 1;
     
     // Create a memory session store
     const MemoryStore = require('memorystore')(session);

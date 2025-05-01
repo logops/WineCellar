@@ -329,6 +329,8 @@ IMPORTANT FORMATTING RULES:
 4. Structure each recommendation in clear sections
 5. NEVER REPEAT information between sections - each section should provide NEW information
 6. Use concise, specific language throughout
+7. CRITICAL: Give EQUAL WEIGHT to ALL wine types (red, white, rosé, sparkling, etc.) - do not show preference for red wines when recommending
+8. Include a diversity of wine types in your recommendations when appropriate to the query
 
 For each recommendation, provide these sections, keeping each brief (1-3 sentences max):
 1. REASONING: Why this SPECIFIC wine (by producer, region, vintage) pairs with the food/occasion
@@ -340,7 +342,7 @@ Make each recommendation extremely specific to the individual wine:
 - Highlight the SPECIFIC PRODUCER'S winemaking style (e.g., Di Costanzo's minimal intervention approach)
 - Explain the SPECIFIC VINTAGE'S characteristics (e.g., how the 2019 growing season affected THIS wine)
 - Describe the SPECIFIC REGIONAL terroir influences (e.g., volcanic soils in northern Napa)
-- Analyze the SPECIFIC GRAPE VARIETIES (e.g., Cabernet Sauvignon's graphite notes complement the query)
+- Analyze the SPECIFIC GRAPE VARIETIES (e.g., Chardonnay's vibrant acidity or Cabernet Sauvignon's graphite notes complement the query)
 
 If the wine has grape varieties listed, incorporate this information. If not, research-based grape knowledge for the region/type is essential (e.g., if it's a Napa red without grape listed, analyze as if Cabernet Sauvignon; if Burgundy, as Pinot Noir, etc.)
 
@@ -420,21 +422,51 @@ Your response MUST be a valid JSON object with this exact format:
         const scoreWineForQuery = (wine: any): number => {
           let score = 0.5; // Start with neutral score
           
-          // Type matching for food pairing
-          if (isSteak && wine.type?.toLowerCase() === 'red') score += 0.15;
-          if (isSeafood && wine.type?.toLowerCase() === 'white') score += 0.15;
-          if (isSpicy && (wine.type?.toLowerCase() === 'white' || wine.type?.toLowerCase() === 'rosé')) score += 0.1;
-          if (isDessert && (wine.type?.toLowerCase() === 'dessert' || wine.type?.toLowerCase() === 'sparkling')) score += 0.15;
-          if (isCelebration && wine.type?.toLowerCase() === 'sparkling') score += 0.15;
+          // We must give equal weight to all wine types, regardless of the query
+          // First, apply a base score boost based on wine type to ensure diversity
+          const wineType = wine.type?.toLowerCase() || '';
           
-          // Special region considerations
-          if (isSteak && wine.region?.toLowerCase().includes('bordeaux')) score += 0.05;
-          if (isSteak && wine.region?.toLowerCase().includes('napa')) score += 0.05;
-          if (isSeafood && wine.region?.toLowerCase().includes('burgundy')) score += 0.05;
-          if (isSeafood && wine.region?.toLowerCase().includes('loire')) score += 0.05;
+          // All wine types receive exactly the same boost
+          if (wineType === 'red') score += 0.05;
+          if (wineType === 'white') score += 0.05;
+          if (wineType === 'rosé' || wineType === 'rose') score += 0.05;
+          if (wineType === 'sparkling') score += 0.05;
+          if (wineType === 'dessert') score += 0.05;
+          if (wineType === 'fortified') score += 0.05;
           
-          // Vintage considerations (newer wines may be more approachable)
-          if (wine.vintage && wine.vintage > 2018) score += 0.05;
+          // Add small query-specific adjustments without compromising type equality
+          if (isSteak || isSeafood || isSpicy || isDessert || isCelebration) {
+            // Give a tiny boost for variety-specific matches without disadvantaging any wine type
+            if (wine.grapeVarieties) {
+              const grapeVarieties = wine.grapeVarieties.toLowerCase();
+              // The boost is tiny and equal for all possible matches
+              if (grapeVarieties.includes('cabernet') || 
+                  grapeVarieties.includes('syrah') ||
+                  grapeVarieties.includes('malbec') ||
+                  grapeVarieties.includes('chardonnay') ||
+                  grapeVarieties.includes('sauvignon') ||
+                  grapeVarieties.includes('riesling') ||
+                  grapeVarieties.includes('pinot') ||
+                  grapeVarieties.includes('merlot') ||
+                  grapeVarieties.includes('chenin') ||
+                  grapeVarieties.includes('grenache') ||
+                  grapeVarieties.includes('zinfandel')) {
+                score += 0.02; // Small boost that doesn't override wine type equality
+              }
+            }
+          }
+          
+          // Regional considerations with equal weighting
+          if (wine.region) score += 0.05;
+          
+          // Vintage considerations - older and newer wines get equal treatment
+          if (wine.vintage) score += 0.05;
+          
+          // If the wine has grape varieties specified, give it a slight boost
+          if (wine.grapeVarieties) score += 0.05;
+          
+          // Add a small random factor to ensure diversity in recommendations
+          score += Math.random() * 0.1;
           
           // Limit maximum score
           return Math.min(score, 0.85);
@@ -521,11 +553,14 @@ Your response MUST be a valid JSON object with this exact format:
             reasoning = `This ${wineObj.vintage} ${wineObj.producer} from ${wineObj.region || "its region"} provides balanced ${grapeVariety} characteristics well-suited to varied cuisine. The wine's versatile profile complements a wide range of flavors and textures.`;
           }
           
-          // Generate specific characteristics based on wine type, region, and grape
+          // Generate specific characteristics based on wine type, region, and grape, giving equal depth to all types
           let characteristics = "";
           let servingSuggestions = "";
           
-          if (wineObj.type?.toLowerCase() === 'red') {
+          const wineType = wineObj.type?.toLowerCase() || '';
+          
+          // Equal detail for all wine types
+          if (wineType === 'red') {
             if (grapeVariety.includes("Cabernet")) {
               characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} delivers concentrated cassis, blackberry, cedar, and graphite notes, with structured tannins. ${vintageCharacteristics.split('.')[0]}.`;
               servingSuggestions = "Decant for 30-45 minutes and serve at 60-65°F (16-18°C) in a Bordeaux-style glass. The broad bowl opens complex aromas while slight chilling emphasizes freshness.";
@@ -539,15 +574,40 @@ Your response MUST be a valid JSON object with this exact format:
               characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} provides structured red fruit and savory notes with layered complexity. ${vintageCharacteristics.split('.')[0]}.`;
               servingSuggestions = "Serve at 60-65°F (16-18°C) in an appropriate red wine glass. Consider 20-minute decanting to fully express aromatics.";
             }
-          } else if (wineObj.type?.toLowerCase() === 'white') {
-            characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} exhibits bright citrus, stone fruit, and subtle minerality with refreshing acidity. ${vintageCharacteristics.split('.')[0]}.`;
-            servingSuggestions = "Serve chilled at 45-50°F (7-10°C) in a white wine glass with a slightly narrower bowl to preserve aromatics.";
-          } else if (wineObj.type?.toLowerCase() === 'sparkling') {
-            characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} presents effervescent citrus, apple, and brioche notes with refreshing acidity. ${vintageCharacteristics.split('.')[0]}.`;
-            servingSuggestions = "Serve well chilled at 42-45°F (6-7°C) in a flute or tulip glass to preserve bubbles while allowing aromas to develop.";
+          } else if (wineType === 'white') {
+            if (grapeVariety.includes("Chardonnay")) {
+              characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} showcases nuanced apple, pear, and vanilla notes with a textured palate and balanced acidity. ${vintageCharacteristics.split('.')[0]}.`;
+              servingSuggestions = "Serve at 48-52°F (9-11°C) in a medium-sized white wine glass to balance fruit expression and structural elements.";
+            } else if (grapeVariety.includes("Sauvignon")) {
+              characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} expresses vibrant citrus, gooseberry, and herbal notes with mouthwatering acidity and mineral precision. ${vintageCharacteristics.split('.')[0]}.`;
+              servingSuggestions = "Serve well-chilled at 45-48°F (7-9°C) in a tulip-shaped white wine glass to focus the aromatic intensity.";
+            } else if (grapeVariety.includes("Riesling")) {
+              characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} offers intricate floral, stone fruit, and petrol notes with a brilliant interplay of sweetness and acidity. ${vintageCharacteristics.split('.')[0]}.`;
+              servingSuggestions = "Serve at 45-50°F (7-10°C) in a smaller white wine glass to concentrate the distinctive aromatics.";
+            } else {
+              characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} exhibits bright citrus, stone fruit, and subtle minerality with refreshing acidity. ${vintageCharacteristics.split('.')[0]}.`;
+              servingSuggestions = "Serve chilled at 45-50°F (7-10°C) in a white wine glass with a slightly narrower bowl to preserve aromatics.";
+            }
+          } else if (wineType === 'sparkling') {
+            if (grapeVariety.includes("Champagne") || grapeVariety.includes("Chardonnay")) {
+              characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} presents refined effervescence with notes of brioche, green apple, and citrus zest, supported by a chalky mineral backbone. ${vintageCharacteristics.split('.')[0]}.`;
+              servingSuggestions = "Serve well chilled at 43-46°F (6-8°C) in a tulip glass to preserve effervescence while enhancing the complex bouquet.";
+            } else {
+              characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} displays energetic bubbles with fresh fruit tones and autolytic complexity. ${vintageCharacteristics.split('.')[0]}.`;
+              servingSuggestions = "Serve well chilled at 42-45°F (6-7°C) in a flute or tulip glass to preserve bubbles while allowing aromas to develop.";
+            }
+          } else if (wineType === 'rosé' || wineType === 'rose') {
+            characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} reveals delicate red berry, watermelon, and floral notes with a crisp, refreshing palate and subtle minerality. ${vintageCharacteristics.split('.')[0]}.`;
+            servingSuggestions = "Serve chilled at 44-48°F (7-9°C) in a stemmed rosé glass with a slightly flared lip to highlight both fruit and freshness.";
+          } else if (wineType === 'dessert') {
+            characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} balances concentrated honey, dried fruit, and exotic spice notes with luxurious sweetness and cleansing acidity. ${vintageCharacteristics.split('.')[0]}.`;
+            servingSuggestions = "Serve slightly chilled at 55-58°F (13-14°C) in a smaller dessert wine glass that directs the wine to the center and back of the palate.";
+          } else if (wineType === 'fortified') {
+            characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} delivers complex dried fruit, nut, and caramel notes with a structured palate and remarkable length. ${vintageCharacteristics.split('.')[0]}.`;
+            servingSuggestions = "Serve at 60-65°F (16-18°C) in a proper Port or Sherry glass to focus the concentrated aromatics and control alcohol perception.";
           } else {
             characteristics = `${wineObj.producer}'s ${wineObj.vintage} ${grapeVariety} offers a unique profile of balanced flavors and structure. ${vintageCharacteristics.split('.')[0]}.`;
-            servingSuggestions = "Serve according to the wine type - chilled for white wines, room temperature for reds.";
+            servingSuggestions = "Serve according to the wine's style - generally chilled for lighter wines and closer to room temperature for fuller ones.";
           }
           
           // Age considerations based on vintage, grape and region
