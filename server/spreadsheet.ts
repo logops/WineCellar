@@ -711,6 +711,85 @@ export async function processBatch(
       }
     }
     
+    // Final check to avoid "Unknown" when we have actual data
+    // If we have a vintage but ended up with Unknown Producer/Wine,
+    // use the original values from the row when possible
+    if (mappedData.vintage && 
+        ((!mappedData.producer || mappedData.producer === 'Unknown Producer') ||
+         (!mappedData.name || mappedData.name === 'Unknown Wine'))) {
+      
+      // Log what we're doing
+      console.log(`Fixing unknown fields for wine with vintage ${mappedData.vintage}`);
+      console.log(`Original row data:`, row);
+      
+      // Try to extract meaningful information from the row
+      // Look for any non-numeric fields that might contain name information
+      const possibleNameFields = Object.entries(row)
+        .filter(([key, value]) => {
+          // Filter for string fields that aren't dates or numbers
+          const stringValue = String(value).trim();
+          return stringValue && 
+                 !/^\d+(\.\d+)?$/.test(stringValue) && // not just a number
+                 !/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(stringValue); // not a date
+        })
+        .map(([key, value]) => String(value).trim());
+      
+      console.log(`Possible name fields:`, possibleNameFields);
+      
+      // If we have possible name fields, use them
+      if (possibleNameFields.length > 0) {
+        // If producer is unknown but name isn't, swap them
+        if ((!mappedData.producer || mappedData.producer === 'Unknown Producer') && 
+            mappedData.name && mappedData.name !== 'Unknown Wine') {
+          mappedData.producer = mappedData.name;
+        }
+        // Otherwise use the first non-empty field
+        else if (!mappedData.producer || mappedData.producer === 'Unknown Producer') {
+          mappedData.producer = possibleNameFields[0];
+        }
+        
+        // If name is still unknown, use the second field or vintage + type
+        if (!mappedData.name || mappedData.name === 'Unknown Wine') {
+          if (possibleNameFields.length > 1 && 
+              possibleNameFields[1] !== mappedData.producer) {
+            mappedData.name = possibleNameFields[1];
+          } else if (mappedData.type) {
+            // Use vintage + type as the name
+            mappedData.name = `${mappedData.vintage} ${mappedData.type}`;
+          } else {
+            // Last resort
+            mappedData.name = `${mappedData.vintage} Wine`;
+          }
+        }
+      } else {
+        // If we don't have any good name fields, use vintage + any other information
+        if (!mappedData.name || mappedData.name === 'Unknown Wine') {
+          const typeInfo = mappedData.type || '';
+          const regionInfo = mappedData.region || '';
+          const vineyard = mappedData.vineyard || '';
+          
+          // Construct a name using available information
+          const nameParts = [mappedData.vintage.toString()];
+          if (regionInfo) nameParts.push(regionInfo);
+          if (vineyard) nameParts.push(vineyard);
+          if (typeInfo) nameParts.push(typeInfo);
+          
+          mappedData.name = nameParts.join(' ');
+        }
+        
+        // If producer is still unknown, use vintage + region or just region
+        if (!mappedData.producer || mappedData.producer === 'Unknown Producer') {
+          if (mappedData.region) {
+            mappedData.producer = mappedData.region;
+          } else {
+            mappedData.producer = `${mappedData.vintage} Producer`;
+          }
+        }
+      }
+      
+      console.log(`Fixed fields - Producer: ${mappedData.producer}, Name: ${mappedData.name}`);
+    }
+
     // Check if we have the minimum required fields
     if (!mappedData.producer || (!mappedData.vintage && mappedData.vintage !== 0) || !mappedData.type) {
       overallConfidence = ConfidenceLevel.LOW;
