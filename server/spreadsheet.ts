@@ -4,14 +4,9 @@ import * as schema from '@shared/schema';
 import { InsertWine, Wine } from '@shared/schema';
 import { db } from './db';
 import { storage } from './storage';
-import Anthropic from '@anthropic-ai/sdk';
+import { identifySpreadsheetColumns } from './anthropic';
 
-// Initialize Anthropic client with API key
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-// The newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
+// Use anthropic client from anthropic.ts file
 
 type FileType = 'xlsx' | 'csv' | 'unknown';
 
@@ -919,7 +914,8 @@ export async function processBatchFromFile(
     startRow?: number,
     batchSize?: number,
     fieldMappings?: FieldMapping[],
-    useAiDrinkingWindows: boolean
+    useAiDrinkingWindows: boolean,
+    useAiColumnMapping?: boolean
   }
 ): Promise<{
   success: boolean;
@@ -963,7 +959,50 @@ export async function processBatchFromFile(
     const batchSize = options.batchSize || 100;
     
     // If no field mappings provided, generate them
-    const fieldMappings = options.fieldMappings || identifyColumnMappings(data);
+    let fieldMappings = options.fieldMappings || [];
+    
+    if (fieldMappings.length === 0) {
+      console.log('No field mappings provided, attempting to identify columns');
+      
+      // Try AI-based column identification if requested
+      if (options.useAiColumnMapping) {
+        console.log('Using AI to identify spreadsheet columns');
+        
+        try {
+          // Extract headers from first row
+          const headers = Object.values(data[0]).map(value => String(value));
+          
+          // Get sample rows for context (up to 3)
+          const sampleRows = data.slice(1, 4);
+          
+          // Use Claude to identify columns
+          const aiMappings = await identifySpreadsheetColumns(headers, sampleRows);
+          
+          if (aiMappings && aiMappings.length > 0) {
+            console.log('AI successfully identified column mappings:', aiMappings);
+            
+            // Convert AI mappings to our FieldMapping format
+            fieldMappings = aiMappings.map(mapping => ({
+              field: mapping.field,
+              columnHeader: mapping.columnHeader,
+              columnIndex: Object.entries(data[0]).find(
+                ([_, value]) => String(value).toLowerCase() === mapping.columnHeader.toLowerCase()
+              )?.[0] as unknown as number || 0,
+              confidence: mapping.confidence as ConfidenceLevel
+            }));
+          } else {
+            console.log('AI failed to identify columns, falling back to rule-based approach');
+            fieldMappings = identifyColumnMappings(data);
+          }
+        } catch (aiError) {
+          console.error('Error using AI for column identification:', aiError);
+          fieldMappings = identifyColumnMappings(data);
+        }
+      } else {
+        // Use rule-based approach
+        fieldMappings = identifyColumnMappings(data);
+      }
+    }
     
     console.log('Processing batch with', data.length, 'rows from Excel/CSV file');
     console.log('Field mappings:', fieldMappings);

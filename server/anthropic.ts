@@ -682,8 +682,15 @@ Respond in valid JSON format like this:
 
     // Parse the JSON response
     try {
+      // First check that we have a text response
+      if (!message.content[0] || message.content[0].type !== 'text') {
+        console.error('No text content found in AI response');
+        return null;
+      }
+      
       // Extract JSON from the response (handling potential text wrapping)
-      const jsonMatch = message.content[0].text.match(/\{[\s\S]*\}/);
+      const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error('No JSON found in AI response');
         return null;

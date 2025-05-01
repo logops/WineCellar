@@ -667,13 +667,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Process the batch
+      // Process the batch with AI column mapping if requested
+      const useAiColumnMapping = req.body.useAiColumnMapping === 'true';
+      
       const result = await processBatchFromFile(fileBuffer, {
         userId: req.user.id,
         useAiDrinkingWindows,
         startRow: batchIndex,
         batchSize,
-        fieldMappings
+        fieldMappings,
+        useAiColumnMapping
       });
 
       return res.status(result.success ? 200 : 400).json(result);
