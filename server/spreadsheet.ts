@@ -1003,9 +1003,48 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
     );
   });
   
+  if (winesNeedingRecommendations.length === 0) {
+    return;
+  }
+  
+  // Smart Selection Approach: Prioritize wines that would benefit most from AI analysis
+  const prioritizedWines = [...winesNeedingRecommendations].sort((a, b) => {
+    // Scoring system to prioritize wines (higher score = higher priority)
+    const getScore = (wine: ProcessedWine): number => {
+      let score = 0;
+      
+      // 1. Prioritize older vintages (they need more careful assessment)
+      const vintage = typeof wine.mappedData.vintage === 'number' ? wine.mappedData.vintage : 0;
+      if (vintage <= 1990) score += 40;  // Very old wines (pre-1990) get highest priority
+      else if (vintage <= 2000) score += 30;  // Older wines (1991-2000)
+      else if (vintage <= 2010) score += 20;  // Mature wines (2001-2010)
+      else if (vintage <= 2015) score += 10;  // Young but potentially ready wines
+      
+      // 2. Prioritize wines from regions where drinking windows matter more
+      const regions = ['burgundy', 'bordeaux', 'barolo', 'barbaresco', 'brunello'];
+      const region = String(wine.mappedData.region || '').toLowerCase();
+      const subregion = String(wine.mappedData.subregion || '').toLowerCase();
+      if (regions.some(r => region.includes(r) || subregion.includes(r))) {
+        score += 15;
+      }
+      
+      // 3. Prioritize high confidence data
+      if (wine.confidence === ConfidenceLevel.HIGH) score += 10;
+      
+      // 4. Give red wines slightly higher priority (they often have more complex aging patterns)
+      const type = String(wine.mappedData.type || '').toLowerCase();
+      if (type.includes('red')) score += 5;
+      
+      return score;
+    };
+    
+    // Sort by score (descending)
+    return getScore(b) - getScore(a);
+  });
+  
   // Limit to only 5 wines maximum to avoid rate limits
-  const limitedWines = winesNeedingRecommendations.slice(0, 5);
-  console.log(`Processing AI drinking windows for ${limitedWines.length} wines (out of ${winesNeedingRecommendations.length} candidates)`);
+  const limitedWines = prioritizedWines.slice(0, 5);
+  console.log(`Processing AI drinking windows for ${limitedWines.length} high-priority wines (out of ${winesNeedingRecommendations.length} candidates)`);
   
   if (limitedWines.length === 0) {
     return;
