@@ -584,6 +584,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Recommendation history endpoints
+  app.get('/api/recommendation-history', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      // Get the recommendation history for this user
+      const history = await dbStorage.getRecommendationHistory(req.user.id);
+      
+      return res.status(200).json({
+        success: true,
+        data: history
+      });
+    } catch (error) {
+      console.error('Error fetching recommendation history:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
+    }
+  });
+  
+  // API endpoint to get a specific recommendation by ID
+  app.get('/api/recommendation-history/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      const recommendationId = parseInt(req.params.id);
+      if (isNaN(recommendationId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid recommendation ID'
+        });
+      }
+      
+      // Get the specific recommendation
+      const recommendation = await dbStorage.getRecommendationById(recommendationId);
+      
+      // Check if recommendation exists and belongs to this user
+      if (!recommendation) {
+        return res.status(404).json({
+          success: false,
+          error: 'Recommendation not found'
+        });
+      }
+      
+      if (recommendation.userId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not authorized to access this recommendation'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: recommendation
+      });
+    } catch (error) {
+      console.error('Error fetching recommendation by ID:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
+    }
+  });
+  
   // API endpoint for getting AI drinking window recommendation for a single wine
   app.post('/api/wine-drinking-window-recommendation', isAuthenticated, async (req: Request, res: Response) => {
     try {
