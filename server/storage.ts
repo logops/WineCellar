@@ -7,7 +7,7 @@ import {
   recommendationHistory, type RecommendationHistory, type InsertRecommendationHistory
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 
@@ -216,6 +216,30 @@ export class MemStorage implements IStorage {
       drinkingWindowAccepted
     });
     // No persistent storage in memory implementation
+  }
+  
+  // Recommendation history operations
+  async getRecommendationHistory(userId: number): Promise<RecommendationHistory[]> {
+    return Array.from(this.recommendationHistoryItems.values())
+      .filter(item => item.userId === userId)
+      .sort((a, b) => {
+        // Sort by creation date, newest first
+        const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+        const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+        return dateB.getTime() - dateA.getTime();
+      });
+  }
+  
+  async getRecommendationById(id: number): Promise<RecommendationHistory | undefined> {
+    return this.recommendationHistoryItems.get(id);
+  }
+  
+  async createRecommendationHistory(insertHistory: InsertRecommendationHistory): Promise<RecommendationHistory> {
+    const id = this.recommendationHistoryId++;
+    const createdAt = new Date();
+    const history: RecommendationHistory = { ...insertHistory, id, createdAt };
+    this.recommendationHistoryItems.set(id, history);
+    return history;
   }
 
   // Initialize sample data
@@ -590,6 +614,46 @@ export class DatabaseStorage implements IStorage {
       console.log('Label analytics recorded successfully');
     } catch (error) {
       console.error('Error recording label analytics:', error);
+    }
+  }
+  
+  // Recommendation history operations
+  async getRecommendationHistory(userId: number): Promise<RecommendationHistory[]> {
+    try {
+      return await db.select()
+        .from(recommendationHistory)
+        .where(eq(recommendationHistory.userId, userId))
+        .orderBy(desc(recommendationHistory.createdAt));
+    } catch (error) {
+      console.error('Error fetching recommendation history:', error);
+      return [];
+    }
+  }
+  
+  async getRecommendationById(id: number): Promise<RecommendationHistory | undefined> {
+    try {
+      const [history] = await db.select()
+        .from(recommendationHistory)
+        .where(eq(recommendationHistory.id, id));
+      return history;
+    } catch (error) {
+      console.error('Error fetching recommendation by ID:', error);
+      return undefined;
+    }
+  }
+  
+  async createRecommendationHistory(insertHistory: InsertRecommendationHistory): Promise<RecommendationHistory> {
+    try {
+      const [history] = await db.insert(recommendationHistory)
+        .values({
+          ...insertHistory,
+          createdAt: new Date()
+        })
+        .returning();
+      return history;
+    } catch (error) {
+      console.error('Error creating recommendation history:', error);
+      throw error;
     }
   }
 }
