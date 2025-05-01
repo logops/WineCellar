@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ConfirmDialog } from '@/components/ui/dialog-confirm';
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
+import { extractGrapeVarieties, extractVineyard } from '@/lib/wineUtils';
 
 interface WineData {
   rowIndex: number;
@@ -70,6 +71,35 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [aiRecommendationDialogOpen, setAiRecommendationDialogOpen] = useState(false);
+  
+  // Extract grape varieties and vineyard from wine name when editing
+  useEffect(() => {
+    if (setAllProcessedWines && wine.mappedData.name) {
+      // Only extract if fields are empty
+      const extractedGrapes = wine.mappedData.grapeVarieties ? null : extractGrapeVarieties(wine.mappedData.name);
+      const extractedVineyard = wine.mappedData.vineyard ? null : extractVineyard(wine.mappedData.name);
+      
+      // If we found either grapes or vineyard, update the wine data
+      if (extractedGrapes || extractedVineyard) {
+        const updatedWine: WineData = {
+          ...wine,
+          mappedData: {
+            ...wine.mappedData,
+            grapeVarieties: extractedGrapes || wine.mappedData.grapeVarieties,
+            vineyard: extractedVineyard || wine.mappedData.vineyard
+          }
+        };
+        
+        // Update the wine in the list
+        const wineIndex = allProcessedWines.findIndex((w: WineData) => w.rowIndex === wine.rowIndex);
+        if (wineIndex !== -1) {
+          const newProcessedWines = [...allProcessedWines];
+          newProcessedWines[wineIndex] = updatedWine;
+          setAllProcessedWines(newProcessedWines);
+        }
+      }
+    }
+  }, [wine.mappedData.name, setAllProcessedWines]);
 
   const getConfidenceBadgeColor = (confidence: string) => {
     switch (confidence) {

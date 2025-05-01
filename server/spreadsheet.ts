@@ -7,6 +7,7 @@ import { storage } from './storage';
 import { identifySpreadsheetColumns } from './anthropic';
 import Anthropic from '@anthropic-ai/sdk';
 import { anthropic } from './anthropic';
+import { extractGrapeVarieties, extractVineyard, processWineTitle } from './wineUtils';
 
 // Use anthropic client from anthropic.ts file
 
@@ -923,6 +924,21 @@ export async function processBatch(
     // Check if we have the minimum required fields
     if (!mappedData.producer || (!mappedData.vintage && mappedData.vintage !== 0) || !mappedData.type) {
       overallConfidence = ConfidenceLevel.LOW;
+    }
+    
+    // Extract grape varieties and vineyard information from wine name
+    if (mappedData.name) {
+      const extractedGrapes = extractGrapeVarieties(mappedData.name, mappedData.grapeVarieties);
+      if (extractedGrapes) {
+        mappedData.grapeVarieties = extractedGrapes;
+        console.log(`Extracted grape varieties from name: ${extractedGrapes}`);
+      }
+      
+      const extractedVineyard = extractVineyard(mappedData.name, mappedData.vineyard);
+      if (extractedVineyard) {
+        mappedData.vineyard = extractedVineyard;
+        console.log(`Extracted vineyard from name: ${extractedVineyard}`);
+      }
     }
     
     // Set default values for missing fields
