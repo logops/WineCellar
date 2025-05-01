@@ -374,7 +374,25 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     }
   }
   
-  // Function to request AI drinking window recommendation
+  // Interface for comprehensive wine analysis response
+  interface WineAnalysisResponse {
+    success: boolean;
+    data?: {
+      start: string | number;
+      end: string | number;
+      confidence: string;
+      reasoning: string;
+      grapeVarieties?: string | null;
+      region?: string | null;
+      subregion?: string | null;
+      notes?: string | null;
+      cellaring?: string | null;
+      pairings?: string | null;
+    };
+    message?: string;
+  }
+
+  // Function to request comprehensive AI wine analysis
   async function handleDrinkingWindowRecommendation() {
     const currentValues = form.getValues();
     const wineName = currentValues.name;
@@ -387,7 +405,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     if (!producer || !vintage) {
       toast({
         title: "Missing Information",
-        description: "Please enter at least the producer and vintage to get a drinking window recommendation.",
+        description: "Please enter at least the producer and vintage to get a wine analysis.",
         variant: "destructive"
       });
       return;
@@ -407,20 +425,20 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         grapeVarieties: currentValues.grapeVarieties || ''
       };
       
-      // Call the API to get drinking window recommendation
+      // Call the API to get comprehensive wine analysis
       const response = await apiRequest(
         "POST", 
         "/api/wine-drinking-window-recommendation", 
         wineData
       );
       
-      const result = await response.json();
+      const result: WineAnalysisResponse = await response.json();
       
       if (result.success && result.data) {
         // Create recommended drinking window object
         const recommendation = {
-          startYear: parseInt(result.data.start),
-          endYear: parseInt(result.data.end),
+          startYear: typeof result.data.start === 'string' ? parseInt(result.data.start) : result.data.start,
+          endYear: typeof result.data.end === 'string' ? parseInt(result.data.end) : result.data.end,
           notes: result.data.reasoning,
           isPastPrime: false // Determine this based on current year and end year
         };
@@ -434,22 +452,43 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         // Set the recommendation in state
         setRecommendedDrinkingWindow(recommendation);
         
+        // Update form fields with AI-provided information if available
+        if (result.data.grapeVarieties && (!currentValues.grapeVarieties || currentValues.grapeVarieties.trim() === '')) {
+          form.setValue('grapeVarieties', result.data.grapeVarieties, { shouldDirty: true });
+        }
+        
+        if (result.data.region && (!currentValues.region || currentValues.region.trim() === '')) {
+          form.setValue('region', result.data.region, { shouldDirty: true });
+        }
+        
+        if (result.data.subregion && (!currentValues.subregion || currentValues.subregion.trim() === '')) {
+          form.setValue('subregion', result.data.subregion, { shouldDirty: true });
+        }
+        
+        // Add notes if provided and current notes are empty
+        if (result.data.notes && (!currentValues.notes || currentValues.notes.trim() === '')) {
+          const aiNotes = `${result.data.notes}\n\n` + 
+                       (result.data.cellaring ? `Cellaring: ${result.data.cellaring}\n\n` : '') + 
+                       (result.data.pairings ? `Recommended pairings: ${result.data.pairings}` : '');
+          form.setValue('notes', aiNotes, { shouldDirty: true });
+        }
+        
         toast({
-          title: "Drinking Window Recommendation",
-          description: `AI suggests a drinking window of ${recommendation.startYear} - ${recommendation.endYear}`,
+          title: "Wine Analysis Complete",
+          description: `AI analyzed your wine and suggested optimal drinking between ${recommendation.startYear} - ${recommendation.endYear}. Additional information has been added to the form.`,
         });
       } else {
         toast({
-          title: "Recommendation Failed",
-          description: result.message || "Could not generate a drinking window recommendation.",
+          title: "Analysis Failed",
+          description: result.message || "Could not generate a wine analysis.",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error("Error getting drinking window recommendation:", error);
+      console.error("Error getting wine analysis:", error);
       toast({
         title: "Error",
-        description: "There was a problem getting the drinking window recommendation.",
+        description: "There was a problem analyzing the wine.",
         variant: "destructive",
       });
     } finally {

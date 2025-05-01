@@ -22,7 +22,7 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
     'Merlot',
     'Pinot Noir',
     'Syrah',
-    'Shiraz',
+    'Shiraz', 
     'Grenache',
     'Tempranillo',
     'Sangiovese',
@@ -41,18 +41,80 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
     'Chenin Blanc',
     'Sémillon',
     'Muscat',
-    'Gamay'
+    'Gamay',
+    'Mourvèdre',
+    'Petite Sirah',
+    'Carmenere',
+    'Semillon',
+    'Albarino',
+    'Roussanne',
+    'Marsanne',
+    'Gruner Veltliner',
+    'Vermentino',
+    'Mencia',
+    'Primitivo',
+    'Corvina',
+    'Aglianico',
+    'Dolcetto',
+    'Verdejo',
+    'Verdicchio',
+    'Godello',
+    'Fiano',
+    'Carignan',
+    'Grenache Blanc',
+    'Tannat'
   ];
   
-  // Special case for just "Cabernet" without "Sauvignon"
-  if (wineName.toLowerCase().includes('cabernet') && !wineName.toLowerCase().includes('cabernet franc') && !wineName.toLowerCase().includes('cabernet sauvignon')) {
-    return 'Cabernet Sauvignon';
+  // Define common abbreviations or partial mentions
+  const grapeAliases: Record<string, string> = {
+    'Cabernet': 'Cabernet Sauvignon',
+    'Sauv Blanc': 'Sauvignon Blanc',
+    'Pinot G': 'Pinot Gris',
+    'P. Grigio': 'Pinot Grigio',
+    'P. Noir': 'Pinot Noir',
+    'Gewurz': 'Gewürztraminer',
+    'Mouvedre': 'Mourvèdre',
+    'Mouvèdre': 'Mourvèdre',
+    'Mourvedre': 'Mourvèdre',
+    'P. Sirah': 'Petite Sirah'
+  };
+  
+  // Find aliases first
+  for (const [alias, fullName] of Object.entries(grapeAliases)) {
+    // Make sure we don't get false positives (e.g., "Cabernet" should not match if "Cabernet Franc" is in the name)
+    const lowerName = wineName.toLowerCase();
+    const lowerAlias = alias.toLowerCase();
+    const lowerFull = fullName.toLowerCase();
+    
+    if (lowerName.includes(lowerAlias) && !lowerName.includes(lowerFull)) {
+      // For Cabernet, make sure it's not Cabernet Franc
+      if (alias === 'Cabernet' && lowerName.includes('cabernet franc')) {
+        continue;
+      }
+      return fullName;
+    }
   }
   
-  // Find all matches
+  // Find all exact matches
   const foundGrapes = commonGrapes.filter(grape => 
     wineName.toLowerCase().includes(grape.toLowerCase())
   );
+  
+  // If no exact matches, try to find word boundaries to catch standalone grape mentions
+  if (foundGrapes.length === 0) {
+    const words = wineName.split(/\s+/);
+    for (const word of words) {
+      // Clean up the word (remove punctuation)
+      const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '').trim();
+      
+      // Check against the entire grape list (exact match only)
+      for (const grape of commonGrapes) {
+        if (cleanWord.toLowerCase() === grape.toLowerCase()) {
+          return grape;
+        }
+      }
+    }
+  }
   
   if (foundGrapes.length > 0) {
     return foundGrapes.join(', ');
@@ -88,6 +150,18 @@ export function extractVineyard(wineName: string, existingVineyard?: string | nu
     { pattern: /(Grand Cru|Premier Cru|1er Cru)\s+([\w\s'-]+)/i, group: 2 },
     // Look for "Single Vineyard" mentions
     { pattern: /Single Vineyard\s+([\w\s'-]+)/i, group: 1 },
+    // Look for "Heart of the X" pattern (common in some regions)
+    { pattern: /Heart of the\s+([\w\s'-]+)/i, group: 1 },
+    // Look for "X Vineyard" pattern
+    { pattern: /([\w\s'-]+)\s+Vyd\.?/i, group: 1 },
+    // Look for "Vigneto" (Italian for vineyard)
+    { pattern: /Vigneto\s+([\w\s'-]+)/i, group: 1 },
+    // Look for "Vigna" (Italian for vineyard)
+    { pattern: /Vigna\s+([\w\s'-]+)/i, group: 1 },
+    // Look for common vineyard suffixes
+    { pattern: /([\w\s'-]+)\s+(Block|Parcel|Plot|Lot|Section)/i, group: 1 },
+    // Look for names between quotes that might be vineyard names
+    { pattern: /"([\w\s'-]+)"/i, group: 1 },
   ];
   
   // Try each pattern

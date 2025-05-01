@@ -15,29 +15,36 @@ export const anthropic = new Anthropic({
 const CLAUDE_MODEL = 'claude-3-7-sonnet-20250219';
 
 /**
- * Generate a drinking window recommendation for a single wine
+ * Generate a comprehensive wine analysis including drinking window recommendation for a single wine
  */
 export async function generateDrinkingWindowRecommendation(wine: Wine) {
   try {
     const wineInfo = `${wine.vintage || 'NV'} ${wine.producer} ${wine.name || ''} ${wine.grapeVarieties || ''}`;
-    console.log(`Getting AI drinking window recommendation for: ${wineInfo}`);
+    console.log(`Getting AI comprehensive wine analysis for: ${wineInfo}`);
     
-    // Use Claude to get drinking window recommendation
+    // Use Claude to get full wine information including drinking window recommendation
     const result = await anthropic.messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 512,
-      system: `You are a wine expert assistant. Based on the wine details provided, recommend an appropriate drinking window (start year and end year). 
+      max_tokens: 1024,
+      system: `You are a wine expert assistant. Based on the wine details provided, analyze the wine and recommend an appropriate drinking window (start year and end year). 
+      Additionally, identify grape varieties, region, and other key information if they weren't provided.
       Respond in JSON format with the following fields:
       {
-        "startYear": 2025, // Year to start drinking (numeric)
-        "endYear": 2030,   // Year to stop drinking (numeric)
-        "confidenceLevel": "high/medium/low", // Your confidence in this recommendation
-        "reasoning": "Brief explanation of your recommendation"
+        "start": 2025, // Year to start drinking (numeric)
+        "end": 2030,   // Year to stop drinking (numeric)
+        "confidence": "high/medium/low", // Your confidence in this recommendation
+        "reasoning": "Brief explanation of your recommendation",
+        "grapeVarieties": "...", // Identified grape varieties or likely grapes based on region and style
+        "region": "...", // Region if it can be identified from context
+        "subregion": "...", // Subregion if it can be identified
+        "notes": "...", // Brief tasting notes or characteristics of this wine
+        "cellaring": "...", // Brief advice on cellaring conditions
+        "pairings": "..." // Food pairing suggestions
       }`,
       messages: [
         {
           role: "user",
-          content: `Please recommend a drinking window for this wine: ${wineInfo}
+          content: `Please provide a comprehensive analysis for this wine: ${wineInfo}
           Wine Type: ${wine.type}
           Region: ${wine.region || 'unknown'}
           Sub-Region: ${wine.subregion || 'unknown'}
@@ -45,7 +52,9 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
           
           Today's date is ${new Date().toISOString().split('T')[0]}.
           
-          Respond only with JSON as specified. Use numeric values for years, not strings.`
+          Respond only with JSON as specified. Use numeric values for years, not strings.
+          For any fields where you're uncertain, provide your best estimate based on similar wines.
+          If you have absolutely no information to determine a field, use null for that field.`
         }
       ],
     });
@@ -64,23 +73,25 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
       try {
         const recommendation = JSON.parse(contentText);
         
-        // Convert string years to numbers if needed
-        const startYear = typeof recommendation.startYear === 'string' 
-          ? parseInt(recommendation.startYear) 
-          : recommendation.startYear;
-          
-        const endYear = typeof recommendation.endYear === 'string' 
-          ? parseInt(recommendation.endYear) 
-          : recommendation.endYear;
-        
+        // Extract and convert all fields with appropriate fallbacks
+        // Make sure all expected fields exist in the response
         return {
           success: true,
-          drinkingWindow: {
-            startYear,
-            endYear
-          },
-          confidenceLevel: recommendation.confidenceLevel || 'medium',
-          reasoning: recommendation.reasoning || 'Based on the wine characteristics.'
+          data: {
+            // Main drinking window data
+            start: recommendation.start || recommendation.startYear,
+            end: recommendation.end || recommendation.endYear,
+            confidence: recommendation.confidence || recommendation.confidenceLevel || 'medium',
+            reasoning: recommendation.reasoning || 'Based on the wine characteristics.',
+            
+            // Additional wine information
+            grapeVarieties: recommendation.grapeVarieties || null,
+            region: recommendation.region || null,
+            subregion: recommendation.subregion || null,
+            notes: recommendation.notes || null,
+            cellaring: recommendation.cellaring || null,
+            pairings: recommendation.pairings || null
+          }
         };
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError);
