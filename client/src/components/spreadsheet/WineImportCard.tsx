@@ -143,11 +143,18 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg">
+              {/* Display vintage */}
               {wine.mappedData.vintage && wine.mappedData.vintage !== 'NV' 
                 ? wine.mappedData.vintage 
                 : wine.mappedData.vintage === 'NV' 
                   ? 'NV'
-                  : 'Unknown Vintage'} {wine.mappedData.producer || 'Unknown Producer'} {wine.mappedData.name && wine.mappedData.name !== wine.mappedData.producer ? wine.mappedData.name : ''}
+                  : 'Unknown Vintage'}
+              {/* Display producer */}
+              {' '}{wine.mappedData.producer || 'Unknown Producer'}
+              {/* Only display name if it's different from producer */}
+              {wine.mappedData.name && wine.mappedData.producer && 
+               wine.mappedData.name.trim() !== wine.mappedData.producer.trim() 
+                ? ` ${wine.mappedData.name}` : ''}
             </CardTitle>
             <div className="text-sm text-muted-foreground mt-1">
               {wine.mappedData.type || 'Unknown Type'} {wine.mappedData.region ? `• ${wine.mappedData.region}` : ''}

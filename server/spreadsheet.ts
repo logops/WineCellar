@@ -987,10 +987,11 @@ export async function processBatch(
     
     // Extract grape varieties and vineyard information from wine name
     if (mappedData.name) {
-      const extractedGrapes = extractGrapeVarieties(mappedData.name, mappedData.grapeVarieties);
+      // Use the enhanced extraction that considers producer for better variety detection
+      const extractedGrapes = extractGrapeVarieties(mappedData.name, mappedData.grapeVarieties, mappedData.producer);
       if (extractedGrapes) {
         mappedData.grapeVarieties = extractedGrapes;
-        console.log(`Extracted grape varieties from name: ${extractedGrapes}`);
+        console.log(`Extracted grape varieties from name/producer: ${extractedGrapes}`);
       }
       
       const extractedVineyard = extractVineyard(mappedData.name, mappedData.vineyard);
