@@ -583,6 +583,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // API endpoint for getting AI drinking window recommendation for a single wine
+  app.post('/api/wine-drinking-window-recommendation', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      // Get wine ID from request
+      const { wineId } = req.body;
+      if (!wineId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Wine ID is required' 
+        });
+      }
+      
+      // Get the wine
+      const wine = await dbStorage.getWine(Number(wineId));
+      if (!wine) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Wine not found' 
+        });
+      }
+      
+      // Ensure the wine belongs to the current user
+      if (wine.userId !== req.user.id) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Access denied' 
+        });
+      }
+      
+      // Get recommendation
+      const recommendation = await generateDrinkingWindowRecommendation(wine);
+      return res.status(recommendation.success ? 200 : 500).json(recommendation);
+    } catch (error) {
+      console.error('Error generating drinking window recommendation:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
+    }
+  });
 
   // Spreadsheet import endpoints
   // Step 1: Initial upload and analysis
