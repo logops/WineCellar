@@ -748,7 +748,9 @@ export async function processBatch(
         "Opus One",
         "Stag's Leap",
         "Penfolds Grange",
-        "Caymus Vineyards"
+        "Caymus Vineyards",
+        "Alice et Olivier De Moor", // Add the specific producer we need to handle
+        "Alice et Olivier"
       ];
       
       // Check for known multi-word producers
