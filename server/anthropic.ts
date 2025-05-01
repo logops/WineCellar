@@ -800,6 +800,98 @@ Respond in valid JSON format like this:
 }
 
 /**
+ * Lookup wine information using Claude
+ */
+export async function lookupWineInformation(wineName: string, producer?: string, vintage?: number | string) {
+  try {
+    const wineInfo = `${vintage || ''} ${producer || ''} ${wineName}`.trim();
+    console.log(`Looking up wine information for: ${wineInfo}`);
+    
+    // Use Claude to look up wine information
+    const result = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 512,
+      system: `You are a wine expert assistant. Based on the wine name and details provided, look up information about the wine's grape varieties and vineyard.
+      Respond in JSON format with the following fields:
+      {
+        "grapeVarieties": "Grape varieties used in this wine, comma separated",
+        "vineyard": "Vineyard information if available",
+        "confidenceLevel": "high/medium/low", // Your confidence in this information
+        "reasoning": "Brief explanation of your information sources"
+      }`,
+      messages: [
+        {
+          role: "user",
+          content: `Please look up information about this wine: ${wineInfo}
+          
+          I need to know:
+          1. What grape varieties are used in this wine? (comma separated list)
+          2. Is there any specific vineyard information for this wine?
+          
+          Respond only with JSON as specified.`
+        }
+      ],
+    });
+    
+    // Parse the response
+    try {
+      // Extract the response text
+      const content = result.content[0];
+      if ('text' in content) {
+        // Clean up any markdown formatting
+        const contentText = content.text
+          .replace(/```json\s*/g, '') // Remove markdown json code block start
+          .replace(/```\s*$/g, '')    // Remove markdown code block end
+          .trim();
+          
+        console.log('Processing AI wine info response:', contentText);
+        
+        const wineInfo = JSON.parse(contentText);
+        return {
+          success: true,
+          data: wineInfo
+        };
+      }
+    } catch (parseError) {
+      console.error('Error parsing AI wine information:', parseError);
+      return {
+        success: false,
+        message: 'Failed to parse wine information'
+      };
+    }
+  } catch (error) {
+    console.error('Error looking up wine information:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+}
+
+/**
+ * Handle wine information lookup requests
+ */
+export async function handleWineInformationLookup(req: Request, res: Response) {
+  try {
+    const { wineName, producer, vintage } = req.body;
+    
+    if (!wineName) {
+      return res.status(400).json({ success: false, message: 'Missing wine name parameter' });
+    }
+    
+    const wineInfo = await lookupWineInformation(wineName, producer, vintage);
+    
+    return res.json(wineInfo);
+  } catch (error) {
+    console.error('Error handling wine information lookup:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+}
+
+/**
  * Handle wine recommendation requests
  */
 export async function handleWineRecommendations(req: Request, res: Response) {
