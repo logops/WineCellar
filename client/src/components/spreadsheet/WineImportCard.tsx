@@ -147,7 +147,7 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                 ? wine.mappedData.vintage 
                 : wine.mappedData.vintage === 'NV' 
                   ? 'NV'
-                  : 'Unknown Vintage'} {wine.mappedData.producer || 'Unknown Producer'} {wine.mappedData.name || 'Unknown Wine'}
+                  : 'Unknown Vintage'} {wine.mappedData.producer || 'Unknown Producer'} {wine.mappedData.name && wine.mappedData.name !== wine.mappedData.producer ? wine.mappedData.name : ''}
             </CardTitle>
             <div className="text-sm text-muted-foreground mt-1">
               {wine.mappedData.type || 'Unknown Type'} {wine.mappedData.region ? `• ${wine.mappedData.region}` : ''}

@@ -2,17 +2,100 @@
  * Utility functions for processing wine data
  */
 
+// Producer to grape variety mappings for well-known producers
+const PRODUCER_GRAPE_MAPPINGS: Record<string, string> = {
+  // Napa producers
+  'Robert Mondavi': 'Cabernet Sauvignon, Chardonnay',
+  'Opus One': 'Cabernet Sauvignon, Cabernet Franc, Merlot, Petit Verdot, Malbec',
+  'Silver Oak': 'Cabernet Sauvignon',
+  'Caymus': 'Cabernet Sauvignon',
+  'Stag\'s Leap': 'Cabernet Sauvignon',
+  'Heitz Cellar': 'Cabernet Sauvignon',
+  'Far Niente': 'Cabernet Sauvignon, Chardonnay',
+  'Shafer': 'Cabernet Sauvignon, Syrah, Merlot',
+  'Cakebread': 'Cabernet Sauvignon, Chardonnay, Sauvignon Blanc',
+  'Duckhorn': 'Merlot, Cabernet Sauvignon',
+  'ADAMVS': 'Cabernet Sauvignon',
+  'Di Costanzo': 'Cabernet Sauvignon',
+  'Corison': 'Cabernet Sauvignon',
+  'Harlan Estate': 'Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot',
+  'Joseph Phelps': 'Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec, Syrah',
+  'Dominus': 'Cabernet Sauvignon, Cabernet Franc, Petit Verdot',
+  
+  // Sonoma producers
+  'Ridge': 'Zinfandel, Cabernet Sauvignon, Chardonnay, Petite Sirah',
+  'Kosta Browne': 'Pinot Noir, Chardonnay',
+  'Williams Selyem': 'Pinot Noir, Chardonnay',
+  'Littorai': 'Pinot Noir, Chardonnay',
+  'Hirsch': 'Pinot Noir, Chardonnay',
+  'Ramey': 'Chardonnay, Syrah, Cabernet Sauvignon',
+  'Martinelli': 'Pinot Noir, Chardonnay, Zinfandel, Syrah',
+  'Rochioli': 'Pinot Noir, Chardonnay',
+  'Peay': 'Pinot Noir, Syrah, Chardonnay',
+  'DuMOL': 'Pinot Noir, Chardonnay, Syrah, Cabernet Sauvignon',
+  'Hanzell': 'Pinot Noir, Chardonnay',
+  'Kistler': 'Chardonnay, Pinot Noir',
+  'Paul Hobbs': 'Pinot Noir, Chardonnay, Cabernet Sauvignon',
+  
+  // Italian producers
+  'Gaja': 'Nebbiolo, Sangiovese, Cabernet Sauvignon, Merlot, Chardonnay',
+  'Sassicaia': 'Cabernet Sauvignon, Cabernet Franc',
+  'Antinori': 'Sangiovese, Cabernet Sauvignon, Merlot, Cabernet Franc',
+  'Biondi Santi': 'Sangiovese',
+  'Ornellaia': 'Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot',
+  'Giacomo Conterno': 'Nebbiolo',
+  'Bruno Giacosa': 'Nebbiolo, Barbera',
+  'Vietti': 'Nebbiolo, Barbera, Arneis',
+  'Produttori del Barbaresco': 'Nebbiolo',
+  'Tiberio': 'Montepulciano, Trebbiano',
+  'Ar.Pe.Pe.': 'Nebbiolo',
+  'Bertani': 'Corvina, Rondinella',
+  
+  // French producers
+  'Chateau Margaux': 'Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot',
+  'Château Latour': 'Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot',
+  'Chateau Lafite Rothschild': 'Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot',
+  'Château Mouton Rothschild': 'Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot',
+  'Romanée-Conti': 'Pinot Noir',
+  'Domaine Leflaive': 'Chardonnay',
+  'Guigal': 'Syrah, Grenache, Mourvèdre',
+  'Château Cheval Blanc': 'Cabernet Franc, Merlot',
+  'Château Petrus': 'Merlot',
+  'Château d\'Yquem': 'Semillon, Sauvignon Blanc',
+  'Krug': 'Pinot Noir, Chardonnay, Pinot Meunier',
+  'Dom Pérignon': 'Pinot Noir, Chardonnay',
+  'Louis Roederer': 'Pinot Noir, Chardonnay, Pinot Meunier',
+  'Vega Sicilia': 'Tempranillo, Cabernet Sauvignon, Merlot',
+  'Chateau Dufort Vivens': 'Cabernet Sauvignon, Merlot, Cabernet Franc'
+};
+
 /**
  * Extract grape varieties from a wine name if they're mentioned
  * @param wineName The name of the wine which might contain grape varieties
  * @param existingGrapes Any existing grape varieties to preserve
+ * @param producer The producer name to look up grape varieties in the mapping
  */
-export function extractGrapeVarieties(wineName: string, existingGrapes?: string | null): string | undefined {
-  if (!wineName) return existingGrapes || undefined;
+export function extractGrapeVarieties(wineName: string, existingGrapes?: string | null, producer?: string | null): string | undefined {
+  if (!wineName && !producer) return existingGrapes || undefined;
   
   // If we already have grape varieties specified, return those
   if (existingGrapes && existingGrapes.trim() !== '') {
     return existingGrapes;
+  }
+  
+  // Check producer mappings first if producer is provided
+  if (producer) {
+    // Look for exact matches
+    if (PRODUCER_GRAPE_MAPPINGS[producer]) {
+      return PRODUCER_GRAPE_MAPPINGS[producer];
+    }
+    
+    // Look for partial matches (e.g., "Robert Mondavi Winery" should match "Robert Mondavi")
+    for (const knownProducer of Object.keys(PRODUCER_GRAPE_MAPPINGS)) {
+      if (producer.includes(knownProducer) || knownProducer.includes(producer)) {
+        return PRODUCER_GRAPE_MAPPINGS[knownProducer];
+      }
+    }
   }
   
   // Common grape varieties to look for in wine names
