@@ -126,10 +126,18 @@ const SpreadsheetImport: React.FC = () => {
         formData.append('batchSize', batchSize.toString());
         formData.append('useAiColumnMapping', 'true'); // Enable AI-powered column mapping
         formData.append('useAiDrinkingWindows', 'true'); // Enable AI recommendations for drinking windows
+        
+        try {
+          console.log('Uploading file for batch processing:', file.name, 'size:', file.size);
+          const response = await uploadFile('/api/spreadsheet/process-batch', formData);
+          return response.json();
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          throw error;
+        }
+      } else {
+        throw new Error('No file selected');
       }
-      
-      const response = await uploadFile('/api/spreadsheet/process-batch', formData);
-      return response.json();
     },
     onSuccess: (response: any) => {
       // Check if the response is wrapped in a data property
@@ -168,8 +176,14 @@ const SpreadsheetImport: React.FC = () => {
   // Import wines mutation
   const importWinesMutation = useMutation({
     mutationFn: async (wines: ProcessedWine[]) => {
-      const response = await apiRequest('POST', '/api/spreadsheet/import', wines);
-      return response.json();
+      try {
+        console.log('Importing wines:', wines.length);
+        const response = await apiRequest('POST', '/api/spreadsheet/import', { wines });
+        return response.json();
+      } catch (error) {
+        console.error('Error importing wines:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({

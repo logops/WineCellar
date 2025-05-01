@@ -1,4 +1,4 @@
-Vintage,Winery,Wine (Name/Varietal(s)),Country,State,Region
-1995,Robert Mondavi,Reserve Cabernet Sauvignon,USA,CA,Northern CA
-2018,Alice et Olivier De Moor,L'Humeur du Temps,France,,Chablis
-2008,Domain Drouhin,Arthur Chardonnay,USA,OR,Willamette Valley
+Producer,Name,Vintage,Type,Region,Subregion,Grape Varieties,Bottle Size,Quantity,Purchase Price,Notes
+Château Lafite Rothschild,Pauillac,2015,red,Bordeaux,Pauillac,Cabernet Sauvignon,750ml,2,200,Test import
+Antinori,Tignanello,2016,red,Tuscany,Toscana IGT,Sangiovese,750ml,1,120,Test import 2
+Domaine de la Romanée-Conti,La Tâche,2017,red,Burgundy,Côte de Nuits,Pinot Noir,750ml,1,2500,Test import 3
