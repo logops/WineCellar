@@ -8,7 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAutocompleteSuggestions } from "@/lib/autocompleteService";
-import { extractGrapeVarieties, extractVineyard } from "@/lib/wineUtils";
+import { extractGrapeVarieties, extractVineyard, lookupWineInformation } from "@/lib/wineUtils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { WineLabelRecognition } from "@/components/wines/WineLabelRecognition";
