@@ -291,13 +291,13 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
   
   // Define mapping patterns for each field
   const fieldPatterns: Record<string, string[]> = {
-    name: ['name', 'wine name', 'wine', 'title', 'label', 'wine (name', 'wine (name/varietal', 'wine (name/varietal(s))'],
-    producer: ['producer', 'winery', 'chateau', 'domaine', 'maker', 'vineyard'],
-    vintage: ['vintage', 'year', 'vin'],
-    type: ['type', 'color', 'wine type', 'style'],
-    region: ['region', 'area', 'appellation', 'location'],
-    country: ['country', 'nation'],
-    state: ['state', 'province'], 
+    name: ['name', 'wine name', 'wine', 'title', 'label', 'wine (name', 'wine (name/varietal', 'wine (name/varietal(s))', 'description', 'designation'],
+    producer: ['producer', 'winery', 'chateau', 'domaine', 'maker', 'vineyard', 'winery name', 'brand'],
+    vintage: ['vintage', 'year', 'vin', 'vintage year'],
+    type: ['type', 'color', 'wine type', 'style', 'category', 'wine color', 'wine style'],
+    region: ['region', 'area', 'appellation', 'location', 'origin', 'growing area', 'ava'],
+    country: ['country', 'nation', 'origin country'],
+    state: ['state', 'province', 'origin state'], 
     subregion: ['subregion', 'sub-region', 'sub region', 'district', 'sub app', 'sub appellation'],
     grapeVarieties: ['grape', 'grapes', 'varieties', 'varietals', 'cepage', 'cépage', 'varietal'],
     quantity: ['quantity', 'qty', 'bottles', 'count', 'inventory'],
@@ -478,16 +478,44 @@ export async function processBatch(
           
         case 'drinkingWindowStart':
           try {
-            // Try to extract year for drinking window start
-            const yearMatch = String(value).match(/(?:19|20)\d{2}/);
-            if (yearMatch) {
-              const year = parseInt(yearMatch[0]);
-              const date = new Date(year, 0, 1);
-              mappedData.drinkingWindowStart = date.toISOString();
-            } else {
-              const date = new Date(value);
-              if (!isNaN(date.getTime())) {
+            // First look for year ranges like "2022-2025" and take the first year
+            const rangeMatch = String(value).match(/(?:19|20)\d{2}\s*[-–—]\s*(?:19|20)\d{2}/);
+            if (rangeMatch) {
+              const rangeParts = rangeMatch[0].split(/[-–—]/).map(part => part.trim());
+              if (rangeParts.length === 2) {
+                const startYear = parseInt(rangeParts[0]);
+                if (!isNaN(startYear) && startYear >= 1900 && startYear <= new Date().getFullYear() + 50) {
+                  const date = new Date(startYear, 0, 1);
+                  mappedData.drinkingWindowStart = date.toISOString();
+                }
+              }
+            }
+            // If no range found, try to extract any year
+            else {
+              const yearMatch = String(value).match(/(?:19|20)\d{2}/);
+              if (yearMatch) {
+                const year = parseInt(yearMatch[0]);
+                const date = new Date(year, 0, 1);
                 mappedData.drinkingWindowStart = date.toISOString();
+              } 
+              // Try common formats like "drink from 2022" or "start 2022"
+              else if (String(value).toLowerCase().includes('from') || String(value).toLowerCase().includes('start')) {
+                const fromMatch = String(value).match(/(?:from|start)\s*(?:19|20)\d{2}/i);
+                if (fromMatch) {
+                  const yearMatch = fromMatch[0].match(/(?:19|20)\d{2}/);
+                  if (yearMatch) {
+                    const year = parseInt(yearMatch[0]);
+                    const date = new Date(year, 0, 1);
+                    mappedData.drinkingWindowStart = date.toISOString();
+                  }
+                }
+              }
+              // Try standard date parsing as a fallback
+              else {
+                const date = new Date(value);
+                if (!isNaN(date.getTime())) {
+                  mappedData.drinkingWindowStart = date.toISOString();
+                }
               }
             }
           } catch (e) {
@@ -497,16 +525,47 @@ export async function processBatch(
           
         case 'drinkingWindowEnd':
           try {
-            // Try to extract year for drinking window end
-            const yearMatch = String(value).match(/(?:19|20)\d{2}/);
-            if (yearMatch) {
-              const year = parseInt(yearMatch[0]);
-              const date = new Date(year, 11, 31);
-              mappedData.drinkingWindowEnd = date.toISOString();
-            } else {
-              const date = new Date(value);
-              if (!isNaN(date.getTime())) {
+            // First look for year ranges like "2022-2025" and take the second year
+            const rangeMatch = String(value).match(/(?:19|20)\d{2}\s*[-–—]\s*(?:19|20)\d{2}/);
+            if (rangeMatch) {
+              const rangeParts = rangeMatch[0].split(/[-–—]/).map(part => part.trim());
+              if (rangeParts.length === 2) {
+                const endYear = parseInt(rangeParts[1]);
+                if (!isNaN(endYear) && endYear >= 1900 && endYear <= new Date().getFullYear() + 100) {
+                  const date = new Date(endYear, 11, 31);
+                  mappedData.drinkingWindowEnd = date.toISOString();
+                }
+              }
+            }
+            // If no range found, try to extract any year
+            else {
+              const yearMatch = String(value).match(/(?:19|20)\d{2}/);
+              if (yearMatch) {
+                const year = parseInt(yearMatch[0]);
+                const date = new Date(year, 11, 31);
                 mappedData.drinkingWindowEnd = date.toISOString();
+              } 
+              // Try common formats like "drink until 2030" or "through 2030"
+              else if (String(value).toLowerCase().includes('until') || 
+                      String(value).toLowerCase().includes('through') ||
+                      String(value).toLowerCase().includes('by') ||
+                      String(value).toLowerCase().includes('end')) {
+                const untilMatch = String(value).match(/(?:until|through|by|end)\s*(?:19|20)\d{2}/i);
+                if (untilMatch) {
+                  const yearMatch = untilMatch[0].match(/(?:19|20)\d{2}/);
+                  if (yearMatch) {
+                    const year = parseInt(yearMatch[0]);
+                    const date = new Date(year, 11, 31);
+                    mappedData.drinkingWindowEnd = date.toISOString();
+                  }
+                }
+              }
+              // Try standard date parsing as a fallback
+              else {
+                const date = new Date(value);
+                if (!isNaN(date.getTime())) {
+                  mappedData.drinkingWindowEnd = date.toISOString();
+                }
               }
             }
           } catch (e) {

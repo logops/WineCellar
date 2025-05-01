@@ -17,6 +17,7 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
   
   // Common grape varieties to look for in wine names
   const commonGrapes = [
+    // Red varieties
     'Cabernet Sauvignon',
     'Cabernet Franc',
     'Merlot',
@@ -31,6 +32,27 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
     'Zinfandel',
     'Malbec',
     'Petit Verdot',
+    'Gamay',
+    'Mourvèdre',
+    'Mouvedre',
+    'Carignan',
+    'Cinsault',
+    'Petite Sirah',
+    'Dolcetto',
+    'Corvina',
+    'Primitivo',
+    'Nero d\'Avola',
+    'Carménère',
+    'Touriga Nacional',
+    'Aglianico',
+    'Montepulciano',
+    'Mencia',
+    'Tannat',
+    'Pinotage',
+    'Graciano',
+    'Monastrell',
+    
+    // White varieties
     'Chardonnay',
     'Sauvignon Blanc',
     'Riesling',
@@ -41,13 +63,26 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
     'Chenin Blanc',
     'Sémillon',
     'Muscat',
-    'Gamay',
-    'Mourvèdre',
-    'Mouvedre',
-    'Carignan',
-    'Cinsault',
-    'Petite Sirah',
     'Grenache Blanc',
+    'Vermentino',
+    'Albariño',
+    'Verdejo',
+    'Grüner Veltliner',
+    'Torrontés',
+    'Arneis',
+    'Marsanne',
+    'Roussanne',
+    'Trebbiano',
+    'Verdicchio',
+    'Viura',
+    'Fiano',
+    'Picpoul',
+    'Colombard',
+    'Cortese',
+    'Garganega',
+    'Müller-Thurgau',
+    'Sylvaner',
+    'Assyrtiko',
     'Marsanne',
     'Roussanne',
     'Vermentino',
@@ -111,6 +146,8 @@ export function extractVineyard(wineName: string, existingVineyard?: string | nu
   const vineyardPatterns = [
     // Look for "Vineyard" mentions
     { pattern: /([\w\s'-]+)\s+Vineyard/i, group: 1 },
+    // Vineyard at the beginning
+    { pattern: /Vineyard\s+([\w\s'-]+)/i, group: 1 },
     // Look for estates
     { pattern: /([\w\s'-]+)\s+Estate/i, group: 1 },
     // Look for "Cru" mentions (common in French wines)
@@ -121,6 +158,17 @@ export function extractVineyard(wineName: string, existingVineyard?: string | nu
     { pattern: /(Grand Cru|Premier Cru|1er Cru)\s+([\w\s'-]+)/i, group: 2 },
     // Look for "Single Vineyard" mentions
     { pattern: /Single Vineyard\s+([\w\s'-]+)/i, group: 1 },
+    // Look for specific patterns used in different regions
+    { pattern: /([\w\s'-]+)\s+Domaine/i, group: 1 },
+    { pattern: /([\w\s'-]+)\s+Vyd/i, group: 1 },  // Common abbreviation
+    { pattern: /VYD\s+([\w\s'-]+)/i, group: 1 },  // Abbreviation at the beginning
+    { pattern: /([\w\s'-]+)\s+Vigneto/i, group: 1 }, // Italian
+    { pattern: /([\w\s'-]+)\s+Vinas?/i, group: 1 }, // Spanish
+    { pattern: /([\w\s'-]+)\s+Weinberg/i, group: 1 }, // German
+    { pattern: /([\w\s'-]+)\s+Mountain/i, group: 1 }, // Common in mountain vineyards
+    { pattern: /([\w\s'-]+)\s+Hill/i, group: 1 }, // Common in hill vineyards
+    { pattern: /([\w\s'-]+)\s+Valley/i, group: 1 }, // Valley vineyards
+    { pattern: /([\w\s'-]+)\s+Block/i, group: 1 }, // Common in new world
   ];
   
   // Try each pattern
