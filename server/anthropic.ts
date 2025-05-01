@@ -15,6 +15,79 @@ export const anthropic = new Anthropic({
 const CLAUDE_MODEL = 'claude-3-7-sonnet-20250219';
 
 /**
+ * Generate a drinking window recommendation for a single wine
+ */
+export async function generateDrinkingWindowRecommendation(wine: Wine) {
+  try {
+    const wineInfo = `${wine.vintage || 'NV'} ${wine.producer} ${wine.name || ''} ${wine.grapeVarieties || ''}`;
+    console.log(`Getting AI drinking window recommendation for: ${wineInfo}`);
+    
+    // Use Claude to get drinking window recommendation
+    const result = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 512,
+      system: `You are a wine expert assistant. Based on the wine details provided, recommend an appropriate drinking window (start year and end year). 
+      Respond in JSON format with the following fields:
+      {
+        "start": "YYYY", // Year to start drinking
+        "end": "YYYY",   // Year to stop drinking
+        "confidence": "high/medium/low", // Your confidence in this recommendation
+        "reasoning": "Brief explanation of your recommendation"
+      }`,
+      messages: [
+        {
+          role: "user",
+          content: `Please recommend a drinking window for this wine: ${wineInfo}
+          Wine Type: ${wine.type}
+          Region: ${wine.region || 'unknown'}
+          Sub-Region: ${wine.subregion || 'unknown'}
+          Grape Varieties: ${wine.grapeVarieties || 'unknown'}
+          
+          Today's date is ${new Date().toISOString().split('T')[0]}.
+          
+          Respond only with JSON as specified.`
+        }
+      ],
+    });
+    
+    // Parse the recommendation
+    const content = result.content[0];
+    if ('text' in content) {
+      // Clean up any markdown formatting that might be in the response
+      const contentText = content.text
+        .replace(/```json\s*/g, '') // Remove markdown json code block start
+        .replace(/```\s*$/g, '')    // Remove markdown code block end
+        .trim();
+        
+      console.log('Processing AI response:', contentText);
+      
+      const recommendation = JSON.parse(contentText);
+      
+      return {
+        success: true,
+        data: {
+          start: recommendation.start,
+          end: recommendation.end,
+          confidence: recommendation.confidence,
+          reasoning: recommendation.reasoning
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Failed to extract recommendation from AI response'
+    };
+  } catch (error) {
+    console.error('Error generating drinking window recommendation:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+}
+
+/**
  * Extract wine information from a label image using Claude Vision
  */
 export async function analyzeWineLabel(imageBase64: string) {

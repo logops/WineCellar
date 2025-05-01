@@ -13,7 +13,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import { handleWineLabelAnalysis, handleWineRecommendations } from './anthropic';
+import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation } from './anthropic';
 import { 
   processSpreadsheetFile, 
   processBatchFromFile, 
