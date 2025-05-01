@@ -168,7 +168,11 @@ export async function detectFileType(buffer: Buffer): Promise<FileType> {
 /**
  * Parse spreadsheet from buffer
  */
-export function parseSpreadsheet(buffer: Buffer, fileType: FileType): XLSX.WorkSheet | null {
+export function parseSpreadsheet(buffer: Buffer, fileType: FileType, sheetIndex: number = 0): {
+  worksheet: XLSX.WorkSheet | null;
+  sheetNames: string[];
+  selectedSheetName?: string;
+} {
   try {
     console.log(`Parsing spreadsheet file as ${fileType}`);
     let readOptions: XLSX.ParsingOptions = { type: 'buffer' };
@@ -190,22 +194,49 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType): XLSX.WorkS
     // Check if workbook was parsed successfully
     if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
       console.error('Failed to parse workbook or no sheets found');
-      return null;
+      return { worksheet: null, sheetNames: [] };
     }
     
-    console.log(`Found sheets: ${workbook.SheetNames.join(', ')}`);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+    const sheetNames = workbook.SheetNames;
+    console.log(`Found sheets: ${sheetNames.join(', ')}`);
     
-    if (!sheet) {
-      console.error(`Sheet ${sheetName} not found in workbook`);
-      return null;
+    // Find the sheet to use - prefer the following sheet names for wine collections if present
+    const preferredSheetNames = [
+      'wines', 'wine', 'collection', 'cellar', 'inventory', 'master', 'main',
+      'wine list', 'wine collection', 'master inventory'
+    ];
+    
+    // Look for sheets with wine-related names if sheetIndex is default 0
+    let selectedSheetIndex = sheetIndex;
+    if (sheetIndex === 0) {
+      for (let i = 0; i < sheetNames.length; i++) {
+        const lowerName = sheetNames[i].toLowerCase();
+        if (preferredSheetNames.some(name => lowerName.includes(name))) {
+          console.log(`Found preferred sheet: ${sheetNames[i]}`);
+          selectedSheetIndex = i;
+          break;
+        }
+      }
     }
     
-    return sheet;
+    // Make sure index is in range
+    if (selectedSheetIndex < 0 || selectedSheetIndex >= sheetNames.length) {
+      selectedSheetIndex = 0;
+    }
+    
+    const selectedSheetName = sheetNames[selectedSheetIndex];
+    const worksheet = workbook.Sheets[selectedSheetName];
+    
+    if (!worksheet) {
+      console.error(`Sheet ${selectedSheetName} not found in workbook`);
+      return { worksheet: null, sheetNames, selectedSheetName };
+    }
+    
+    console.log(`Using sheet: ${selectedSheetName}`);
+    return { worksheet, sheetNames, selectedSheetName };
   } catch (error) {
     console.error('Error parsing spreadsheet:', error);
-    return null;
+    return { worksheet: null, sheetNames: [] };
   }
 }
 
@@ -298,10 +329,10 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
   
   // Define mapping patterns for each field
   const fieldPatterns: Record<string, string[]> = {
-    // 'wine name' should be prioritized over just 'wine' to avoid confusion with 'winery'
-    name: ['wine name', 'wine-name', 'wine_name', 'title', 'label', 'wine (name', 'wine (name/varietal', 'wine (name/varietal(s))', 'description', 'designation'],
-    // Handle 'wine' separately with special case logic
-    producer: ['producer', 'winery', 'chateau', 'domaine', 'maker', 'vineyard', 'winery name', 'brand'],
+    // 'wine name' and explicit name columns should be prioritized
+    name: ['wine name', 'wine-name', 'wine_name', 'title', 'label', 'wine (name', 'wine (name/varietal', 'wine (name/varietal(s))', 'description', 'designation', 'product', 'bottle', 'bottle name', 'cuvee name', 'wine label'],
+    // Producer/winery terms - comprehensive list of variations
+    producer: ['producer', 'winery', 'chateau', 'domaine', 'maker', 'vineyard', 'winery name', 'brand', 'estate', 'vigneron', 'bodega', 'maison', 'cantina', 'weingut', 'vina'],
     vintage: ['vintage', 'year', 'vin', 'vintage year'],
     type: ['type', 'color', 'wine type', 'style', 'category', 'wine color', 'wine style'],
     region: ['region', 'area', 'appellation', 'location', 'origin', 'growing area', 'ava'],
@@ -1328,7 +1359,8 @@ export async function processSpreadsheetFile(
   options: {
     userId: number,
     useAiDrinkingWindows: boolean,
-    batchSize?: number
+    batchSize?: number,
+    sheetIndex?: number
   }
 ): Promise<{
   success: boolean;
@@ -1337,6 +1369,8 @@ export async function processSpreadsheetFile(
     fieldMappings: FieldMapping[];
     sampleData: any[];
     totalRows: number;
+    sheetNames?: string[];
+    selectedSheetName?: string;
   }
 }> {
   try {
@@ -1350,11 +1384,18 @@ export async function processSpreadsheetFile(
     }
     
     // Parse the spreadsheet
-    const worksheet = parseSpreadsheet(fileBuffer, fileType);
+    const { worksheet, sheetNames, selectedSheetName } = parseSpreadsheet(fileBuffer, fileType, options.sheetIndex);
     if (!worksheet) {
       return {
         success: false,
-        message: 'Failed to parse the spreadsheet. Please check the file format.'
+        message: 'Failed to parse the spreadsheet. Please check the file format.',
+        data: { 
+          fieldMappings: [],
+          sampleData: [],
+          totalRows: 0,
+          sheetNames,
+          selectedSheetName
+        }
       };
     }
     
@@ -1363,7 +1404,14 @@ export async function processSpreadsheetFile(
     if (!data || data.length === 0) {
       return {
         success: false,
-        message: 'No data found in the spreadsheet.'
+        message: 'No data found in the spreadsheet.',
+        data: { 
+          fieldMappings: [],
+          sampleData: [],
+          totalRows: 0,
+          sheetNames,
+          selectedSheetName
+        }
       };
     }
     
