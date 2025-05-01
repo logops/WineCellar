@@ -69,6 +69,201 @@ const PRODUCER_GRAPE_MAPPINGS: Record<string, string> = {
   'Chateau Dufort Vivens': 'Cabernet Sauvignon, Merlot, Cabernet Franc'
 };
 
+// Wine regions by country
+const WINE_REGIONS = {
+  // France
+  'France': [
+    'Alsace', 'Beaujolais', 'Bordeaux', 'Burgundy', 'Chablis', 'Champagne', 
+    'Cognac', 'Languedoc-Roussillon', 'Loire', 'Provence', 'Rhone', 'Savoie/Jura',
+    'Southwest France', 'Armagnac', 'Calvados'
+  ],
+  // Italy
+  'Italy': [
+    'Abruzzo', 'Campania', 'Emilia Romagna', 'Friuli-Venezia-Giulia', 'Lombardy',
+    'Marche', 'Piedmont', 'Puglia', 'Sardinia', 'Sicily', 'Trentino-Alto Adige', 
+    'Tuscany', 'Umbria', 'Veneto'
+  ],
+  // Spain
+  'Spain': [
+    'Navarra', 'Penedes', 'Priorato', 'Rias Baixas', 'Ribera del Duero', 'Rioja', 'Sherry'
+  ],
+  // United States
+  'United States': [
+    'California', 'Kentucky', 'New York', 'Oregon', 'Washington'
+  ],
+  // Germany
+  'Germany': [
+    'Mosel-Saar-Ruwer', 'Nahe', 'Pfalz', 'Rheingau', 'Rheinhessen'
+  ],
+  // Portugal
+  'Portugal': [
+    'Madeira', 'Port'
+  ],
+  // Australia
+  'Australia': [
+    'New South Wales', 'South Australia', 'Victoria', 'Western Australia'
+  ],
+  // Japan
+  'Japan': [
+    'Hokkaido', 'Honshu', 'Kyushu', 'Okinawa', 'Shikoku'
+  ],
+  // Mexico
+  'Mexico': [
+    'Chihuahua', 'Durango', 'Guerrero', 'Jalisco', 'Oaxaca', 'Puebla', 'San Luis Potosi'
+  ],
+  // Scotland (for whisky)
+  'Scotland': [
+    'Campbeltown', 'Highlands', 'Islands Other - Scotland', 'Islay', 'Lowland', 'Speyside'
+  ]
+};
+
+// Wine sub-regions/appellations by region
+const WINE_APPELLATIONS: Record<string, string[]> = {
+  // France
+  'Bordeaux': [
+    'Margaux', 'Pauillac', 'Pessac-Leognan/Graves', 'Pomerol', 'Saint Emilion', 
+    'Saint Estephe', 'Saint Julien', 'Sauternes'
+  ],
+  'Burgundy': [
+    'Chambolle Musigny', 'Chassagne Montrachet', 'Corton', 'Gevrey Chambertin',
+    'Meursault', 'Nuits Saint Georges', 'Puligny Montrachet', 'Volnay', 'Vosne Romanee', 'Vougeot'
+  ],
+  'Rhone': [
+    'Chateauneuf du Pape', 'Cote Rotie', 'Gigondas', 'Hermitage/Crozes-Hermitage', 'Rasteau'
+  ],
+  'Armagnac': ['Armagnac-Tenareze', 'Bas-Armagnac'],
+  'Calvados': ['Domfrontais', 'Pays d\'Auge'],
+  'Cognac': ['Fine Bois', 'Grande Champagne'],
+  
+  // Italy
+  'Piedmont': ['Barbaresco', 'Barolo'],
+  'Tuscany': ['Brunello di Montalcino', 'Chianti', 'Super Tuscan'],
+  
+  // United States - California
+  'California': [
+    'Alexander Valley/Russian River', 'Anderson Valley/Mendocino', 'Carneros', 'Central Valley/Lodi',
+    'Lake County', 'Livermore', 'Monterey/Carmel Valley', 'Napa Valley', 'Paso Robles',
+    'Santa Cruz Mountains', 'Santa Lucia Highlands', 'Santa Maria/Santa Barbara', 
+    'Sierra Foothills/El Dorado', 'Sonoma County'
+  ],
+  
+  // Australia
+  'South Australia': ['Adelaide Hills', 'Barossa Valley', 'Clare Valley', 'Coonawarra', 'Eden Valley', 'McLaren Vale'],
+  'Victoria': ['Heathcote', 'Rutherglen', 'Yarra Valley'],
+  'New South Wales': ['Hunter Valley'],
+  'Western Australia': ['Margaret River'],
+  
+  // Scotland
+  'Highlands': ['Eastern Highlands', 'Northern Highlands', 'Western Highlands'],
+  'Islands Other - Scotland': ['Mull', 'Orkney', 'Skye'],
+  'Islay': ['Lochindaal']
+};
+
+// Function to determine region from subregion
+export function getRegionFromAppellation(appellation: string): string | undefined {
+  for (const [region, appellations] of Object.entries(WINE_APPELLATIONS)) {
+    if (appellations.includes(appellation)) {
+      return region;
+    }
+  }
+  return undefined;
+}
+
+// Function to determine country from region
+export function getCountryFromRegion(region: string): string | undefined {
+  for (const [country, regions] of Object.entries(WINE_REGIONS)) {
+    if (regions.includes(region)) {
+      return country;
+    }
+  }
+  return undefined;
+}
+
+// Non-wine beverages to identify when filtering
+const NON_WINE_SPIRITS_AND_BEVERAGES = [
+  // Spirits and liquors
+  'Armagnac',
+  'Baijiu',
+  'Bourbon',
+  'Brandy',
+  'Calvados',
+  'Cognac',
+  'Cordial',
+  'Eau de Vie',
+  'Gin',
+  'Grappa',
+  'Irish', // Irish Whiskey
+  'Mezcal',
+  'Rum',
+  'Rye',
+  'Scotch',
+  'Tequila',
+  'Vodka',
+  'Whiskey',
+  'Whisky',
+  'Malt', // Malt Whisky
+  
+  // Beers
+  'Belgian Ale',
+  'Hard Seltzer',
+  'India Pale Ale',
+  'IPA',
+  'Lager',
+  'Pale Ale',
+  'Pilsner',
+  'Sour and Wild Ale',
+  'Stout',
+  'Porter',
+  'Wheat Ale',
+  
+  // Other beverages
+  'Cider',
+  'Sake',
+  'Mead',
+  'Kombucha',
+];
+
+/**
+ * Checks if the given product name is likely a wine or a different type of beverage
+ * @param productName The name to check
+ * @returns true if the product is likely wine, false if likely a different beverage
+ */
+export function isLikelyWine(productName: string): boolean {
+  if (!productName) return true; // Default to wine if no name provided
+  
+  const lowerName = productName.toLowerCase();
+  
+  // Check against common non-wine beverages
+  for (const nonWine of NON_WINE_SPIRITS_AND_BEVERAGES) {
+    if (lowerName.includes(nonWine.toLowerCase())) {
+      return false;
+    }
+  }
+  
+  // Common wine indicators
+  const wineKeywords = ['wine', 'vino', 'vin', 'wein', 'cru', 'chateau', 'domaine', 'estate', 'bodega', 'vineyard'];
+  for (const keyword of wineKeywords) {
+    if (lowerName.includes(keyword.toLowerCase())) {
+      return true;
+    }
+  }
+  
+  // Check if it contains a common grape variety
+  const commonGrapes = [
+    'cabernet', 'merlot', 'pinot', 'chardonnay', 'sauvignon', 'syrah', 'shiraz', 'malbec', 
+    'zinfandel', 'riesling', 'grenache', 'tempranillo', 'sangiovese', 'nebbiolo'
+  ];
+  
+  for (const grape of commonGrapes) {
+    if (lowerName.includes(grape.toLowerCase())) {
+      return true;
+    }
+  }
+  
+  // Default behavior: assume it's wine if we can't determine otherwise
+  return true;
+}
+
 /**
  * Extract grape varieties from a wine name if they're mentioned
  * @param wineName The name of the wine which might contain grape varieties
@@ -98,89 +293,86 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
     }
   }
   
-  // Common grape varieties to look for in wine names
+  // Common grape varieties to look for in wine names - sorted by category
   const commonGrapes = [
     // Red varieties
-    'Cabernet Sauvignon',
-    'Cabernet Franc',
-    'Merlot',
-    'Pinot Noir',
-    'Syrah',
-    'Shiraz',
-    'Grenache',
-    'Tempranillo',
-    'Sangiovese',
-    'Nebbiolo',
     'Barbera',
-    'Zinfandel',
-    'Malbec',
-    'Petit Verdot',
-    'Gamay',
-    'Mourvèdre',
-    'Mouvedre',
+    'Cabernet Franc',
+    'Cabernet Sauvignon',
+    'Carignane', // Alternative spelling for Carignan
     'Carignan',
-    'Cinsault',
-    'Petite Sirah',
-    'Dolcetto',
-    'Corvina',
-    'Primitivo',
-    'Nero d\'Avola',
     'Carménère',
-    'Touriga Nacional',
-    'Aglianico',
-    'Montepulciano',
-    'Mencia',
-    'Tannat',
-    'Pinotage',
+    'Cinsault',
+    'Corvina',
+    'Dolcetto',
+    'Gamay',
     'Graciano',
+    'Grenache',
+    'Lagrein',
+    'Malbec',
+    'Mencia',
+    'Merlot',
     'Monastrell',
+    'Montepulciano',
+    'Mourvèdre', // Correct spelling
+    'Mouvedre', // Common misspelling
+    'Nebbiolo',
+    'Nero d\'Avola',
+    'Petit Verdot',
+    'Petite Sirah',
+    'Pineau d\'Aunis',
+    'Pinot Noir',
+    'Pinotage',
+    'Primitivo',
+    'Sangiovese',
+    'Shiraz', // Alternative name for Syrah
+    'Syrah',
+    'Tannat',
+    'Tempranillo',
+    'Touriga Nacional',
+    'Zinfandel',
+    'Aglianico',
     
     // White varieties
-    'Chardonnay',
-    'Sauvignon Blanc',
-    'Riesling',
-    'Pinot Gris',
-    'Pinot Grigio',
-    'Gewürztraminer',
-    'Viognier',
-    'Chenin Blanc',
-    'Sémillon',
-    'Muscat',
-    'Grenache Blanc',
-    'Vermentino',
     'Albariño',
-    'Verdejo',
-    'Grüner Veltliner',
-    'Torrontés',
     'Arneis',
-    'Marsanne',
-    'Roussanne',
-    'Trebbiano',
-    'Verdicchio',
-    'Viura',
-    'Fiano',
-    'Picpoul',
+    'Assyrtiko',
+    'Chardonnay',
+    'Chenin Blanc',
     'Colombard',
     'Cortese',
+    'Fiano',
     'Garganega',
-    'Müller-Thurgau',
-    'Sylvaner',
-    'Assyrtiko',
-    'Marsanne',
-    'Roussanne',
-    'Vermentino',
-    'Albariño',
-    'Verdejo',
-    'Touriga Nacional',
-    'Primitivo',
+    'Gewürztraminer',
+    'Glera', // Used for Prosecco
+    'Grenache Blanc',
     'Grüner Veltliner',
-    'Corvina',
-    'Garganega',
+    'Marsanne',
+    'Melon de Bourgogne', // Used for Muscadet
+    'Müller-Thurgau',
+    'Muscat',
+    'Picpoul',
+    'Pinot Blanc',
+    'Pinot Gris',
+    'Pinot Grigio', // Italian name for Pinot Gris
+    'Riesling',
+    'Romorantin',
+    'Roussanne',
+    'Sauvignon Blanc',
+    'Sémillon',
+    'Semillon', // Alternative spelling
+    'Sylvaner',
+    'Torrontés',
     'Trebbiano',
-    'Nero d\'Avola',
-    'Aglianico',
-    'Glera',
-    'Carménère'
+    'Verdejo',
+    'Verdicchio',
+    'Vermentino',
+    'Viognier',
+    'Viura', // Spanish name for Macabeo
+    
+    // Major blend categories
+    'Rhone Blend',
+    'Bordeaux Blend'
   ];
   
   // Find all matches

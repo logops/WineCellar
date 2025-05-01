@@ -7,7 +7,14 @@ import { storage } from './storage';
 import { identifySpreadsheetColumns } from './anthropic';
 import Anthropic from '@anthropic-ai/sdk';
 import { anthropic } from './anthropic';
-import { extractGrapeVarieties, extractVineyard, processWineTitle } from './wineUtils';
+import { 
+  extractGrapeVarieties, 
+  extractVineyard, 
+  processWineTitle, 
+  getRegionFromAppellation, 
+  getCountryFromRegion, 
+  isLikelyWine 
+} from './wineUtils';
 
 // Use anthropic client from anthropic.ts file
 
@@ -844,13 +851,44 @@ export async function processBatch(
       if (mapping.field === 'region' && mapping.confidence === 'high' && value) {
         const specificRegion = String(value).trim();
         if (specificRegion) {
-          // If we have both country and region, combine them
-          if ((mappedData as any).country && !specificRegion.includes((mappedData as any).country)) {
-            mappedData.region = `${(mappedData as any).country} - ${specificRegion}`;
-            console.log(`Set region to combined country-region: ${mappedData.region}`);
+          // Check if this is an appellation (sub-region)
+          let region = specificRegion;
+          let country: string | undefined = (mappedData as any).country;
+          
+          // Try to identify if this is a known wine appellation
+          const parentRegion = getRegionFromAppellation(specificRegion);
+          if (parentRegion) {
+            // If it's an appellation, set it as the region and look up its parent region
+            mappedData.subRegion = specificRegion;
+            region = parentRegion;
+            console.log(`Identified appellation ${specificRegion} belongs to region ${parentRegion}`);
+            
+            // Look up the country for this region if we don't already have it
+            if (!country) {
+              country = getCountryFromRegion(parentRegion);
+              if (country) {
+                (mappedData as any).country = country;
+                console.log(`Derived country ${country} from region ${parentRegion}`);
+              }
+            }
           } else {
-            mappedData.region = specificRegion;
-            console.log(`Set region to specific region: ${mappedData.region}`);
+            // Check if this is a known wine region and get its country
+            const regionCountry = getCountryFromRegion(specificRegion);
+            if (regionCountry) {
+              country = regionCountry;
+              (mappedData as any).country = regionCountry;
+              console.log(`Identified region ${specificRegion} belongs to country ${regionCountry}`);
+            }
+          }
+          
+          // Set the region appropriately
+          mappedData.region = region;
+          console.log(`Set region to: ${mappedData.region}`);
+          
+          // If subRegion isn't set but we have parent region and specific region info,
+          // use the specific region as subRegion
+          if (!mappedData.subRegion && region !== specificRegion) {
+            mappedData.subRegion = specificRegion;
           }
         }
       }
