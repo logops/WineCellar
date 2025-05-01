@@ -298,7 +298,9 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
   
   // Define mapping patterns for each field
   const fieldPatterns: Record<string, string[]> = {
-    name: ['name', 'wine name', 'wine', 'title', 'label', 'wine (name', 'wine (name/varietal', 'wine (name/varietal(s))', 'description', 'designation'],
+    // 'wine name' should be prioritized over just 'wine' to avoid confusion with 'winery'
+    name: ['wine name', 'wine-name', 'wine_name', 'title', 'label', 'wine (name', 'wine (name/varietal', 'wine (name/varietal(s))', 'description', 'designation'],
+    // Handle 'wine' separately with special case logic
     producer: ['producer', 'winery', 'chateau', 'domaine', 'maker', 'vineyard', 'winery name', 'brand'],
     vintage: ['vintage', 'year', 'vin', 'vintage year'],
     type: ['type', 'color', 'wine type', 'style', 'category', 'wine color', 'wine style'],
@@ -319,9 +321,34 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
   // Identify mappings
   const mappings: FieldMapping[] = [];
   
+  // Special case handling for 'wine' by itself, which could be confused with winery
+  const hasWineNameColumn = Object.keys(headerIndices).some(header => 
+    header === 'wine name' || header === 'wine-name' || header === 'wine_name'
+  );
+  
+  const hasWineryColumn = Object.keys(headerIndices).some(header => 
+    header === 'winery' || header === 'producer'
+  );
+  
+  // Special handling for 'wine' column when both 'wine' and 'winery' columns exist
+  if (!hasWineNameColumn && hasWineryColumn && headerIndices['wine']) {
+    console.log('Found "wine" column with separate "winery" column - mapping "wine" to name field');
+    mappings.push({
+      field: 'name',
+      columnHeader: 'wine',
+      columnIndex: headerIndices['wine'],
+      confidence: ConfidenceLevel.HIGH
+    });
+  }
+  
   for (const [field, patterns] of Object.entries(fieldPatterns)) {
     // First try exact matches
     let found = false;
+    
+    // Skip 'name' field mapping if we already handled 'wine' column specially
+    if (field === 'name' && !hasWineNameColumn && hasWineryColumn && headerIndices['wine']) {
+      continue;
+    }
     
     for (const pattern of patterns) {
       if (headerIndices[pattern]) {
@@ -1116,6 +1143,21 @@ export async function processBatch(
   // If AI drinking windows are requested, get them for wines that need them
   if (options.useAiDrinkingWindows) {
     await addAiDrinkingWindowRecommendations(result.processedWines);
+  }
+  
+  // Final critical check: Make sure producer names are not duplicated as wine names
+  // This addresses a common issue in imports
+  for (const processedWine of result.processedWines) {
+    if (processedWine.mappedData.producer === processedWine.mappedData.name) {
+      console.log(`CRITICAL FIX: Found duplicate producer/name: ${processedWine.mappedData.producer}`);
+      // Clear the name field since it's the same as the producer
+      processedWine.mappedData.name = '';
+      // Flag for verification
+      processedWine.needsVerification = true;
+      if (!processedWine.missingRequiredFields.includes('name_missing')) {
+        processedWine.missingRequiredFields.push('name_missing');
+      }
+    }
   }
   
   return result;
