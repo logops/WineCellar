@@ -997,27 +997,45 @@ export async function processBatchFromFile(
         console.log('Using AI to identify spreadsheet columns');
         
         try {
+          // Create an easy to use mapping of column headers and indices
+          const headerRow = data[0];
+          const headerIndices: Record<string, string> = {};
+          
+          // Create a clean mapping of column headers to their indices
+          Object.entries(headerRow).forEach(([index, value]) => {
+            if (value && typeof value === 'string' && value.trim() !== '') {
+              headerIndices[value.toLowerCase().trim()] = index;
+              console.log(`Found header: '${value}' at index ${index}`);
+            }
+          });
+          
           // Extract headers from first row
-          const headers = Object.values(data[0]).map(value => String(value));
+          const headers = Object.values(headerRow)
+            .filter(value => value && typeof value === 'string' && value.trim() !== '')
+            .map(value => String(value));
           
           // Get sample rows for context (up to 3)
           const sampleRows = data.slice(1, 4);
           
           // Use Claude to identify columns
-          const aiMappings = await identifySpreadsheetColumns(headers, sampleRows);
+          const aiMappings = await identifySpreadsheetColumns(headers, sampleRows, headerIndices);
           
           if (aiMappings && aiMappings.length > 0) {
             console.log('AI successfully identified column mappings:', aiMappings);
             
             // Convert AI mappings to our FieldMapping format
-            fieldMappings = aiMappings.map((mapping: { field: string, columnHeader: string, confidence: string }) => ({
-              field: mapping.field,
-              columnHeader: mapping.columnHeader,
-              columnIndex: Object.entries(data[0]).find(
-                ([_, value]) => String(value).toLowerCase() === mapping.columnHeader.toLowerCase()
-              )?.[0] as unknown as number || 0,
-              confidence: mapping.confidence as ConfidenceLevel
-            }));
+            fieldMappings = aiMappings.map((mapping: { field: string, columnHeader: string, confidence: string }) => {
+              // Find the matching column index by exact header name match
+              const columnKey = headerIndices[mapping.columnHeader.toLowerCase().trim()] || '0';
+              console.log(`Mapping ${mapping.field} to column '${mapping.columnHeader}', found at index: ${columnKey}`);
+              
+              return {
+                field: mapping.field,
+                columnHeader: mapping.columnHeader,
+                columnIndex: columnKey,
+                confidence: mapping.confidence as ConfidenceLevel
+              };
+            });
           } else {
             console.log('AI failed to identify columns, falling back to rule-based approach');
             fieldMappings = identifyColumnMappings(data);

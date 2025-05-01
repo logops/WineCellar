@@ -632,7 +632,7 @@ Your response MUST be a valid JSON object with this exact format:
 /**
  * Use AI to identify spreadsheet column mappings
  */
-export async function identifySpreadsheetColumns(headers: string[], sampleRows: any[]) {
+export async function identifySpreadsheetColumns(headers: string[], sampleRows: any[], headerIndices?: Record<string, string>) {
   try {
     // Convert sample rows to a formatted string for better context
     const sampleRowsFormatted = sampleRows.map(row => {
