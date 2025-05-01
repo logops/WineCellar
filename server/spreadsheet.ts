@@ -789,11 +789,16 @@ export async function processBatch(
     const headerIndices: Record<string, string> = {};
     if (data.length > 0) {
       const headerRow = data[0];
+      console.log('Full header row:', JSON.stringify(headerRow));
       Object.entries(headerRow).forEach(([index, value]) => {
         if (value && typeof value === 'string' && value.trim() !== '') {
           headerIndices[value.toLowerCase().trim()] = index;
+          console.log(`Added header mapping: '${value.toLowerCase().trim()}' -> ${index}`);
         }
       });
+      
+      // Debug: Log all header mappings
+      console.log('All header mappings:', JSON.stringify(headerIndices));
     }
     
     // First: Check for country and state/region information
@@ -911,7 +916,9 @@ export async function processBatch(
           }
         }
         
-        if (headerName.includes('wine') && !headerName.includes('type')) {
+        // Look for columns named "wine name", "wine", etc. but not "wine type"
+        if ((headerName.includes('wine name') || 
+             (headerName.includes('wine') && !headerName.includes('type') && !headerName.includes('winery')))) {
           mappedData.name = String(value).trim();
           console.log(`Found wine name in column '${headerName}': ${mappedData.name}`);
           break;
