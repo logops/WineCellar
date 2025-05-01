@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAutocompleteSuggestions } from "@/lib/autocompleteService";
+import { extractGrapeVarieties, extractVineyard } from "@/lib/wineUtils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { WineLabelRecognition } from "@/components/wines/WineLabelRecognition";
@@ -142,6 +143,31 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       
       // Get current form values
       const currentValues = form.getValues();
+      
+      // Auto-extract grape varieties and vineyard information from wine name if those fields are empty
+      if (name === 'name') {
+        const wineName = currentValues.name;
+        
+        if (wineName) {
+          // Only extract grape varieties if the field is currently empty
+          const currentGrapes = currentValues.grapeVarieties;
+          if (!currentGrapes || currentGrapes.trim() === '') {
+            const extractedGrapes = extractGrapeVarieties(wineName);
+            if (extractedGrapes) {
+              form.setValue('grapeVarieties', extractedGrapes, { shouldDirty: true });
+            }
+          }
+          
+          // Only extract vineyard if the field is currently empty
+          const currentVineyard = currentValues.vineyard;
+          if (!currentVineyard || currentVineyard.trim() === '') {
+            const extractedVineyard = extractVineyard(wineName);
+            if (extractedVineyard) {
+              form.setValue('vineyard', extractedVineyard, { shouldDirty: true });
+            }
+          }
+        }
+      }
       
       // Compare with default values to determine if form is dirty
       let isDirty = false;
