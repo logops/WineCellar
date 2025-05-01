@@ -1018,6 +1018,16 @@ export async function processBatch(
       console.log(`Fixed fields - Producer: ${mappedData.producer}, Name: ${mappedData.name}`);
     }
 
+    // Verify wine vs non-wine beverage
+    if (mappedData.name) {
+      const isWine = isLikelyWine(mappedData.name);
+      if (!isWine) {
+        console.log(`Product "${mappedData.name}" appears to be a non-wine beverage - flagging for verification`);
+        missingRequiredFields.push('not_wine');
+        overallConfidence = ConfidenceLevel.LOW;
+      }
+    }
+
     // Check if we have the minimum required fields
     if (!mappedData.producer || (!mappedData.vintage && mappedData.vintage !== 0) || !mappedData.type) {
       overallConfidence = ConfidenceLevel.LOW;

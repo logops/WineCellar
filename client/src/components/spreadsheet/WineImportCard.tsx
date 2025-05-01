@@ -183,6 +183,43 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="pt-2">
+        {/* Auto-identification Alerts */}
+        {wine.missingRequiredFields.includes('not_wine') && (
+          <div className="bg-red-50 text-red-600 p-2 mb-4 rounded border border-red-200 text-sm">
+            <AlertCircle className="h-4 w-4 inline-block mr-1" />
+            This appears to be a non-wine beverage and may not belong in your collection.
+          </div>
+        )}
+        
+        {/* Identification Tags */}
+        {(wine.mappedData.grapeVarieties || wine.mappedData.vineyard || wine.mappedData.region || wine.mappedData.subregion) && (
+          <div className="mb-3">
+            <p className="text-xs text-muted-foreground mb-1">Auto-identified:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {wine.mappedData.grapeVarieties && (
+                <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200">
+                  <span className="text-blue-600">Grapes:</span> {wine.mappedData.grapeVarieties}
+                </Badge>
+              )}
+              {wine.mappedData.vineyard && (
+                <Badge variant="outline" className="text-xs bg-emerald-50 border-emerald-200">
+                  <span className="text-emerald-600">Vineyard:</span> {wine.mappedData.vineyard}
+                </Badge>
+              )}
+              {wine.mappedData.region && (
+                <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">
+                  <span className="text-purple-600">Region:</span> {wine.mappedData.region}
+                </Badge>
+              )}
+              {wine.mappedData.subregion && (
+                <Badge variant="outline" className="text-xs bg-indigo-50 border-indigo-200">
+                  <span className="text-indigo-600">Subregion:</span> {wine.mappedData.subregion}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <h4 className="text-sm font-medium mb-2">Wine Details</h4>
