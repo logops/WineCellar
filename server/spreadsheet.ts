@@ -757,7 +757,26 @@ export async function processBatch(
       }
     }
 
+    // First pass: Get the exact field matches from column headers
     // Extract 'Wine (Name/Varietal(s))' column specifically - this is common in Excel exports
+    for (const mapping of fieldMappings) {
+      const index = mapping.columnIndex;
+      const value = row[index];
+      
+      if (!value) continue;
+      
+      if (mapping.field === 'name' && mapping.confidence === 'high') {
+        mappedData.name = String(value).trim();
+        console.log(`Found wine name in column '${mapping.columnHeader}': ${mappedData.name}`);
+      }
+      
+      if (mapping.field === 'producer' && mapping.confidence === 'high') {
+        mappedData.producer = String(value).trim();
+        console.log(`Found producer in column '${mapping.columnHeader}': ${mappedData.producer}`);
+      }
+    }
+
+    // Second pass: If we didn't find values with high confidence, look harder
     if (!mappedData.name || mappedData.name === 'Unknown Wine') {
       // Look for wine name in columns containing 'wine' in the header
       for (const [index, value] of Object.entries(row)) {
