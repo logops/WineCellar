@@ -859,7 +859,7 @@ export async function processBatch(
           const parentRegion = getRegionFromAppellation(specificRegion);
           if (parentRegion) {
             // If it's an appellation, set it as the region and look up its parent region
-            mappedData.subRegion = specificRegion;
+            mappedData.subregion = specificRegion;
             region = parentRegion;
             console.log(`Identified appellation ${specificRegion} belongs to region ${parentRegion}`);
             
@@ -885,10 +885,10 @@ export async function processBatch(
           mappedData.region = region;
           console.log(`Set region to: ${mappedData.region}`);
           
-          // If subRegion isn't set but we have parent region and specific region info,
-          // use the specific region as subRegion
-          if (!mappedData.subRegion && region !== specificRegion) {
-            mappedData.subRegion = specificRegion;
+          // If subregion isn't set but we have parent region and specific region info,
+          // use the specific region as subregion
+          if (!mappedData.subregion && region !== specificRegion) {
+            mappedData.subregion = specificRegion;
           }
         }
       }
