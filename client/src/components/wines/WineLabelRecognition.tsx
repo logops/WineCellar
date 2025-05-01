@@ -14,6 +14,23 @@ interface RecommendedDrinkingWindow {
   isPastPrime: boolean;
 }
 
+interface TastingProfile {
+  characteristics: string | null;
+  ageability: string | null;
+  maturity: string | null;
+}
+
+interface ProductionDetails {
+  winemaking: string | null;
+  terroir: string | null;
+  classification: string | null;
+}
+
+interface WineRating {
+  score: number | null;
+  confidenceLevel: string;
+}
+
 interface RecognitionResult {
   producer: string | null;
   name: string | null;
@@ -26,6 +43,12 @@ interface RecognitionResult {
   alcoholContent: number | null;
   confidence: number;
   recommendedDrinkingWindow?: RecommendedDrinkingWindow;
+  // New comprehensive analysis fields
+  tasting?: TastingProfile;
+  foodPairings?: string | null;
+  servingSuggestions?: string | null;
+  productionDetails?: ProductionDetails;
+  rating?: WineRating;
 }
 
 interface WineLabelRecognitionProps {
