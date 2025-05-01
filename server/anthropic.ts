@@ -819,33 +819,61 @@ Your response MUST be a valid JSON object with this exact format:
 export async function identifySpreadsheetColumns(headers: string[], sampleRows: any[], headerIndices?: Record<string, string>) {
   try {
     // Convert sample rows to a formatted string for better context
-    const sampleRowsFormatted = sampleRows.map(row => {
+    // Limit to 5 sample rows for clarity
+    const limitedSampleRows = sampleRows.slice(0, 5);
+    const sampleRowsFormatted = limitedSampleRows.map(row => {
       return Object.entries(row)
         .map(([key, value]) => `${key}: ${value}`)
         .join(', ');
     }).join('\n');
     
-    const prompt = `You are an expert wine database specialist. I need help mapping columns from a wine spreadsheet to our database fields.
+    // Create a representation of data in column format for easier analysis
+    let columnView = '';
+    if (limitedSampleRows.length > 0) {
+      // Get all column keys from the first row
+      const columnKeys = Object.keys(limitedSampleRows[0]);
+      // For each column, show the values from all rows
+      columnKeys.forEach(key => {
+        const values = limitedSampleRows.map(row => row[key] || '-').join(', ');
+        columnView += `Column ${key} values: ${values}\n`;
+      });
+    }
+    
+    const prompt = `You are an expert wine database specialist helping to map wine spreadsheet columns to our standardized database fields. Users often import wine collections from different sources with varying formats and terminology.
 
-The spreadsheet has these headers:
+The spreadsheet has these headers (column identifiers may be letters or indices):
 ${headers.join(', ')}
 
 Here are a few sample rows to understand the data format:
 ${sampleRowsFormatted}
 
-For each of our database fields below, tell me which column header corresponds to it and how confident you are (high, medium, or low):
+Here's the data organized by column for easier analysis:
+${columnView}
 
-- vintage (the year the wine was produced, or "NV" for non-vintage)
-- name (the name of the wine)
-- producer (the winery or producer)
-- type (red, white, rosé, sparkling, etc.)
-- region (wine region or country)
-- subregion (more specific location within region)
-- quantity (number of bottles)
-- purchasePrice (cost of the wine)
-- grapeVarieties (grape varietals used)
-- bottleSize (standard is 750ml)
-- storageLocation (where the wine is stored)
+For each of our database fields below, determine which column header best corresponds to it and rate your confidence as high, medium, or low:
+
+- vintage: The year the wine was produced, or "NV" for non-vintage. Look for years like 2018, 2019, etc.
+- name: The name of the wine (not including producer). Sometimes combined with producer.
+- producer: The winery, château, domaine or producer name. May be combined with the wine name.
+- type: Wine color/style (red, white, rosé, sparkling, dessert, etc.) May be called "color" or "style".
+- region: Wine region, appellation, or country of origin.
+- subregion: More specific location within region (e.g., commune, village).
+- grapeVarieties: Grape varietals used (e.g., Cabernet Sauvignon, Chardonnay, etc.).
+- quantity: Number of bottles owned.
+- purchasePrice: Cost of the wine. May include currency symbols ($, €, £).
+- bottleSize: Bottle format/size (standard is 750ml, may be listed as 750ml, 75cl, Standard, etc.).
+- storageLocation: Where the wine is stored (cellar location, bin number, etc.).
+- drinkingWindowStart: The recommended year to start drinking the wine.
+- drinkingWindowEnd: The recommended last year to drink the wine.
+- purchaseDate: When the wine was acquired.
+- purchaseLocation: Where the wine was purchased from.
+- notes: Any tasting notes or additional information.
+
+Keep in mind:
+1. One spreadsheet column might contain multiple pieces of information (e.g., "2018 Château Margaux Bordeaux" contains vintage, producer, and region).
+2. Column headers may use abbreviations or unusual terminology.
+3. Some fields may not have a corresponding column - that's okay.
+4. For columns with ambiguous headers but clear content based on sample values, use the content to guide your mapping.
 
 Respond in valid JSON format like this:
 {
@@ -904,23 +932,38 @@ export async function lookupWineInformation(wineName: string, producer?: string,
     // Use Claude to look up wine information
     const result = await anthropic.messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 512,
-      system: `You are a wine expert assistant. Based on the wine name and details provided, look up information about the wine's grape varieties and vineyard.
+      max_tokens: 1024,
+      temperature: 0.1,
+      system: `You are a wine expert assistant providing comprehensive information about wines. Based on the wine name and details provided, analyze the wine and provide detailed information.
+      
       Respond in JSON format with the following fields:
       {
         "grapeVarieties": "Grape varieties used in this wine, comma separated",
         "vineyard": "Vineyard information if available",
+        "region": "Wine region, appellation, or growing area",
+        "subregion": "More specific location within the region, if available",
+        "tastingNotes": "Brief description of typical flavor profile",
+        "foodPairings": "2-3 recommended food pairings",
+        "drinkingWindow": "Recommended drinking window (e.g., '2023-2030')",
         "confidenceLevel": "high/medium/low", // Your confidence in this information
+        "productionNotes": "Brief information about production methods if relevant",
         "reasoning": "Brief explanation of your information sources"
       }`,
       messages: [
         {
           role: "user",
-          content: `Please look up information about this wine: ${wineInfo}
+          content: `Please provide detailed information about this wine: ${wineInfo}
           
           I need to know:
           1. What grape varieties are used in this wine? (comma separated list)
           2. Is there any specific vineyard information for this wine?
+          3. What's the wine region and subregion (if available)?
+          4. What are the typical flavor profile and tasting notes?
+          5. What foods would pair well with this wine?
+          6. What's the recommended drinking window?
+          7. Are there any notable production methods or techniques used?
+          
+          If certain information isn't available or you're uncertain, provide your best educated assessment based on similar wines from the same producer, region, or style. Indicate your confidence level accordingly.
           
           Respond only with JSON as specified.`
         }

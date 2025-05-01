@@ -1,6 +1,7 @@
 import TabNavigation from "@/components/ui/TabNavigation";
 import WineRecommendations from "@/components/wines/WineRecommendations";
 import RecommendationHistory from "@/components/wines/RecommendationHistory";
+import { WineLookupInfo } from "@/components/wines/WineLookupInfo";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -31,6 +32,9 @@ export default function Recommendations() {
             <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-burgundy-700">
               Recommendation History
             </TabsTrigger>
+            <TabsTrigger value="lookup" className="data-[state=active]:bg-white data-[state=active]:text-burgundy-700">
+              Wine Encyclopedia
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="new" className="mt-4">
@@ -39,6 +43,10 @@ export default function Recommendations() {
           
           <TabsContent value="history" className="mt-4">
             <RecommendationHistory />
+          </TabsContent>
+          
+          <TabsContent value="lookup" className="mt-4">
+            <WineLookupInfo />
           </TabsContent>
         </Tabs>
         
@@ -77,6 +85,26 @@ export default function Recommendations() {
               <p>
                 This history makes it easy to find wines that worked well for similar occasions in the past, 
                 helping you build knowledge about your collection and make informed decisions for future events.
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {activeTab === "lookup" && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-montserrat font-semibold text-burgundy-700 mb-4">
+              About Wine Encyclopedia
+            </h2>
+            <div className="prose max-w-none">
+              <p>
+                Our Wine Encyclopedia provides detailed information about wines from around the world. 
+                Enter a wine name, producer, and vintage to discover comprehensive details about grape varieties, 
+                region, tasting notes, food pairings, and recommended drinking windows.
+              </p>
+              <p>
+                This feature helps you learn more about wines you're interested in before adding them to your collection, 
+                or to enhance your understanding of wines already in your cellar. Use this information to make better 
+                informed purchasing decisions and to deepen your wine knowledge.
               </p>
             </div>
           </div>
