@@ -6,6 +6,7 @@ import { Check, X, AlertCircle, Edit } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/ui/dialog-confirm';
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from '@/lib/queryClient';
 
 interface WineData {
   rowIndex: number;
@@ -236,13 +237,64 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                       variant="outline" 
                       size="sm" 
                       className="h-7 text-xs"
-                      onClick={() => {
-                        // This would be replaced with actual API call in a real implementation
-                        // For now, we'll just show a message
-                        toast({
-                          title: "AI analysis requested",
-                          description: "This would request an AI drinking window analysis for this wine."
-                        });
+                      onClick={async () => {
+                        try {
+                          // Set up a temporary wine ID in the mapped data for the API call
+                          // This is a workaround for imported wines that don't have an ID yet
+                          const tempWineId = wine.rowIndex;
+                          
+                          toast({
+                            title: "Requesting AI recommendation",
+                            description: "Analyzing wine characteristics..."
+                          });
+                          
+                          // Call the new AI drinking window recommendation endpoint
+                          const response = await apiRequest('POST', '/api/wine-drinking-window-recommendation', {
+                            wineId: tempWineId,
+                            wineData: wine.mappedData // Send the wine data directly since this is not yet in the database
+                          });
+                          
+                          const data = await response.json();
+                          
+                          if (data.success) {
+                            // Create an updated wine object with the recommendation
+                            const updatedWine: WineData = {
+                              ...wine,
+                              aiDrinkingWindowRecommendation: {
+                                start: data.drinkingWindow.startYear.toString(),
+                                end: data.drinkingWindow.endYear.toString(),
+                                confidence: data.confidenceLevel || 'medium',
+                                reasoning: data.reasoning || 'Based on the wine characteristics.'
+                              }
+                            };
+                            
+                            // Update the wine in the parent component if setter is provided
+                            if (setAllProcessedWines) {
+                              const wineIndex = allProcessedWines.findIndex((w: WineData) => w.rowIndex === wine.rowIndex);
+                              if (wineIndex !== -1) {
+                                const newProcessedWines = [...allProcessedWines];
+                                newProcessedWines[wineIndex] = updatedWine;
+                                setAllProcessedWines(newProcessedWines);
+                              }
+                            }
+                            
+                            // Show the AI recommendation dialog
+                            setAiRecommendationDialogOpen(true);
+                          } else {
+                            toast({
+                              title: "AI recommendation failed",
+                              description: data.message || "Could not generate a recommendation for this wine.",
+                              variant: "destructive"
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Error requesting AI recommendation:', error);
+                          toast({
+                            title: "AI recommendation failed",
+                            description: error instanceof Error ? error.message : "An unknown error occurred",
+                            variant: "destructive"
+                          });
+                        }
                       }}
                     >
                       Request AI recommendation

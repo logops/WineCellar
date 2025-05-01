@@ -29,9 +29,9 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
       system: `You are a wine expert assistant. Based on the wine details provided, recommend an appropriate drinking window (start year and end year). 
       Respond in JSON format with the following fields:
       {
-        "start": "YYYY", // Year to start drinking
-        "end": "YYYY",   // Year to stop drinking
-        "confidence": "high/medium/low", // Your confidence in this recommendation
+        "startYear": 2025, // Year to start drinking (numeric)
+        "endYear": 2030,   // Year to stop drinking (numeric)
+        "confidenceLevel": "high/medium/low", // Your confidence in this recommendation
         "reasoning": "Brief explanation of your recommendation"
       }`,
       messages: [
@@ -45,7 +45,7 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
           
           Today's date is ${new Date().toISOString().split('T')[0]}.
           
-          Respond only with JSON as specified.`
+          Respond only with JSON as specified. Use numeric values for years, not strings.`
         }
       ],
     });
@@ -61,17 +61,34 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
         
       console.log('Processing AI response:', contentText);
       
-      const recommendation = JSON.parse(contentText);
-      
-      return {
-        success: true,
-        data: {
-          start: recommendation.start,
-          end: recommendation.end,
-          confidence: recommendation.confidence,
-          reasoning: recommendation.reasoning
-        }
-      };
+      try {
+        const recommendation = JSON.parse(contentText);
+        
+        // Convert string years to numbers if needed
+        const startYear = typeof recommendation.startYear === 'string' 
+          ? parseInt(recommendation.startYear) 
+          : recommendation.startYear;
+          
+        const endYear = typeof recommendation.endYear === 'string' 
+          ? parseInt(recommendation.endYear) 
+          : recommendation.endYear;
+        
+        return {
+          success: true,
+          drinkingWindow: {
+            startYear,
+            endYear
+          },
+          confidenceLevel: recommendation.confidenceLevel || 'medium',
+          reasoning: recommendation.reasoning || 'Based on the wine characteristics.'
+        };
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        return {
+          success: false,
+          message: 'Failed to parse AI recommendation'
+        };
+      }
     }
     
     return {

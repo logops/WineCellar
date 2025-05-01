@@ -591,29 +591,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'User not authenticated' });
       }
       
-      // Get wine ID from request
-      const { wineId } = req.body;
-      if (!wineId) {
+      // Support two flows: 1) Existing wine by ID, 2) Wine data from import without ID
+      const { wineId, wineData } = req.body;
+      let wine;
+      
+      if (wineId && !wineData) {
+        // Get the wine by ID
+        const existingWine = await dbStorage.getWine(Number(wineId));
+        if (!existingWine) {
+          return res.status(404).json({ 
+            success: false, 
+            message: 'Wine not found' 
+          });
+        }
+        
+        // Ensure the wine belongs to the current user
+        if (existingWine.userId !== req.user.id) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Access denied' 
+          });
+        }
+        
+        wine = existingWine;
+      } else if (wineData) {
+        // Create a temporary wine object from the provided data
+        // Set the userId to current user so AI can use user preferences
+        wine = {
+          ...wineData,
+          id: wineId || -1, // Use a temporary ID if not provided
+          userId: req.user.id,
+          createdAt: new Date()
+        };
+      } else {
         return res.status(400).json({ 
           success: false, 
-          message: 'Wine ID is required' 
-        });
-      }
-      
-      // Get the wine
-      const wine = await dbStorage.getWine(Number(wineId));
-      if (!wine) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Wine not found' 
-        });
-      }
-      
-      // Ensure the wine belongs to the current user
-      if (wine.userId !== req.user.id) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Access denied' 
+          message: 'Either Wine ID or Wine Data is required' 
         });
       }
       
