@@ -273,8 +273,31 @@ export function isLikelyWine(productName: string): boolean {
 export function extractGrapeVarieties(wineName: string, existingGrapes?: string | null, producer?: string | null): string | undefined {
   if (!wineName && !producer) return existingGrapes || undefined;
   
-  // If we already have grape varieties specified, return those
+  // If we already have grape varieties specified, check if they conflict with the wine name
   if (existingGrapes && existingGrapes.trim() !== '') {
+    // Special case: If wine name contains a specific varietal but existingGrapes has multiple varieties
+    // This handles cases like "Cabernet Sauvignon" in the name but "Zinfandel, Cabernet Sauvignon, Chardonnay, Petite Sirah" in grapes
+    const singleVarietalNames = [
+      'Cabernet Sauvignon', 'Pinot Noir', 'Chardonnay', 'Sauvignon Blanc', 'Merlot', 'Zinfandel',
+      'Syrah', 'Malbec', 'Grenache', 'Cabernet Franc', 'Petit Verdot', 'Viognier', 'Riesling'
+    ];
+    
+    // Check if the wine name specifically mentions a single varietal
+    const namedVarietal = singleVarietalNames.find(varietal => 
+      wineName.toLowerCase().includes(varietal.toLowerCase())
+    );
+    
+    // If the wine name contains a single varietal name, and existing grapes has multiple varieties
+    if (namedVarietal && existingGrapes.includes(',')) {
+      const grapeList = existingGrapes.split(',').map(g => g.trim());
+      
+      // If the named varietal is in the list, prioritize it as the primary grape
+      if (grapeList.some(g => g.toLowerCase() === namedVarietal.toLowerCase())) {
+        console.log(`Wine named after ${namedVarietal} but has multiple varieties (${existingGrapes}) - prioritizing ${namedVarietal}`);
+        return namedVarietal;
+      }
+    }
+    
     return existingGrapes;
   }
   

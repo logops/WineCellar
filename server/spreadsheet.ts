@@ -1179,7 +1179,10 @@ export async function processBatch(
   // Final critical check: Make sure producer names are not duplicated as wine names
   // This addresses a common issue in imports
   for (const processedWine of result.processedWines) {
-    if (processedWine.mappedData.producer === processedWine.mappedData.name) {
+    // Check for exact match or case-insensitive match
+    if (processedWine.mappedData.producer && processedWine.mappedData.name && 
+        (processedWine.mappedData.producer === processedWine.mappedData.name ||
+        processedWine.mappedData.producer.toLowerCase().trim() === processedWine.mappedData.name.toLowerCase().trim())) {
       console.log(`CRITICAL FIX: Found duplicate producer/name: ${processedWine.mappedData.producer}`);
       // Clear the name field since it's the same as the producer
       processedWine.mappedData.name = '';
@@ -1187,6 +1190,20 @@ export async function processBatch(
       processedWine.needsVerification = true;
       if (!processedWine.missingRequiredFields.includes('name_missing')) {
         processedWine.missingRequiredFields.push('name_missing');
+      }
+    }
+    
+    // Also check if name is just a prefix or suffix of producer (common when auto-filling spreadsheets)
+    if (processedWine.mappedData.producer && processedWine.mappedData.name) {
+      const producerLower = processedWine.mappedData.producer.toLowerCase().trim();
+      const nameLower = processedWine.mappedData.name.toLowerCase().trim();
+      
+      // If producer contains entire name or name contains entire producer
+      if ((producerLower.includes(nameLower) && nameLower.length > 2) || 
+          (nameLower.includes(producerLower) && producerLower.length > 2)) {
+        console.log(`POTENTIAL ISSUE: Name "${processedWine.mappedData.name}" may be part of producer "${processedWine.mappedData.producer}"`);
+        // Flag for verification but don't clear the field automatically
+        processedWine.needsVerification = true;
       }
     }
   }
