@@ -151,10 +151,8 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                   : 'Unknown Vintage'}
               {/* Display producer */}
               {' '}{wine.mappedData.producer || 'Unknown Producer'}
-              {/* Only display name if it's different from producer */}
-              {wine.mappedData.name && wine.mappedData.producer && 
-               wine.mappedData.name.trim() !== wine.mappedData.producer.trim() 
-                ? ` ${wine.mappedData.name}` : ''}
+              {/* Always display the name if it exists, even if it's similar to producer */}
+              {wine.mappedData.name && ` ${wine.mappedData.name}`}
             </CardTitle>
             <div className="text-sm text-muted-foreground mt-1">
               {wine.mappedData.type || 'Unknown Type'} {wine.mappedData.region ? `• ${wine.mappedData.region}` : ''}
