@@ -374,6 +374,89 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     }
   }
   
+  // Function to request AI drinking window recommendation
+  async function handleDrinkingWindowRecommendation() {
+    const currentValues = form.getValues();
+    const wineName = currentValues.name;
+    const producer = currentValues.producer;
+    const vintage = currentValues.vintage;
+    const type = currentValues.type;
+    const region = currentValues.region;
+    
+    // Check if we have enough information to perform a recommendation
+    if (!producer || !vintage) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter at least the producer and vintage to get a drinking window recommendation.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true); // Reuse the isSubmitting state to show loading
+    
+    try {
+      // Construct wine data for the API request
+      const wineData = {
+        producer,
+        name: wineName || '',
+        vintage: vintage || 0,
+        type: type || 'red',
+        region: region || '',
+        subregion: currentValues.subregion || '',
+        grapeVarieties: currentValues.grapeVarieties || ''
+      };
+      
+      // Call the API to get drinking window recommendation
+      const response = await apiRequest(
+        "POST", 
+        "/api/wine-drinking-window-recommendation", 
+        wineData
+      );
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Create recommended drinking window object
+        const recommendation = {
+          startYear: parseInt(result.data.start),
+          endYear: parseInt(result.data.end),
+          notes: result.data.reasoning,
+          isPastPrime: false // Determine this based on current year and end year
+        };
+        
+        // Check if it's past prime
+        const currentYear = new Date().getFullYear();
+        if (recommendation.endYear < currentYear) {
+          recommendation.isPastPrime = true;
+        }
+        
+        // Set the recommendation in state
+        setRecommendedDrinkingWindow(recommendation);
+        
+        toast({
+          title: "Drinking Window Recommendation",
+          description: `AI suggests a drinking window of ${recommendation.startYear} - ${recommendation.endYear}`,
+        });
+      } else {
+        toast({
+          title: "Recommendation Failed",
+          description: result.message || "Could not generate a drinking window recommendation.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error getting drinking window recommendation:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem getting the drinking window recommendation.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+  
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     try {
@@ -817,7 +900,19 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               </div>
               
               <div>
-                <FormLabel>Drinking Window</FormLabel>
+                <div className="flex justify-between items-center mb-2">
+                  <FormLabel>Drinking Window</FormLabel>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleDrinkingWindowRecommendation}
+                    disabled={isSubmitting}
+                    className="h-7 px-2 text-xs"
+                  >
+                    {isSubmitting ? "Getting recommendation..." : "Get AI Recommendation"}
+                  </Button>
+                </div>
                 
                 {/* Show Claude's recommendation if available */}
                 {recommendedDrinkingWindow && (

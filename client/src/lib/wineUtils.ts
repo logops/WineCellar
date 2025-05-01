@@ -44,6 +44,11 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
     'Gamay'
   ];
   
+  // Special case for just "Cabernet" without "Sauvignon"
+  if (wineName.toLowerCase().includes('cabernet') && !wineName.toLowerCase().includes('cabernet franc') && !wineName.toLowerCase().includes('cabernet sauvignon')) {
+    return 'Cabernet Sauvignon';
+  }
+  
   // Find all matches
   const foundGrapes = commonGrapes.filter(grape => 
     wineName.toLowerCase().includes(grape.toLowerCase())
