@@ -585,6 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Step 2: Process a batch of rows
   app.post('/api/spreadsheet/process-batch', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+    console.log('Processing batch with file:', req.file?.originalname);
     try {
       if (!req.user) {
         return res.status(401).json({ message: 'User not authenticated' });
@@ -617,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await processBatchFromFile(fileBuffer, {
         userId: req.user.id,
         useAiDrinkingWindows,
-        batchIndex,
+        startRow: batchIndex,
         batchSize,
         fieldMappings
       });

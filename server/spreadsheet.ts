@@ -208,7 +208,7 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
       mappings.push({
         field,
         columnHeader: bestMatch.headerText,
-        columnIndex: bestMatch.columnIndex,
+        columnIndex: Number(bestMatch.columnIndex),
         confidence: bestMatch.confidence
       });
     }
@@ -222,10 +222,10 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
  */
 export async function processBatch(
   data: any[],
-  startRow: number,
-  batchSize: number,
-  fieldMappings: FieldMapping[],
-  existingWines: Wine[],
+  startRow: number = 0,
+  batchSize: number = 100,
+  fieldMappings: FieldMapping[] = [],
+  existingWines: Wine[] = [],
   options: {
     userId: number,
     useAiDrinkingWindows: boolean
@@ -314,9 +314,10 @@ export async function processBatch(
           break;
           
         case 'price':
+        case 'purchasePrice':
           const price = parseFloat(String(value).replace(/[$£€,]/g, ''));
           if (!isNaN(price)) {
-            mappedData.price = price;
+            mappedData.purchasePrice = price;
           }
           break;
           
@@ -815,11 +816,21 @@ export async function processBatchFromFile(
     const existingWines = await storage.getWinesByUserId(options.userId);
     
     // Process batch
+    // Set default values if not provided
+    const startRow = options.startRow || 0;
+    const batchSize = options.batchSize || 100;
+    
+    // If no field mappings provided, generate them
+    const fieldMappings = options.fieldMappings || identifyColumnMappings(data);
+    
+    console.log('Processing batch with', data.length, 'rows from Excel/CSV file');
+    console.log('Field mappings:', fieldMappings);
+    
     const batchResult = await processBatch(
       data,
-      options.startRow,
-      options.batchSize,
-      options.fieldMappings,
+      startRow,
+      batchSize,
+      fieldMappings,
       existingWines,
       {
         userId: options.userId,
