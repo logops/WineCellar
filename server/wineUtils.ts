@@ -485,12 +485,12 @@ export function extractVineyard(wineName: string, existingVineyard?: string | nu
  * @param wine Wine object containing name and potentially grape/vineyard info
  * @returns Updated wine object with extracted information
  */
-export function processWineTitle<T extends { name?: string | null; grapeVarieties?: string | null; vineyard?: string | null }>(
+export function processWineTitle<T extends { name?: string | null; grapeVarieties?: string | null; vineyard?: string | null; producer?: string | null }>(
   wine: T
 ): T {
   if (!wine.name) return wine;
   
-  const extractedGrapes = extractGrapeVarieties(wine.name, wine.grapeVarieties);
+  const extractedGrapes = extractGrapeVarieties(wine.name, wine.grapeVarieties, wine.producer);
   const extractedVineyard = extractVineyard(wine.name, wine.vineyard);
   
   return {
