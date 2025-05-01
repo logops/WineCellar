@@ -546,20 +546,41 @@ const SpreadsheetImport: React.FC = () => {
               </div>
               
               <div>
-                <Label htmlFor="drinkingWindowStart">Start of Drinking Window</Label>
+                <div className="flex justify-between items-center mb-2">
+                  <Label htmlFor="drinkingWindowStart">Start of Drinking Window (Year)</Label>
+                  {editingWine.aiDrinkingWindowRecommendation && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const start = editingWine.aiDrinkingWindowRecommendation?.start;
+                        const end = editingWine.aiDrinkingWindowRecommendation?.end;
+                        handleEditFieldChange('drinkingWindowStart', start);
+                        handleEditFieldChange('drinkingWindowEnd', end);
+                        toast({
+                          title: "AI Recommendation Applied",
+                          description: `Drinking window set to ${start} - ${end}`,
+                        });
+                      }}
+                    >
+                      Use AI: {editingWine.aiDrinkingWindowRecommendation.start} - {editingWine.aiDrinkingWindowRecommendation.end}
+                    </Button>
+                  )}
+                </div>
                 <Input
                   id="drinkingWindowStart"
-                  type="date"
+                  placeholder="YYYY"
                   defaultValue={editingWine.mappedData.drinkingWindowStart || ''}
                   onChange={(e) => handleEditFieldChange('drinkingWindowStart', e.target.value)}
                 />
               </div>
               
               <div>
-                <Label htmlFor="drinkingWindowEnd">End of Drinking Window</Label>
+                <Label htmlFor="drinkingWindowEnd">End of Drinking Window (Year)</Label>
                 <Input
                   id="drinkingWindowEnd"
-                  type="date"
+                  placeholder="YYYY"
                   defaultValue={editingWine.mappedData.drinkingWindowEnd || ''}
                   onChange={(e) => handleEditFieldChange('drinkingWindowEnd', e.target.value)}
                 />
@@ -672,12 +693,16 @@ const SpreadsheetImport: React.FC = () => {
                   <Button 
                     onClick={handleUpload} 
                     disabled={loading || !file}
+                    className="px-6 py-5 text-base font-medium"
                   >
                     {loading ? (
-                      <>Uploading...</>
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
                     ) : (
                       <>
-                        <Upload className="mr-2 h-4 w-4" />
+                        <Upload className="mr-2 h-5 w-5" />
                         Upload & Process
                       </>
                     )}
