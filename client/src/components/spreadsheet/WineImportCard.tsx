@@ -62,7 +62,9 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
   onApprove,
   onReject,
   onEdit,
-  editable = true
+  editable = true,
+  allProcessedWines = [],
+  setAllProcessedWines
 }) => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -347,27 +349,35 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
           confirmText="Use AI Recommendation"
           cancelText="Keep Original"
           onConfirm={() => {
+            // This check was already done in the enclosing condition, but we add it here for type safety
+            if (!wine.aiDrinkingWindowRecommendation) return;
+            
             // Apply the recommendation but don't auto-approve the wine
-            const updatedWine = {
+            const updatedWine: WineData = {
               ...wine,
               mappedData: {
                 ...wine.mappedData,
-                drinkingWindowStart: wine.aiDrinkingWindowRecommendation.start,
-                drinkingWindowEnd: wine.aiDrinkingWindowRecommendation.end,
+                drinkingWindowStart: wine.aiDrinkingWindowRecommendation.start || '',
+                drinkingWindowEnd: wine.aiDrinkingWindowRecommendation.end || '',
               }
             };
             
-            // Update the wine in the allProcessedWines array
-            const wineIndex = allProcessedWines.findIndex(w => w.rowIndex === wine.rowIndex);
-            if (wineIndex !== -1) {
-              const newProcessedWines = [...allProcessedWines];
-              newProcessedWines[wineIndex] = updatedWine;
-              setAllProcessedWines(newProcessedWines);
+            // Update the wine in the allProcessedWines array if setAllProcessedWines was provided
+            if (setAllProcessedWines) {
+              const wineIndex = allProcessedWines.findIndex((w: WineData) => w.rowIndex === wine.rowIndex);
+              if (wineIndex !== -1) {
+                const newProcessedWines = [...allProcessedWines];
+                newProcessedWines[wineIndex] = updatedWine;
+                setAllProcessedWines(newProcessedWines);
+              }
             }
+            
+            const start = wine.aiDrinkingWindowRecommendation.start || 'not set';
+            const end = wine.aiDrinkingWindowRecommendation.end || 'not set';
             
             toast({
               title: "AI recommendation applied",
-              description: `Drinking window set to ${formatDate(wine.aiDrinkingWindowRecommendation.start)} - ${formatDate(wine.aiDrinkingWindowRecommendation.end)}`,
+              description: `Drinking window set to ${formatDate(start)} - ${formatDate(end)}`,
             });
             
             setAiRecommendationDialogOpen(false);

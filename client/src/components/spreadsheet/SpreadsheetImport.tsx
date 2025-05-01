@@ -798,6 +798,8 @@ const SpreadsheetImport: React.FC = () => {
                           onApprove={handleApproveWine}
                           onReject={handleRejectWine}
                           onEdit={() => handleEditWine(wine)}
+                          allProcessedWines={allProcessedWines}
+                          setAllProcessedWines={setAllProcessedWines}
                         />
                       ))}
                     </div>
