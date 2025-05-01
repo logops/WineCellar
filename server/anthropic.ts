@@ -120,6 +120,7 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
  */
 export async function analyzeWineLabel(imageBase64: string) {
   try {
+    console.log('Performing comprehensive wine label analysis...');
     const response = await anthropic.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 1024,
@@ -147,10 +148,32 @@ export async function analyzeWineLabel(imageBase64: string) {
                   "endYear": number,
                   "notes": string,
                   "isPastPrime": boolean
+                },
+                "tasting": {
+                  "characteristics": string or null,  // Expected flavor profile and characteristics
+                  "ageability": string or null,      // How long it can age
+                  "maturity": string or null        // Current status in its lifecycle
+                },
+                "foodPairings": string or null,      // Recommended food pairings
+                "servingSuggestions": string or null, // Serving temperature, decanting time, etc.
+                "productionDetails": {
+                  "winemaking": string or null,      // Oak aging, fermentation details, etc.
+                  "terroir": string or null,         // Soil, microclimate, etc.
+                  "classification": string or null    // Any official classification
+                },
+                "rating": {
+                  "score": number or null,           // Estimated score out of 100
+                  "confidenceLevel": string         // high/medium/low confidence in score
                 }
               }
               
-              For the recommendedDrinkingWindow, use your expertise on wine aging potential based on the producer, vintage, region, and grape varieties. Calculate when the wine will be at its best drinking period. For example, many Bordeaux reds need 10-20 years to mature while Beaujolais are often best consumed young. If the wine is already past its prime drinking window, set isPastPrime to true.`
+              For the recommendedDrinkingWindow, use your expertise on wine aging potential based on the producer, vintage, region, and grape varieties. Calculate when the wine will be at its best drinking period. For example, many Bordeaux reds need 10-20 years to mature while Beaujolais are often best consumed young. If the wine is already past its prime drinking window, set isPastPrime to true.
+              
+              For grape varieties that aren't explicitly stated on the label, use your knowledge to make an educated guess based on the region, producer style, and any visual cues from the label. For example, if it's a red wine from Barolo, it's likely Nebbiolo.
+              
+              Provide comprehensive tasting notes and characteristics based on the typical profile of this type of wine. Include all details that would help a wine enthusiast understand the wine's style and flavor profile.
+              
+              Today's date is ${new Date().toISOString().split('T')[0]}.`
             },
             {
               type: 'image',

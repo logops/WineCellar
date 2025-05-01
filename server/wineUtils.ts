@@ -41,13 +41,51 @@ export function extractGrapeVarieties(wineName: string, existingGrapes?: string 
     'Chenin Blanc',
     'Sémillon',
     'Muscat',
-    'Gamay'
+    'Gamay',
+    'Mourvèdre',
+    'Mouvedre',
+    'Carignan',
+    'Cinsault',
+    'Petite Sirah',
+    'Grenache Blanc',
+    'Marsanne',
+    'Roussanne',
+    'Vermentino',
+    'Albariño',
+    'Verdejo',
+    'Touriga Nacional',
+    'Primitivo',
+    'Grüner Veltliner',
+    'Corvina',
+    'Garganega',
+    'Trebbiano',
+    'Nero d\'Avola',
+    'Aglianico',
+    'Glera',
+    'Carménère'
   ];
   
   // Find all matches
   const foundGrapes = commonGrapes.filter(grape => 
     wineName.toLowerCase().includes(grape.toLowerCase())
   );
+  
+  // If no grape found with simple matching, try more advanced patterns
+  if (foundGrapes.length === 0) {
+    // Check if the last word of the wine name is a grape variety
+    // This catches formats like "Heart of the Hill Vineyard Mouvedre"
+    const nameWords = wineName.split(/\s+/);
+    const lastWord = nameWords[nameWords.length - 1];
+    
+    const matchingGrape = commonGrapes.find(grape => 
+      lastWord.toLowerCase() === grape.toLowerCase() ||
+      grape.toLowerCase().includes(lastWord.toLowerCase())
+    );
+    
+    if (matchingGrape) {
+      foundGrapes.push(matchingGrape);
+    }
+  }
   
   if (foundGrapes.length > 0) {
     return foundGrapes.join(', ');
