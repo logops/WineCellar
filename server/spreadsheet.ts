@@ -516,9 +516,35 @@ export async function processBatch(
           break;
           
         default:
-          // For other string fields, just store as is
+          // For other string fields, ensure they're properly converted to strings
           if (mapping.field in mappedData) {
-            mappedData[mapping.field as keyof InsertWine] = value;
+            // Convert objects or complex values to strings to avoid [object Object]
+            if (typeof value === 'object' && value !== null) {
+              try {
+                // Try to stringify the object in a meaningful way
+                const stringValue = JSON.stringify(value);
+                // Set the value based on field type with type assertion
+                if (mapping.field === 'notes' || mapping.field === 'producer' || mapping.field === 'name' || 
+                    mapping.field === 'region' || mapping.field === 'subregion' || mapping.field === 'grapeVarieties') {
+                  (mappedData as any)[mapping.field] = stringValue;
+                }
+              } catch (e) {
+                // If stringification fails, convert to string directly
+                const stringValue = String(value);
+                // Set the value based on field type with type assertion
+                if (mapping.field === 'notes' || mapping.field === 'producer' || mapping.field === 'name' || 
+                    mapping.field === 'region' || mapping.field === 'subregion' || mapping.field === 'grapeVarieties') {
+                  (mappedData as any)[mapping.field] = stringValue;
+                }
+              }
+            } else {
+              // For non-object values, convert to string and set based on field type
+              const stringValue = String(value);
+              if (mapping.field === 'notes' || mapping.field === 'producer' || mapping.field === 'name' || 
+                  mapping.field === 'region' || mapping.field === 'subregion' || mapping.field === 'grapeVarieties') {
+                (mappedData as any)[mapping.field] = stringValue;
+              }
+            }
           }
       }
     }
@@ -982,7 +1008,7 @@ export async function processBatchFromFile(
             console.log('AI successfully identified column mappings:', aiMappings);
             
             // Convert AI mappings to our FieldMapping format
-            fieldMappings = aiMappings.map(mapping => ({
+            fieldMappings = aiMappings.map((mapping: { field: string, columnHeader: string, confidence: string }) => ({
               field: mapping.field,
               columnHeader: mapping.columnHeader,
               columnIndex: Object.entries(data[0]).find(
