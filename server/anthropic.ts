@@ -1016,6 +1016,27 @@ export async function handleWineRecommendations(req: Request, res: Response) {
       });
     }
 
+    // Store the recommendation in history if user is authenticated
+    if (req.isAuthenticated() && req.user && recommendationResult.data) {
+      try {
+        // Import storage to save recommendation history
+        const { storage } = await import('./storage');
+        
+        // Create history record
+        await storage.createRecommendationHistory({
+          userId: req.user.id,
+          query: query,
+          recommendations: recommendationResult.data.recommendations,
+          additionalSuggestions: recommendationResult.data.additionalSuggestions || null
+        });
+        
+        console.log('Wine recommendation history saved');
+      } catch (historyError) {
+        // Log error but don't fail the request if history storage fails
+        console.error('Failed to save recommendation history:', historyError);
+      }
+    }
+
     // Return the recommendation data
     return res.status(200).json({
       success: true,
