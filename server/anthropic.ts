@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import { Wine } from '@shared/schema';
 
 // Initialize Anthropic client with API key
-const anthropic = new Anthropic({
+export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 

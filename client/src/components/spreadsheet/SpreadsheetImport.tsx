@@ -124,6 +124,8 @@ const SpreadsheetImport: React.FC = () => {
         formData.append('file', file);
         formData.append('batchIndex', index.toString());
         formData.append('batchSize', batchSize.toString());
+        formData.append('useAiColumnMapping', 'true'); // Enable AI-powered column mapping
+        formData.append('useAiDrinkingWindows', 'true'); // Enable AI recommendations for drinking windows
       }
       
       const response = await uploadFile('/api/spreadsheet/process-batch', formData);

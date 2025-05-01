@@ -5,6 +5,8 @@ import { InsertWine, Wine } from '@shared/schema';
 import { db } from './db';
 import { storage } from './storage';
 import { identifySpreadsheetColumns } from './anthropic';
+import Anthropic from '@anthropic-ai/sdk';
+import { anthropic } from './anthropic';
 
 // Use anthropic client from anthropic.ts file
 

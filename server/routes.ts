@@ -66,7 +66,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (acceptedMimeTypes.includes(file.mimetype) || (extension && validExtensions.includes(extension))) {
         cb(null, true);
       } else {
-        cb(new Error('Invalid file type. Only CSV and Excel files are accepted.'), false);
+        // Use multer's error handling - pass null for the first parameter and false for the second
+        // This correctly indicates rejection without causing type errors
+        cb(null, false);
+        
+        // You can also log the error for debugging
+        console.error('Invalid file type rejected. Only CSV and Excel files are accepted.');
       }
     }
   });
