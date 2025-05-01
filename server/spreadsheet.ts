@@ -713,13 +713,13 @@ export async function processBatch(
       }
     }
     
-    // Create a mapping of headers to indices for this row
-    const headerIndices: Record<string, string> = {};
+    // Process state, country, wine name, and producer fields
+    // This section handles special column processing beyond the initial field mappings
     
-    // Get the first row of data (headers)
+    // Create a header mapping table from the first row
+    const headerIndices: Record<string, string> = {};
     if (data.length > 0) {
       const headerRow = data[0];
-      // Create a clean mapping of column headers to their indices
       Object.entries(headerRow).forEach(([index, value]) => {
         if (value && typeof value === 'string' && value.trim() !== '') {
           headerIndices[value.toLowerCase().trim()] = index;
@@ -727,44 +727,49 @@ export async function processBatch(
       });
     }
     
-    // Process state and country fields to enhance region information
-    // If we have state or country but no region, use those as the region
+    // First: Check for country and state/region information
     for (const [index, value] of Object.entries(row)) {
       if (!value) continue;
       
-      // Find the header name for this index
-      const headerName = Object.entries(headerIndices)
-        .find(([header, idx]) => idx === index)?.[0]?.toLowerCase() || '';
+      // Get header name for this column
+      let headerName = '';
+      for (const [header, idx] of Object.entries(headerIndices)) {
+        if (idx === index) {
+          headerName = header.toLowerCase();
+          break;
+        }
+      }
       
-      // Check for state field
+      // Process state field
       if (headerName.includes('state') && !mappedData.region) {
         mappedData.region = String(value).trim();
         console.log(`Using state as region: ${mappedData.region}`);
       }
       
-      // Check for country field
+      // Process country field
       if (headerName.includes('country')) {
         const country = String(value).trim();
+        (mappedData as any).country = country; // Store country separately for reference
+        
+        // Only use country for region if we don't have a more specific region
+        // We'll check for actual region field mapping later
         if (!mappedData.region) {
-          // If no region but we have a country, use that
           mappedData.region = country;
-          console.log(`Using country as region: ${mappedData.region}`);
-        } else if (!mappedData.region.includes(country)) {
-          // If we have both, combine them if they're not already combined
-          mappedData.region = `${country} - ${mappedData.region}`;
-          console.log(`Combined country and region: ${mappedData.region}`);
+          console.log(`Tentatively using country as region: ${mappedData.region}`);
         }
       }
     }
 
-    // First pass: Get the exact field matches from column headers
-    // Extract 'Wine (Name/Varietal(s))' column specifically - this is common in Excel exports
+    // Second: Extract wine name, producer, and region using high confidence mappings first
     for (const mapping of fieldMappings) {
+      if (!mapping) continue;
+      
       const index = mapping.columnIndex;
       const value = row[index];
       
       if (!value) continue;
       
+      // Direct field assignments using high confidence mappings
       if (mapping.field === 'name' && mapping.confidence === 'high') {
         mappedData.name = String(value).trim();
         console.log(`Found wine name in column '${mapping.columnHeader}': ${mappedData.name}`);
@@ -774,17 +779,37 @@ export async function processBatch(
         mappedData.producer = String(value).trim();
         console.log(`Found producer in column '${mapping.columnHeader}': ${mappedData.producer}`);
       }
+      
+      // Process specific region field when available, which should override country
+      if (mapping.field === 'region' && mapping.confidence === 'high' && value) {
+        const specificRegion = String(value).trim();
+        if (specificRegion) {
+          // If we have both country and region, combine them
+          if ((mappedData as any).country && !specificRegion.includes((mappedData as any).country)) {
+            mappedData.region = `${(mappedData as any).country} - ${specificRegion}`;
+            console.log(`Set region to combined country-region: ${mappedData.region}`);
+          } else {
+            mappedData.region = specificRegion;
+            console.log(`Set region to specific region: ${mappedData.region}`);
+          }
+        }
+      }
     }
 
-    // Second pass: If we didn't find values with high confidence, look harder
+    // Third: If fields still missing, look for special column names
+    // Extract wine name from Wine column if still missing
     if (!mappedData.name || mappedData.name === 'Unknown Wine') {
-      // Look for wine name in columns containing 'wine' in the header
       for (const [index, value] of Object.entries(row)) {
         if (!value) continue;
         
-        // Find the header name for this index
-        const headerName = Object.entries(headerIndices)
-          .find(([header, idx]) => idx === index)?.[0]?.toLowerCase() || '';
+        // Find header name
+        let headerName = '';
+        for (const [header, idx] of Object.entries(headerIndices)) {
+          if (idx === index) {
+            headerName = header.toLowerCase();
+            break;
+          }
+        }
         
         if (headerName.includes('wine') && !headerName.includes('type')) {
           mappedData.name = String(value).trim();
@@ -794,15 +819,19 @@ export async function processBatch(
       }
     }
 
-    // Extract 'Winery' column specifically
+    // Extract producer from Winery column if still missing
     if (!mappedData.producer || mappedData.producer === 'Unknown Producer') {
-      // Look for producer in columns containing 'winery' in the header
       for (const [index, value] of Object.entries(row)) {
         if (!value) continue;
         
-        // Find the header name for this index
-        const headerName = Object.entries(headerIndices)
-          .find(([header, idx]) => idx === index)?.[0]?.toLowerCase() || '';
+        // Find header name
+        let headerName = '';
+        for (const [header, idx] of Object.entries(headerIndices)) {
+          if (idx === index) {
+            headerName = header.toLowerCase();
+            break;
+          }
+        }
         
         if (headerName.includes('winery')) {
           mappedData.producer = String(value).trim();
