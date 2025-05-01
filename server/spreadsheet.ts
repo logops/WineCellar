@@ -290,15 +290,17 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
   
   // Define mapping patterns for each field
   const fieldPatterns: Record<string, string[]> = {
-    name: ['name', 'wine name', 'wine', 'title', 'label'],
+    name: ['name', 'wine name', 'wine', 'title', 'label', 'wine (name', 'wine (name/varietal', 'wine (name/varietal(s))'],
     producer: ['producer', 'winery', 'chateau', 'domaine', 'maker', 'vineyard'],
     vintage: ['vintage', 'year', 'vin'],
     type: ['type', 'color', 'wine type', 'style'],
-    region: ['region', 'area', 'country', 'appellation', 'location'],
-    subregion: ['subregion', 'sub-region', 'sub region', 'district'],
-    grapeVarieties: ['grape', 'grapes', 'varieties', 'varietals', 'cepage', 'cépage'],
+    region: ['region', 'area', 'appellation', 'location'],
+    country: ['country', 'nation'],
+    state: ['state', 'province'], 
+    subregion: ['subregion', 'sub-region', 'sub region', 'district', 'sub app', 'sub appellation'],
+    grapeVarieties: ['grape', 'grapes', 'varieties', 'varietals', 'cepage', 'cépage', 'varietal'],
     quantity: ['quantity', 'qty', 'bottles', 'count', 'inventory'],
-    price: ['price', 'cost', 'value'],
+    price: ['price', 'cost', 'value', 'retail price'],
     purchaseDate: ['purchase date', 'bought', 'acquired', 'purchase', 'date purchased'],
     drinkingWindowStart: ['drink from', 'start', 'drinking window start', 'begin drinking'],
     drinkingWindowEnd: ['drink until', 'end', 'drinking window end', 'drink by'],
@@ -711,6 +713,86 @@ export async function processBatch(
       }
     }
     
+    // Create a mapping of headers to indices for this row
+    const headerIndices: Record<string, string> = {};
+    
+    // Get the first row of data (headers)
+    if (data.length > 0) {
+      const headerRow = data[0];
+      // Create a clean mapping of column headers to their indices
+      Object.entries(headerRow).forEach(([index, value]) => {
+        if (value && typeof value === 'string' && value.trim() !== '') {
+          headerIndices[value.toLowerCase().trim()] = index;
+        }
+      });
+    }
+    
+    // Process state and country fields to enhance region information
+    // If we have state or country but no region, use those as the region
+    for (const [index, value] of Object.entries(row)) {
+      if (!value) continue;
+      
+      // Find the header name for this index
+      const headerName = Object.entries(headerIndices)
+        .find(([header, idx]) => idx === index)?.[0]?.toLowerCase() || '';
+      
+      // Check for state field
+      if (headerName.includes('state') && !mappedData.region) {
+        mappedData.region = String(value).trim();
+        console.log(`Using state as region: ${mappedData.region}`);
+      }
+      
+      // Check for country field
+      if (headerName.includes('country')) {
+        const country = String(value).trim();
+        if (!mappedData.region) {
+          // If no region but we have a country, use that
+          mappedData.region = country;
+          console.log(`Using country as region: ${mappedData.region}`);
+        } else if (!mappedData.region.includes(country)) {
+          // If we have both, combine them if they're not already combined
+          mappedData.region = `${country} - ${mappedData.region}`;
+          console.log(`Combined country and region: ${mappedData.region}`);
+        }
+      }
+    }
+
+    // Extract 'Wine (Name/Varietal(s))' column specifically - this is common in Excel exports
+    if (!mappedData.name || mappedData.name === 'Unknown Wine') {
+      // Look for wine name in columns containing 'wine' in the header
+      for (const [index, value] of Object.entries(row)) {
+        if (!value) continue;
+        
+        // Find the header name for this index
+        const headerName = Object.entries(headerIndices)
+          .find(([header, idx]) => idx === index)?.[0]?.toLowerCase() || '';
+        
+        if (headerName.includes('wine') && !headerName.includes('type')) {
+          mappedData.name = String(value).trim();
+          console.log(`Found wine name in column '${headerName}': ${mappedData.name}`);
+          break;
+        }
+      }
+    }
+
+    // Extract 'Winery' column specifically
+    if (!mappedData.producer || mappedData.producer === 'Unknown Producer') {
+      // Look for producer in columns containing 'winery' in the header
+      for (const [index, value] of Object.entries(row)) {
+        if (!value) continue;
+        
+        // Find the header name for this index
+        const headerName = Object.entries(headerIndices)
+          .find(([header, idx]) => idx === index)?.[0]?.toLowerCase() || '';
+        
+        if (headerName.includes('winery')) {
+          mappedData.producer = String(value).trim();
+          console.log(`Found producer in column '${headerName}': ${mappedData.producer}`);
+          break;
+        }
+      }
+    }
+
     // Final check to avoid "Unknown" when we have actual data
     // If we have a vintage but ended up with Unknown Producer/Wine,
     // use the original values from the row when possible
@@ -873,15 +955,25 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
     );
   });
   
-  // Process in batches to avoid overloading the API
-  const batchSize = 10;
-  for (let i = 0; i < winesNeedingRecommendations.length; i += batchSize) {
-    const batch = winesNeedingRecommendations.slice(i, i + batchSize);
+  // Limit to only 5 wines maximum to avoid rate limits
+  const limitedWines = winesNeedingRecommendations.slice(0, 5);
+  console.log(`Processing AI drinking windows for ${limitedWines.length} wines (out of ${winesNeedingRecommendations.length} candidates)`);
+  
+  if (limitedWines.length === 0) {
+    return;
+  }
+  
+  // Process in smaller batches with more delay to avoid rate limits
+  const batchSize = 2;
+  for (let i = 0; i < limitedWines.length; i += batchSize) {
+    const batch = limitedWines.slice(i, i + batchSize);
+    console.log(`Processing batch ${i/batchSize + 1} of ${Math.ceil(limitedWines.length/batchSize)}`);
     
-    // Process each wine in the batch
-    await Promise.all(batch.map(async (wine) => {
+    // Process each wine in the batch sequentially to avoid overwhelming the API
+    for (const wine of batch) {
       try {
         const wineInfo = `${wine.mappedData.vintage || 'NV'} ${wine.mappedData.producer} ${wine.mappedData.name || ''} ${wine.mappedData.grapeVarieties || ''}`.trim();
+        console.log(`Getting AI recommendation for: ${wineInfo}`);
         
         // Use Claude to get drinking window recommendation
         const result = await anthropic.messages.create({
@@ -916,7 +1008,15 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
           // The response format has changed in Claude-3-7-sonnet
           const content = result.content[0];
           if ('text' in content) {
-            const recommendation = JSON.parse(content.text);
+            // Clean up any markdown formatting that might be in the response
+            const contentText = content.text
+              .replace(/```json\s*/g, '') // Remove markdown json code block start
+              .replace(/```\s*$/g, '')    // Remove markdown code block end
+              .trim();
+              
+            console.log('Processing AI response:', contentText);
+            
+            const recommendation = JSON.parse(contentText);
           
             // Add the recommendation to the wine
             wine.aiDrinkingWindowRecommendation = {
@@ -929,18 +1029,31 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
                   : ConfidenceLevel.LOW,
               reasoning: recommendation.reasoning
             };
+            
+            console.log(`Added drinking window recommendation: ${recommendation.start}-${recommendation.end}`);
           }
         } catch (parseError) {
           console.error('Error parsing AI recommendation:', parseError);
+          // Add the issue to the logs for debugging
+          console.error('Content that failed to parse:', result.content[0]);
         }
       } catch (aiError) {
+        // Check if it's a rate limit error
+        if (aiError && typeof aiError === 'object' && 'status' in aiError && aiError.status === 429) {
+          console.error('Rate limit reached. Stopping AI recommendations for now.');
+          return; // Exit the function entirely to stop processing
+        }
         console.error('Error getting AI drinking window recommendation:', aiError);
       }
-    }));
+      
+      // Add a delay between individual requests to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5 second delay between each request
+    }
     
-    // Add a small delay between batches to avoid rate limits
-    if (i + batchSize < winesNeedingRecommendations.length) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+    // Add a larger delay between batches
+    if (i + batchSize < limitedWines.length) {
+      console.log('Pausing between batches to respect rate limits...');
+      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay between batches
     }
   }
 }
