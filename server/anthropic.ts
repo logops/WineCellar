@@ -630,6 +630,79 @@ Your response MUST be a valid JSON object with this exact format:
 }
 
 /**
+ * Use AI to identify spreadsheet column mappings
+ */
+export async function identifySpreadsheetColumns(headers: string[], sampleRows: any[]) {
+  try {
+    // Convert sample rows to a formatted string for better context
+    const sampleRowsFormatted = sampleRows.map(row => {
+      return Object.entries(row)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+    }).join('\n');
+    
+    const prompt = `You are an expert wine database specialist. I need help mapping columns from a wine spreadsheet to our database fields.
+
+The spreadsheet has these headers:
+${headers.join(', ')}
+
+Here are a few sample rows to understand the data format:
+${sampleRowsFormatted}
+
+For each of our database fields below, tell me which column header corresponds to it and how confident you are (high, medium, or low):
+
+- vintage (the year the wine was produced, or "NV" for non-vintage)
+- name (the name of the wine)
+- producer (the winery or producer)
+- type (red, white, rosé, sparkling, etc.)
+- region (wine region or country)
+- subregion (more specific location within region)
+- quantity (number of bottles)
+- purchasePrice (cost of the wine)
+- grapeVarieties (grape varietals used)
+- bottleSize (standard is 750ml)
+- storageLocation (where the wine is stored)
+
+Respond in valid JSON format like this:
+{
+  "mappings": [
+    {"field": "vintage", "columnHeader": "SUGGESTED_HEADER", "confidence": "high/medium/low"},
+    ...
+  ]
+}`;
+
+    // Use Claude to analyze the headers and sample data
+    const message = await anthropic.messages.create({
+      model: "claude-3-7-sonnet-20250219", // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
+      max_tokens: 1024,
+      temperature: 0.2,
+      system: "You are a wine database expert helping to map spreadsheet columns to database fields. Respond only with valid JSON.",
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    // Parse the JSON response
+    try {
+      // Extract JSON from the response (handling potential text wrapping)
+      const jsonMatch = message.content[0].text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('No JSON found in AI response');
+        return null;
+      }
+      
+      const mappingResult = JSON.parse(jsonMatch[0]);
+      return mappingResult.mappings;
+    } catch (jsonError) {
+      console.error('Error parsing AI response as JSON:', jsonError);
+      console.log('Raw AI response:', message.content);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error using AI to identify spreadsheet columns:', error);
+    return null;
+  }
+}
+
+/**
  * Handle wine recommendation requests
  */
 export async function handleWineRecommendations(req: Request, res: Response) {

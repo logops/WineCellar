@@ -25,19 +25,50 @@ import { Buffer } from 'buffer';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer for file uploads
+  // First ensure the temp directory exists
+  if (!fs.existsSync('temp')) {
+    console.log('Creating temp directory for file uploads');
+    fs.mkdirSync('temp', { recursive: true });
+  }
+  
   const fileStorage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, 'temp/'); // Store files in 'temp' directory
     },
     filename: function (req, file, cb) {
+      // Generate a unique filename to avoid collisions
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + '-' + file.originalname);
+      const safeFilename = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+      console.log('Generating filename for upload:', uniqueSuffix + '-' + safeFilename);
+      cb(null, uniqueSuffix + '-' + safeFilename);
     }
   });
 
   const upload = multer({ 
     storage: fileStorage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: function(req, file, cb) {
+      // Accept only CSV and Excel files
+      const acceptedMimeTypes = [
+        'text/csv', 
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+        'application/octet-stream',
+        'text/plain' // Some CSV files are sent as text/plain
+      ];
+      
+      // Check file extension as well
+      const extension = file.originalname.split('.').pop()?.toLowerCase();
+      const validExtensions = ['csv', 'xls', 'xlsx'];
+      
+      console.log('Upload file type:', file.mimetype, 'Extension:', extension);
+      
+      if (acceptedMimeTypes.includes(file.mimetype) || (extension && validExtensions.includes(extension))) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only CSV and Excel files are accepted.'), false);
+      }
+    }
   });
   // Set up authentication
   setupAuth(app);
