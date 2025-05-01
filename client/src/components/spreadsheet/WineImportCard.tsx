@@ -584,8 +584,8 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
             const end = wine.aiDrinkingWindowRecommendation.end || 'not set';
             
             toast({
-              title: "AI recommendations applied",
-              description: `Wine information updated with AI analysis results`,
+              title: "AI Wine Analysis Applied",
+              description: `Wine information has been enhanced with AI analysis results`,
             });
             
             setAiRecommendationDialogOpen(false);
