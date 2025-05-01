@@ -773,9 +773,9 @@ export async function processBatchFromFile(
   fileBuffer: Buffer,
   options: {
     userId: number,
-    startRow: number,
-    batchSize: number,
-    fieldMappings: FieldMapping[],
+    startRow?: number,
+    batchSize?: number,
+    fieldMappings?: FieldMapping[],
     useAiDrinkingWindows: boolean
   }
 ): Promise<{
