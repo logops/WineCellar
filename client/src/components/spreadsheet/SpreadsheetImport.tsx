@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Upload, FileSpreadsheet, ArrowRight, Check, X, Ban, AlertTriangle } from "lucide-react";
+import { Upload, FileSpreadsheet, ArrowRight, Check, X, Ban, AlertTriangle, Loader2 } from "lucide-react";
 import WineImportCard from './WineImportCard';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, uploadFile, queryClient } from '@/lib/queryClient';

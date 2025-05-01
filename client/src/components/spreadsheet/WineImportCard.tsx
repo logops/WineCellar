@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, AlertCircle, Edit } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/ui/dialog-confirm';
+import { useToast } from "@/hooks/use-toast";
 
 interface WineData {
   rowIndex: number;
@@ -52,6 +53,8 @@ interface WineImportCardProps {
   onReject: (wine: WineData) => void;
   onEdit: (wine: WineData) => void;
   editable?: boolean;
+  allProcessedWines?: WineData[];
+  setAllProcessedWines?: React.Dispatch<React.SetStateAction<WineData[]>>;
 }
 
 const WineImportCard: React.FC<WineImportCardProps> = ({
@@ -61,6 +64,7 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
   onEdit,
   editable = true
 }) => {
+  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [aiRecommendationDialogOpen, setAiRecommendationDialogOpen] = useState(false);
 
@@ -80,14 +84,17 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not set';
     try {
-      // If dateString is already in YYYY-MM-DD format, return it
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+      // For drinking windows, we just want to show the year
+      if (/^\d{4}$/.test(dateString)) return dateString;
       
-      // Otherwise try to convert it to a date
+      // If dateString is already in YYYY-MM-DD format, extract just the year
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString.substring(0, 4);
+      
+      // Otherwise try to convert it to a date and extract the year
       const date = new Date(dateString);
-      return date.toISOString().split('T')[0];
+      return date.getFullYear().toString();
     } catch (e) {
-      return 'Invalid date';
+      return 'Not set';
     }
   };
 
@@ -189,7 +196,7 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
               </span>
             </div>
             
-            {wine.aiDrinkingWindowRecommendation && (
+            {wine.aiDrinkingWindowRecommendation ? (
               <div className="grid grid-cols-6 gap-1">
                 <span className="text-muted-foreground col-span-2">AI Suggested:</span>
                 <div className="col-span-4 flex items-center">
@@ -218,6 +225,29 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                   </Button>
                 </div>
               </div>
+            ) : (
+              wine.mappedData.vintage && wine.mappedData.vintage !== 'NV' && (
+                <div className="grid grid-cols-6 gap-1">
+                  <span className="text-muted-foreground col-span-2">AI Analysis:</span>
+                  <div className="col-span-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        // This would be replaced with actual API call in a real implementation
+                        // For now, we'll just show a message
+                        toast({
+                          title: "AI analysis requested",
+                          description: "This would request an AI drinking window analysis for this wine."
+                        });
+                      }}
+                    >
+                      Request AI recommendation
+                    </Button>
+                  </div>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -309,7 +339,7 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
           title="AI Drinking Window Recommendation"
           description={
             <div className="space-y-2">
-              <p>Suggested drinking window: {formatDate(wine.aiDrinkingWindowRecommendation.start)} - {formatDate(wine.aiDrinkingWindowRecommendation.end)}</p>
+              <p className="font-medium">Suggested drinking window: {formatDate(wine.aiDrinkingWindowRecommendation.start)} - {formatDate(wine.aiDrinkingWindowRecommendation.end)}</p>
               <p className="text-sm">{wine.aiDrinkingWindowRecommendation.reasoning}</p>
               <p className="text-sm font-medium mt-4">Would you like to use this AI-recommended drinking window?</p>
             </div>
@@ -317,7 +347,29 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
           confirmText="Use AI Recommendation"
           cancelText="Keep Original"
           onConfirm={() => {
-            onApprove(wine, true);
+            // Apply the recommendation but don't auto-approve the wine
+            const updatedWine = {
+              ...wine,
+              mappedData: {
+                ...wine.mappedData,
+                drinkingWindowStart: wine.aiDrinkingWindowRecommendation.start,
+                drinkingWindowEnd: wine.aiDrinkingWindowRecommendation.end,
+              }
+            };
+            
+            // Update the wine in the allProcessedWines array
+            const wineIndex = allProcessedWines.findIndex(w => w.rowIndex === wine.rowIndex);
+            if (wineIndex !== -1) {
+              const newProcessedWines = [...allProcessedWines];
+              newProcessedWines[wineIndex] = updatedWine;
+              setAllProcessedWines(newProcessedWines);
+            }
+            
+            toast({
+              title: "AI recommendation applied",
+              description: `Drinking window set to ${formatDate(wine.aiDrinkingWindowRecommendation.start)} - ${formatDate(wine.aiDrinkingWindowRecommendation.end)}`,
+            });
+            
             setAiRecommendationDialogOpen(false);
           }}
         />
