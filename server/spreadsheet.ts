@@ -175,7 +175,13 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType, sheetIndex:
 } {
   try {
     console.log(`Parsing spreadsheet file as ${fileType}`);
-    let readOptions: XLSX.ParsingOptions = { type: 'buffer' };
+    let readOptions: XLSX.ParsingOptions = { 
+      type: 'buffer',
+      cellDates: true,
+      cellNF: true,
+      cellText: true,
+      WTF: true        // Show errors/warnings and continue
+    };
     
     // Add specific options for different file types
     if (fileType === 'csv') {
@@ -248,9 +254,44 @@ export function worksheetToJson(worksheet: XLSX.WorkSheet): any[] {
     console.log('Converting worksheet to JSON');
     
     // Check if there's data in the worksheet
-    if (!worksheet || !worksheet['!ref']) {
-      console.error('Worksheet is empty or invalid');
+    if (!worksheet) {
+      console.error('Worksheet is null');
       return [];
+    }
+    
+    // If the worksheet doesn't have a reference range, try to determine it
+    if (!worksheet['!ref']) {
+      console.log('Worksheet missing !ref, attempting to determine range');
+      
+      // Look for any cells in the worksheet
+      const keys = Object.keys(worksheet).filter(key => key[0] !== '!' && /^[A-Z]+[0-9]+$/.test(key));
+      
+      if (keys.length > 0) {
+        // Find the highest row and column
+        let maxCol = 0;
+        let maxRow = 0;
+        
+        keys.forEach(key => {
+          const match = key.match(/^([A-Z]+)([0-9]+)$/);
+          if (match) {
+            const col = XLSX.utils.decode_col(match[1]);
+            const row = parseInt(match[2], 10);
+            maxCol = Math.max(maxCol, col);
+            maxRow = Math.max(maxRow, row);
+          }
+        });
+        
+        // Set the reference range
+        worksheet['!ref'] = XLSX.utils.encode_range(
+          {c: 0, r: 0},
+          {c: maxCol, r: maxRow - 1}
+        );
+        
+        console.log(`Determined worksheet range: ${worksheet['!ref']}`);
+      } else {
+        console.error('Worksheet appears to be empty - no cells found');
+        return [];
+      }
     }
     
     // Log the range of data in the worksheet
