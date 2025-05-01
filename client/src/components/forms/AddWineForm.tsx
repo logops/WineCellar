@@ -82,6 +82,31 @@ interface RecommendedDrinkingWindow {
   isPastPrime: boolean;
 }
 
+interface TastingProfile {
+  characteristics: string | null;
+  ageability: string | null;
+  maturity: string | null;
+}
+
+interface ProductionDetails {
+  winemaking: string | null;
+  terroir: string | null;
+  classification: string | null;
+}
+
+interface WineRating {
+  score: number | null;
+  confidenceLevel: string;
+}
+
+interface ComprehensiveWineData {
+  tasting?: TastingProfile;
+  foodPairings?: string | null;
+  servingSuggestions?: string | null;
+  productionDetails?: ProductionDetails;
+  rating?: WineRating;
+}
+
 export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,6 +121,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [originalPrediction, setOriginalPrediction] = useState<any>(null);
   const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
   const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
+  const [comprehensiveWineData, setComprehensiveWineData] = useState<ComprehensiveWineData | null>(null);
   
   // Get autocomplete suggestions
   const suggestions = useAutocompleteSuggestions();
@@ -1271,6 +1297,64 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               form.setValue("subregion", recognitionResult.subregion || "");
               form.setValue("grapeVarieties", recognitionResult.grapeVarieties || "");
               form.setValue("type", recognitionResult.type?.toLowerCase() || "red");
+              
+              // Store comprehensive wine data if available
+              if (recognitionResult.tasting || recognitionResult.foodPairings || 
+                  recognitionResult.servingSuggestions || recognitionResult.productionDetails || 
+                  recognitionResult.rating) {
+                
+                setComprehensiveWineData({
+                  tasting: recognitionResult.tasting,
+                  foodPairings: recognitionResult.foodPairings,
+                  servingSuggestions: recognitionResult.servingSuggestions,
+                  productionDetails: recognitionResult.productionDetails,
+                  rating: recognitionResult.rating
+                });
+                
+                // Generate notes from comprehensive data
+                let aiNotes = "";
+                
+                if (recognitionResult.tasting?.characteristics) {
+                  aiNotes += `Tasting Notes: ${recognitionResult.tasting.characteristics}\n\n`;
+                }
+                
+                if (recognitionResult.tasting?.ageability) {
+                  aiNotes += `Ageability: ${recognitionResult.tasting.ageability}\n`;
+                }
+                
+                if (recognitionResult.tasting?.maturity) {
+                  aiNotes += `Current Maturity: ${recognitionResult.tasting.maturity}\n\n`;
+                }
+                
+                if (recognitionResult.foodPairings) {
+                  aiNotes += `Food Pairings: ${recognitionResult.foodPairings}\n\n`;
+                }
+                
+                if (recognitionResult.servingSuggestions) {
+                  aiNotes += `Serving Suggestions: ${recognitionResult.servingSuggestions}\n\n`;
+                }
+                
+                if (recognitionResult.productionDetails?.winemaking) {
+                  aiNotes += `Winemaking: ${recognitionResult.productionDetails.winemaking}\n`;
+                }
+                
+                if (recognitionResult.productionDetails?.terroir) {
+                  aiNotes += `Terroir: ${recognitionResult.productionDetails.terroir}\n`;
+                }
+                
+                if (recognitionResult.productionDetails?.classification) {
+                  aiNotes += `Classification: ${recognitionResult.productionDetails.classification}\n\n`;
+                }
+                
+                if (recognitionResult.rating?.score) {
+                  aiNotes += `Estimated Rating: ${recognitionResult.rating.score}/100 (${recognitionResult.rating.confidenceLevel} confidence)\n`;
+                }
+                
+                // Set notes if there's content and the field is empty
+                if (aiNotes.trim() !== "") {
+                  form.setValue("notes", aiNotes, { shouldDirty: true });
+                }
+              }
               
               // Handle recommended drinking window if available
               if (recognitionResult.recommendedDrinkingWindow) {
