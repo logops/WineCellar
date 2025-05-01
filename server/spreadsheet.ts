@@ -26,7 +26,7 @@ interface CellLocation {
 interface FieldMapping {
   field: string;
   columnHeader: string;
-  columnIndex: number;
+  columnIndex: string; // Column index can be a string
   confidence: ConfidenceLevel;
 }
 
@@ -276,11 +276,17 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
     return [];
   }
   
-  // Extract headers from first row
-  const headers = Object.entries(data[0]).map(([key, value]) => ({
-    columnIndex: key,
-    headerText: String(value).toLowerCase()
-  }));
+  // Create an easy to use mapping of column headers and indices
+  const headerRow = data[0];
+  const headerIndices: Record<string, string> = {};
+  
+  // Create a clean mapping of column headers to their indices
+  Object.entries(headerRow).forEach(([index, value]) => {
+    if (value && typeof value === 'string' && value.trim() !== '') {
+      headerIndices[value.toLowerCase().trim()] = index;
+      console.log(`Rule-based found header: '${value}' at index ${index}`);
+    }
+  });
   
   // Define mapping patterns for each field
   const fieldPatterns: Record<string, string[]> = {
@@ -304,52 +310,44 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
   const mappings: FieldMapping[] = [];
   
   for (const [field, patterns] of Object.entries(fieldPatterns)) {
-    // Find best match among headers
-    const matches = headers.map(header => {
-      const headerText = header.headerText.toLowerCase().trim();
-      const bestPatternMatch = patterns.find(pattern => 
-        headerText === pattern || 
-        headerText.includes(pattern) || 
-        headerText.replace(/[^a-z0-9]/g, '') === pattern.replace(/[^a-z0-9]/g, '')
-      );
-      
-      let confidence = ConfidenceLevel.LOW;
-      
-      if (bestPatternMatch) {
-        if (headerText === bestPatternMatch) {
-          confidence = ConfidenceLevel.HIGH;
-        } else if (headerText.includes(bestPatternMatch)) {
-          confidence = ConfidenceLevel.MEDIUM;
-        }
+    // First try exact matches
+    let found = false;
+    
+    for (const pattern of patterns) {
+      if (headerIndices[pattern]) {
+        // We have an exact match
+        mappings.push({
+          field,
+          columnHeader: pattern,
+          columnIndex: headerIndices[pattern],
+          confidence: ConfidenceLevel.HIGH
+        });
+        found = true;
+        console.log(`Exact match found for ${field}: ${pattern}`);
+        break;
       }
-      
-      return {
-        columnIndex: header.columnIndex,
-        headerText,
-        pattern: bestPatternMatch,
-        confidence
-      };
-    }).filter(match => match.pattern);
+    }
     
-    // Sort by confidence
-    matches.sort((a, b) => {
-      const confidenceOrder = {
-        [ConfidenceLevel.HIGH]: 3,
-        [ConfidenceLevel.MEDIUM]: 2,
-        [ConfidenceLevel.LOW]: 1
-      };
+    // If no exact match, try partial matches
+    if (!found) {
+      const headerEntries = Object.entries(headerIndices);
       
-      return confidenceOrder[b.confidence] - confidenceOrder[a.confidence];
-    });
-    
-    if (matches.length > 0) {
-      const bestMatch = matches[0];
-      mappings.push({
-        field,
-        columnHeader: bestMatch.headerText,
-        columnIndex: Number(bestMatch.columnIndex),
-        confidence: bestMatch.confidence
-      });
+      for (const pattern of patterns) {
+        for (const [header, index] of headerEntries) {
+          if (header.includes(pattern)) {
+            mappings.push({
+              field,
+              columnHeader: header,
+              columnIndex: index,
+              confidence: ConfidenceLevel.MEDIUM
+            });
+            found = true;
+            console.log(`Partial match found for ${field}: ${header} includes ${pattern}`);
+            break;
+          }
+        }
+        if (found) break;
+      }
     }
   }
   
@@ -405,9 +403,13 @@ export async function processBatch(
     
     // Populate mappedData based on fieldMappings
     for (const mapping of fieldMappings) {
-      const value = row[mapping.columnIndex];
+      // Get the value at this column index - could be a string or number index
+      const columnIndex = mapping.columnIndex; 
+      const value = row[columnIndex];
       
-      if (!value) continue;
+      console.log(`Getting value for ${mapping.field} at index ${columnIndex}: ${value}`);
+      
+      if (value === undefined || value === null || value === '') continue;
       
       // Special handling for different field types
       switch (mapping.field) {
@@ -1026,15 +1028,50 @@ export async function processBatchFromFile(
             // Convert AI mappings to our FieldMapping format
             fieldMappings = aiMappings.map((mapping: { field: string, columnHeader: string, confidence: string }) => {
               // Find the matching column index by exact header name match
-              const columnKey = headerIndices[mapping.columnHeader.toLowerCase().trim()] || '0';
-              console.log(`Mapping ${mapping.field} to column '${mapping.columnHeader}', found at index: ${columnKey}`);
+              const lowerCaseHeader = mapping.columnHeader.toLowerCase().trim();
+              const columnKey = headerIndices[lowerCaseHeader];
               
-              return {
-                field: mapping.field,
-                columnHeader: mapping.columnHeader,
-                columnIndex: columnKey,
-                confidence: mapping.confidence as ConfidenceLevel
-              };
+              if (columnKey) {
+                console.log(`AI mapped ${mapping.field} to column '${mapping.columnHeader}', found at index: ${columnKey}`);
+                
+                return {
+                  field: mapping.field,
+                  columnHeader: mapping.columnHeader,
+                  columnIndex: columnKey,
+                  confidence: mapping.confidence as ConfidenceLevel
+                };
+              } else {
+                // If no direct match found, try to find a partial match
+                let bestMatch = '';
+                let matchKey = '';
+                
+                for (const [header, index] of Object.entries(headerIndices)) {
+                  if (header.includes(lowerCaseHeader) || lowerCaseHeader.includes(header)) {
+                    if (header.length > bestMatch.length) {
+                      bestMatch = header;
+                      matchKey = index;
+                    }
+                  }
+                }
+                
+                if (matchKey) {
+                  console.log(`AI mapped ${mapping.field} to column '${mapping.columnHeader}', found partial match '${bestMatch}' at index: ${matchKey}`);
+                  return {
+                    field: mapping.field,
+                    columnHeader: mapping.columnHeader,
+                    columnIndex: matchKey,
+                    confidence: ConfidenceLevel.MEDIUM // Downgrade confidence for partial matches
+                  };
+                } else {
+                  console.log(`AI mapped ${mapping.field} to column '${mapping.columnHeader}', but no matching header found`);
+                  return {
+                    field: mapping.field,
+                    columnHeader: mapping.columnHeader,
+                    columnIndex: '0', // Default to first column when no match
+                    confidence: ConfidenceLevel.LOW
+                  };
+                }
+              }
             });
           } else {
             console.log('AI failed to identify columns, falling back to rule-based approach');

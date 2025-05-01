@@ -58,7 +58,7 @@ interface ProcessedWine {
 interface FieldMapping {
   field: string;
   columnHeader: string;
-  columnIndex: number;
+  columnIndex: string; // Column index can be a string
   confidence: 'high' | 'medium' | 'low';
 }
 
