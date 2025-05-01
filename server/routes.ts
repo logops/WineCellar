@@ -13,7 +13,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
-import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation } from './anthropic';
+import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation, handleWineInformationLookup } from './anthropic';
 import { 
   processSpreadsheetFile, 
   processBatchFromFile, 
@@ -637,6 +637,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error generating drinking window recommendation:', error);
       res.status(500).json({
         success: false,
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
+    }
+  });
+
+  // Wine information lookup API
+  app.post('/api/wine-info-lookup', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      // Handle the wine information lookup request
+      return await handleWineInformationLookup(req, res);
+    } catch (error) {
+      console.error('Error in wine information lookup route:', error);
+      return res.status(500).json({ 
+        success: false, 
         message: error instanceof Error ? error.message : 'Unknown error occurred'
       });
     }

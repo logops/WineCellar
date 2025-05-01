@@ -115,3 +115,60 @@ export function processWineTitle<T extends { name?: string | null; grapeVarietie
     vineyard: extractedVineyard || wine.vineyard || null
   };
 }
+
+/**
+ * Interface for the response from the AI lookup wine information API
+ */
+export interface WineInfoLookupResponse {
+  success: boolean;
+  data?: {
+    grapeVarieties: string;
+    vineyard: string;
+    confidenceLevel: 'high' | 'medium' | 'low';
+    reasoning: string;
+  };
+  message?: string;
+}
+
+/**
+ * Look up wine information using the AI
+ * @param wineName The wine name to look up
+ * @param producer The producer name (if available)
+ * @param vintage The wine vintage (if available)
+ * @returns Promise with grape varieties and vineyard information
+ */
+export async function lookupWineInformation(
+  wineName: string,
+  producer?: string,
+  vintage?: number | string
+): Promise<WineInfoLookupResponse> {
+  try {
+    const response = await fetch('/api/wine-info-lookup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        wineName,
+        producer,
+        vintage,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        success: false,
+        message: errorData.message || 'Failed to look up wine information',
+      };
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error looking up wine information:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred while looking up wine information',
+    };
+  }
+}
