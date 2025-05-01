@@ -94,6 +94,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [formDirty, setFormDirty] = useState(false);
   const [recommendedDrinkingWindow, setRecommendedDrinkingWindow] = useState<RecommendedDrinkingWindow | null>(null);
   const [originalPrediction, setOriginalPrediction] = useState<any>(null);
+  const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
+  const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
   
   // Get autocomplete suggestions
   const suggestions = useAutocompleteSuggestions();
@@ -295,6 +297,80 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+  
+  // Function to look up wine information using AI
+  async function handleWineInfoLookup() {
+    const currentValues = form.getValues();
+    const wineName = currentValues.name;
+    const producer = currentValues.producer;
+    const vintage = currentValues.vintage;
+    
+    // Check if we have enough information to perform a lookup
+    if (!wineName && !producer) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter at least the wine name or producer to look up information.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check if grape varieties or vineyard are already provided
+    const hasGrapeVarieties = !!currentValues.grapeVarieties;
+    const hasVineyard = !!currentValues.vineyard;
+    
+    if (hasGrapeVarieties && hasVineyard) {
+      toast({
+        title: "Information Already Provided",
+        description: "Grape varieties and vineyard information are already filled in.",
+      });
+      return;
+    }
+    
+    setIsLookingUpWineInfo(true);
+    
+    try {
+      const result = await lookupWineInformation(wineName, producer, vintage);
+      
+      if (result.success && result.data) {
+        // Store the lookup result
+        setWineInfoResult({
+          grapeVarieties: result.data.grapeVarieties,
+          vineyard: result.data.vineyard,
+          confidence: result.data.confidenceLevel
+        });
+        
+        // Update form fields if they're empty
+        if (!hasGrapeVarieties && result.data.grapeVarieties) {
+          form.setValue('grapeVarieties', result.data.grapeVarieties, { shouldDirty: true });
+        }
+        
+        if (!hasVineyard && result.data.vineyard) {
+          form.setValue('vineyard', result.data.vineyard, { shouldDirty: true });
+        }
+        
+        toast({
+          title: "Wine Information Found",
+          description: `Found information about ${wineName} with ${result.data.confidenceLevel} confidence.`,
+        });
+      } else {
+        toast({
+          title: "Information Not Found",
+          description: result.message || "Could not find information about this wine.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error looking up wine information:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem looking up the wine information.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLookingUpWineInfo(false);
     }
   }
   
@@ -551,7 +627,19 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                   name="grapeVarieties"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Grape Varieties</FormLabel>
+                      <div className="flex justify-between items-center">
+                        <FormLabel>Grape Varieties</FormLabel>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleWineInfoLookup}
+                          disabled={isLookingUpWineInfo}
+                          className="h-7 px-2 text-xs"
+                        >
+                          {isLookingUpWineInfo ? "Looking up..." : "AI Lookup"}
+                        </Button>
+                      </div>
                       <FormControl>
                         <Autocomplete 
                           placeholder="e.g. Cabernet Sauvignon, Merlot" 
@@ -560,6 +648,11 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           onValueChange={field.onChange}
                         />
                       </FormControl>
+                      {wineInfoResult?.grapeVarieties && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          AI found: {wineInfoResult.grapeVarieties} ({wineInfoResult.confidence} confidence)
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
