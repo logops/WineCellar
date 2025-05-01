@@ -264,20 +264,41 @@ const SpreadsheetImport: React.FC = () => {
     setLoading(true);
     setUploadProgress(0);
     
-    // Start the upload simulation
-    const interval = setInterval(() => {
+    // Start the initial upload progress - faster at first to indicate file transmission
+    const uploadInterval = setInterval(() => {
       setUploadProgress(prev => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 95;
+        if (prev >= 60) {
+          clearInterval(uploadInterval);
+          return 60;
         }
-        return prev + 5;
+        return prev + 10; // Move faster initially
       });
     }, 100);
     
-    // Skip the initial upload step and go directly to batch processing
-    // since that appears to be working correctly
-    setTotalBatches(1); // Just process one batch for now
+    // Set a timeout to indicate processing is happening
+    setTimeout(() => {
+      toast({
+        title: "Processing data",
+        description: "Analyzing columns and wine data. This may take a minute..."
+      });
+      
+      // Start a slower processing indicator
+      const processingInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(processingInterval);
+            return 90;
+          }
+          return prev + 1; // Move slower during processing
+        });
+      }, 700);
+      
+      // Clean up processing interval when component unmounts
+      return () => clearInterval(processingInterval);
+    }, 2000);
+    
+    // Process the file in a single batch
+    setTotalBatches(1);
     processBatch(0);
   };
 
