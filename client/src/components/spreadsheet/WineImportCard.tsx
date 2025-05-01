@@ -46,6 +46,12 @@ interface WineData {
     end?: string;
     confidence: 'high' | 'medium' | 'low';
     reasoning: string;
+    grapeVarieties?: string | null;
+    region?: string | null;
+    subregion?: string | null;
+    notes?: string | null;
+    cellaring?: string | null;
+    pairings?: string | null;
   };
 }
 
@@ -274,8 +280,8 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                           const tempWineId = wine.rowIndex;
                           
                           toast({
-                            title: "Requesting AI recommendation",
-                            description: "Analyzing wine characteristics..."
+                            title: "AI Wine Analysis in Progress",
+                            description: "Analyzing wine details, determining optimal drinking window, and identifying characteristics..."
                           });
                           
                           // Call the new AI drinking window recommendation endpoint
@@ -286,17 +292,55 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                           
                           const data = await response.json();
                           
-                          if (data.success) {
-                            // Create an updated wine object with the recommendation
+                          if (data.success && data.data) {
+                            // Extract drinking window and additional information from comprehensive analysis
+                            const { start, end, confidence, reasoning, grapeVarieties, region, subregion, notes, cellaring, pairings } = data.data;
+                            
+                            // Create updated wine object with the recommendation and additional info
                             const updatedWine: WineData = {
                               ...wine,
                               aiDrinkingWindowRecommendation: {
-                                start: data.drinkingWindow.startYear.toString(),
-                                end: data.drinkingWindow.endYear.toString(),
-                                confidence: data.confidenceLevel || 'medium',
-                                reasoning: data.reasoning || 'Based on the wine characteristics.'
+                                start: start?.toString() || '',
+                                end: end?.toString() || '',
+                                confidence: confidence || 'medium',
+                                reasoning: reasoning || 'Based on wine characteristics.',
+                                grapeVarieties,
+                                region,
+                                subregion,
+                                notes,
+                                cellaring,
+                                pairings
                               }
                             };
+                            
+                            // Also update the mapped data with any new information
+                            // Only update fields that are currently empty
+                            const updatedMappedData = { ...updatedWine.mappedData };
+                            
+                            if (grapeVarieties && !updatedMappedData.grapeVarieties) {
+                              updatedMappedData.grapeVarieties = grapeVarieties;
+                            }
+                            
+                            if (region && !updatedMappedData.region) {
+                              updatedMappedData.region = region;
+                            }
+                            
+                            if (subregion && !updatedMappedData.subregion) {
+                              updatedMappedData.subregion = subregion;
+                            }
+                            
+                            // Include useful notes information if notes are empty
+                            if ((notes || cellaring || pairings) && !updatedMappedData.notes) {
+                              let combinedNotes = '';
+                              if (notes) combinedNotes += notes + '\n\n';
+                              if (cellaring) combinedNotes += 'Cellaring: ' + cellaring + '\n\n';
+                              if (pairings) combinedNotes += 'Pairings: ' + pairings;
+                              
+                              updatedMappedData.notes = combinedNotes.trim();
+                            }
+                            
+                            // Update the final wine object with the new mapped data
+                            updatedWine.mappedData = updatedMappedData;
                             
                             // Update the wine in the parent component if setter is provided
                             if (setAllProcessedWines) {
@@ -312,22 +356,22 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                             setAiRecommendationDialogOpen(true);
                           } else {
                             toast({
-                              title: "AI recommendation failed",
-                              description: data.message || "Could not generate a recommendation for this wine.",
+                              title: "AI Wine Analysis Failed",
+                              description: data.message || "Could not analyze this wine. Please try again or enter information manually.",
                               variant: "destructive"
                             });
                           }
                         } catch (error) {
-                          console.error('Error requesting AI recommendation:', error);
+                          console.error('Error requesting AI wine analysis:', error);
                           toast({
-                            title: "AI recommendation failed",
-                            description: error instanceof Error ? error.message : "An unknown error occurred",
+                            title: "AI Wine Analysis Failed",
+                            description: error instanceof Error ? error.message : "An unknown error occurred during wine analysis",
                             variant: "destructive"
                           });
                         }
                       }}
                     >
-                      Request AI recommendation
+                      Analyze with AI
                     </Button>
                   </div>
                 </div>
@@ -420,28 +464,110 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
         <ConfirmDialog
           open={aiRecommendationDialogOpen}
           onOpenChange={setAiRecommendationDialogOpen}
-          title="AI Drinking Window Recommendation"
+          title="AI Wine Analysis"
           description={
-            <div className="space-y-2">
-              <p className="font-medium">Suggested drinking window: {formatDate(wine.aiDrinkingWindowRecommendation.start)} - {formatDate(wine.aiDrinkingWindowRecommendation.end)}</p>
-              <p className="text-sm">{wine.aiDrinkingWindowRecommendation.reasoning}</p>
-              <p className="text-sm font-medium mt-4">Would you like to use this AI-recommended drinking window?</p>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-semibold mb-2">Drinking Window</h3>
+                <p className="font-medium">Suggested drinking window: {formatDate(wine.aiDrinkingWindowRecommendation.start)} - {formatDate(wine.aiDrinkingWindowRecommendation.end)}</p>
+                <p className="text-sm mt-1">{wine.aiDrinkingWindowRecommendation.reasoning}</p>
+              </div>
+              
+              {(wine.aiDrinkingWindowRecommendation.grapeVarieties || wine.aiDrinkingWindowRecommendation.region || wine.aiDrinkingWindowRecommendation.subregion) && (
+                <div>
+                  <h3 className="text-base font-semibold mb-2">Wine Information</h3>
+                  {wine.aiDrinkingWindowRecommendation.grapeVarieties && (
+                    <div className="mb-1">
+                      <span className="font-medium">Grape Varieties:</span> {wine.aiDrinkingWindowRecommendation.grapeVarieties}
+                    </div>
+                  )}
+                  {wine.aiDrinkingWindowRecommendation.region && (
+                    <div className="mb-1">
+                      <span className="font-medium">Region:</span> {wine.aiDrinkingWindowRecommendation.region}
+                    </div>
+                  )}
+                  {wine.aiDrinkingWindowRecommendation.subregion && (
+                    <div className="mb-1">
+                      <span className="font-medium">Subregion:</span> {wine.aiDrinkingWindowRecommendation.subregion}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {(wine.aiDrinkingWindowRecommendation.notes || wine.aiDrinkingWindowRecommendation.cellaring || wine.aiDrinkingWindowRecommendation.pairings) && (
+                <div>
+                  <h3 className="text-base font-semibold mb-2">Tasting & Pairing</h3>
+                  {wine.aiDrinkingWindowRecommendation.notes && (
+                    <div className="mb-1">
+                      <span className="font-medium">Characteristics:</span> {wine.aiDrinkingWindowRecommendation.notes}
+                    </div>
+                  )}
+                  {wine.aiDrinkingWindowRecommendation.cellaring && (
+                    <div className="mb-1">
+                      <span className="font-medium">Cellaring:</span> {wine.aiDrinkingWindowRecommendation.cellaring}
+                    </div>
+                  )}
+                  {wine.aiDrinkingWindowRecommendation.pairings && (
+                    <div className="mb-1">
+                      <span className="font-medium">Pairings:</span> {wine.aiDrinkingWindowRecommendation.pairings}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <p className="text-sm font-medium mt-2">Would you like to apply these AI recommendations to your wine?</p>
             </div>
           }
-          confirmText="Use AI Recommendation"
+          confirmText="Apply All Recommendations"
           cancelText="Keep Original"
           onConfirm={() => {
             // This check was already done in the enclosing condition, but we add it here for type safety
             if (!wine.aiDrinkingWindowRecommendation) return;
             
-            // Apply the recommendation but don't auto-approve the wine
+            // Apply all the AI recommendations including drinking window and additional info
+            const updatedMappedData = { ...wine.mappedData };
+            
+            // Apply drinking window
+            updatedMappedData.drinkingWindowStart = wine.aiDrinkingWindowRecommendation.start || '';
+            updatedMappedData.drinkingWindowEnd = wine.aiDrinkingWindowRecommendation.end || '';
+            
+            // Apply other fields if they were provided and current values are empty
+            if (wine.aiDrinkingWindowRecommendation.grapeVarieties && !updatedMappedData.grapeVarieties) {
+              updatedMappedData.grapeVarieties = wine.aiDrinkingWindowRecommendation.grapeVarieties;
+            }
+            
+            if (wine.aiDrinkingWindowRecommendation.region && !updatedMappedData.region) {
+              updatedMappedData.region = wine.aiDrinkingWindowRecommendation.region;
+            }
+            
+            if (wine.aiDrinkingWindowRecommendation.subregion && !updatedMappedData.subregion) {
+              updatedMappedData.subregion = wine.aiDrinkingWindowRecommendation.subregion;
+            }
+            
+            // Combine notes information if it exists and current notes are empty
+            if (!updatedMappedData.notes) {
+              let combinedNotes = '';
+              
+              if (wine.aiDrinkingWindowRecommendation.notes) {
+                combinedNotes += wine.aiDrinkingWindowRecommendation.notes + '\n\n';
+              }
+              
+              if (wine.aiDrinkingWindowRecommendation.cellaring) {
+                combinedNotes += 'Cellaring: ' + wine.aiDrinkingWindowRecommendation.cellaring + '\n\n';
+              }
+              
+              if (wine.aiDrinkingWindowRecommendation.pairings) {
+                combinedNotes += 'Pairings: ' + wine.aiDrinkingWindowRecommendation.pairings;
+              }
+              
+              if (combinedNotes) {
+                updatedMappedData.notes = combinedNotes.trim();
+              }
+            }
+            
             const updatedWine: WineData = {
               ...wine,
-              mappedData: {
-                ...wine.mappedData,
-                drinkingWindowStart: wine.aiDrinkingWindowRecommendation.start || '',
-                drinkingWindowEnd: wine.aiDrinkingWindowRecommendation.end || '',
-              }
+              mappedData: updatedMappedData
             };
             
             // Update the wine in the allProcessedWines array if setAllProcessedWines was provided
@@ -458,8 +584,8 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
             const end = wine.aiDrinkingWindowRecommendation.end || 'not set';
             
             toast({
-              title: "AI recommendation applied",
-              description: `Drinking window set to ${formatDate(start)} - ${formatDate(end)}`,
+              title: "AI recommendations applied",
+              description: `Wine information updated with AI analysis results`,
             });
             
             setAiRecommendationDialogOpen(false);
