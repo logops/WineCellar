@@ -38,6 +38,13 @@ interface FieldMapping {
   confidence: ConfidenceLevel;
 }
 
+export interface SheetInfo {
+  name: string;
+  index: number;
+  rowCount: number;
+  sampleData: any[];
+}
+
 export interface ProcessedWine {
   rowIndex: number;
   originalData: Record<string, any>;
@@ -1748,6 +1755,136 @@ export async function processBatchFromFile(
     return {
       success: false,
       message: `Error processing batch: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Get information about all sheets in a workbook, including sample data
+ */
+export async function getSheetInfo(fileBuffer: Buffer): Promise<{
+  success: boolean;
+  message?: string;
+  fileType?: string;
+  sheets?: SheetInfo[];
+}> {
+  try {
+    // Detect file type
+    const fileType = await detectFileType(fileBuffer);
+    if (fileType === 'unknown') {
+      return {
+        success: false,
+        message: 'Unsupported file format. Please upload an Excel or CSV file.'
+      };
+    }
+
+    // Read the workbook
+    let readOptions: XLSX.ParsingOptions = { 
+      type: 'buffer',
+      cellDates: true,
+      cellNF: true,
+      cellText: true,
+      WTF: true        // Show errors/warnings and continue
+    };
+    
+    if (fileType === 'csv') {
+      readOptions = { 
+        ...readOptions,
+        raw: false,
+        cellText: true,
+        cellDates: true,
+        dateNF: 'yyyy-mm-dd'
+      };
+    }
+    
+    // Read the workbook
+    const workbook = XLSX.read(fileBuffer, readOptions);
+    
+    // Check if workbook was parsed successfully
+    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+      return {
+        success: false,
+        message: 'Failed to parse the spreadsheet file. The file might be empty or corrupted.'
+      };
+    }
+
+    // Get information about each sheet
+    const sheetInfoList: SheetInfo[] = [];
+    
+    for (let i = 0; i < workbook.SheetNames.length; i++) {
+      const sheetName = workbook.SheetNames[i];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Count cells to estimate sheet size
+      const cellKeys = Object.keys(worksheet).filter(key => key[0] !== '!' && /^[A-Z]+[0-9]+$/.test(key));
+      const rowCount = cellKeys.length;
+      
+      // Get sample data (first 5 rows)
+      let sampleData: any[] = [];
+      
+      // Create a temporary ref if needed for extracting sample data
+      const originalRef = worksheet['!ref'];
+      if (!originalRef && cellKeys.length > 0) {
+        // Find highest row and column for sample data
+        let maxCol = 0;
+        let maxRow = 0;
+        
+        cellKeys.forEach(key => {
+          const match = key.match(/^([A-Z]+)([0-9]+)$/);
+          if (match) {
+            const col = XLSX.utils.decode_col(match[1]);
+            const row = parseInt(match[2], 10);
+            maxCol = Math.max(maxCol, col);
+            maxRow = Math.max(maxRow, row);
+          }
+        });
+        
+        // Set temporary range for sample extraction
+        worksheet['!ref'] = XLSX.utils.encode_range(
+          {c: 0, r: 0},
+          {c: maxCol, r: Math.min(maxRow, 10)} // Limit to first 10 rows for sample
+        );
+      }
+      
+      try {
+        // Extract sample data (limited to first 5 rows)
+        const allData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          raw: false,
+          range: 0 // Start from first row
+        });
+        
+        // Take up to 5 rows for the sample
+        sampleData = allData.slice(0, 5);
+      } catch (e) {
+        console.error(`Error extracting sample data from sheet ${sheetName}:`, e);
+        // If extraction fails, provide empty sample
+        sampleData = [];
+      }
+      
+      // Restore original ref if we set a temporary one
+      if (!originalRef) {
+        delete worksheet['!ref'];
+      }
+      
+      sheetInfoList.push({
+        name: sheetName,
+        index: i,
+        rowCount,
+        sampleData
+      });
+    }
+    
+    return {
+      success: true,
+      fileType,
+      sheets: sheetInfoList
+    };
+  } catch (error) {
+    console.error('Error getting sheet info:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An unknown error occurred while analyzing the spreadsheet.'
     };
   }
 }

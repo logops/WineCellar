@@ -730,7 +730,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Spreadsheet import endpoints
-  // Step 1: Initial upload and analysis
+  // Step 1: Get sheet information for selection
+  app.post('/api/spreadsheet/sheets', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No file uploaded' 
+        });
+      }
+
+      // Read the file from disk
+      console.log('Processing uploaded file for sheet info:', req.file.originalname, 'size:', req.file.size, 'bytes', 'path:', req.file.path);
+      
+      // Read file buffer
+      let fileBuffer;
+      try {
+        fileBuffer = fs.readFileSync(req.file.path);
+        console.log('Successfully read file buffer, size:', fileBuffer.length, 'bytes');
+      } catch (readError) {
+        console.error('Error reading file buffer:', readError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error reading uploaded file'
+        });
+      }
+
+      // Get sheet information
+      const sheetInfo = await getSheetInfo(fileBuffer);
+      
+      // Store the uploaded file temporarily with a unique ID
+      const fileId = Date.now().toString() + '-' + Math.floor(Math.random() * 1000000).toString();
+      const tempPath = path.join('temp', fileId + path.extname(req.file.originalname));
+      
+      // Copy the file to the temporary location
+      fs.copyFileSync(req.file.path, tempPath);
+      
+      // Add file path to the response
+      return res.status(sheetInfo.success ? 200 : 400).json({
+        ...sheetInfo,
+        fileId,
+        fileName: req.file.originalname
+      });
+    } catch (error) {
+      console.error('Error processing spreadsheet for sheet info:', error);
+      res.status(500).json({ 
+        success: false,
+        message: error instanceof Error ? error.message : 'An unknown error occurred'
+      });
+    }
+  });
+
+  // Step 2: Initial upload and analysis
   app.post('/api/spreadsheet/upload', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
     try {
       if (!req.user) {
