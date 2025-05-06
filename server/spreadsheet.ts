@@ -208,21 +208,62 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType, sheetIndex:
     
     // Find the sheet to use - prefer the following sheet names for wine collections if present
     const preferredSheetNames = [
+      'master_new', 'master new', 'updated', // Most likely to contain updated data
       'wines', 'wine', 'collection', 'cellar', 'inventory', 'master', 'main',
       'wine list', 'wine collection', 'master inventory'
     ];
     
-    // Look for sheets with wine-related names if sheetIndex is default 0
-    let selectedSheetIndex = sheetIndex;
-    if (sheetIndex === 0) {
+    // Look for non-empty sheets - we'll check each sheet until we find one with data
+    console.log('Checking sheets for data');
+    let worksheetWithData = null;
+    let worksheetWithDataIndex = -1;
+    
+    // First try our preferred names
+    for (let i = 0; i < sheetNames.length; i++) {
+      const lowerName = sheetNames[i].toLowerCase();
+      if (preferredSheetNames.some(name => lowerName.includes(name))) {
+        console.log(`Checking preferred sheet: ${sheetNames[i]}`);
+        const sheet = workbook.Sheets[sheetNames[i]];
+        
+        // Check if sheet has cells
+        const sheetKeys = Object.keys(sheet).filter(key => key[0] !== '!' && /^[A-Z]+[0-9]+$/.test(key));
+        if (sheetKeys.length > 0) {
+          console.log(`Found data in preferred sheet: ${sheetNames[i]} with ${sheetKeys.length} cells`);
+          worksheetWithData = sheet;
+          worksheetWithDataIndex = i;
+          break;
+        } else {
+          console.log(`No data found in sheet: ${sheetNames[i]}`);
+        }
+      }
+    }
+    
+    // If no preferred sheet has data, check all sheets
+    if (!worksheetWithData) {
       for (let i = 0; i < sheetNames.length; i++) {
-        const lowerName = sheetNames[i].toLowerCase();
-        if (preferredSheetNames.some(name => lowerName.includes(name))) {
-          console.log(`Found preferred sheet: ${sheetNames[i]}`);
-          selectedSheetIndex = i;
+        console.log(`Checking sheet: ${sheetNames[i]}`);
+        const sheet = workbook.Sheets[sheetNames[i]];
+        
+        // Check if sheet has cells
+        const sheetKeys = Object.keys(sheet).filter(key => key[0] !== '!' && /^[A-Z]+[0-9]+$/.test(key));
+        if (sheetKeys.length > 0) {
+          console.log(`Found data in sheet: ${sheetNames[i]} with ${sheetKeys.length} cells`);
+          worksheetWithData = sheet;
+          worksheetWithDataIndex = i;
           break;
         }
       }
+    }
+    
+    // Look for sheets with wine-related names if sheetIndex is default 0 and we didn't find a sheet with data
+    let selectedSheetIndex = worksheetWithDataIndex >= 0 ? worksheetWithDataIndex : sheetIndex;
+    
+    // If we didn't find any sheet with data and user specified a sheet, use that
+    if (worksheetWithDataIndex < 0 && sheetIndex !== 0) {
+      selectedSheetIndex = sheetIndex;
+    } else if (worksheetWithDataIndex < 0 && sheetIndex === 0) {
+      console.log('No sheet with data found, defaulting to first sheet');
+      selectedSheetIndex = 0;
     }
     
     // Make sure index is in range
@@ -1534,9 +1575,10 @@ export async function processBatchFromFile(
     // Convert to JSON
     const data = worksheetToJson(worksheet);
     if (!data || data.length === 0) {
+      console.log('No data found in the selected sheet. Sheet may be empty or formatted in an unsupported way.');
       return {
         success: false,
-        message: 'No data found in the spreadsheet.'
+        message: 'No data found in the spreadsheet. This could be because: \n\n1. The selected sheet is empty \n2. Data is stored in a different sheet \n3. The spreadsheet uses a format we don\'t recognize \n\nTry another sheet or file format. For Excel files, ensure data starts in the first few rows with clear column headers.'
       };
     }
     
