@@ -18,8 +18,10 @@ import {
   processSpreadsheetFile, 
   processBatchFromFile, 
   importProcessedWines,
-  ProcessedWine
+  ProcessedWine,
+  getSheetInfo
 } from './spreadsheet';
+import path from 'path';
 import multer from 'multer';
 import { Buffer } from 'buffer';
 

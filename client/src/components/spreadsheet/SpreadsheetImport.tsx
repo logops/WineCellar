@@ -14,6 +14,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// Types for the sheet information we'll receive from the backend
+interface SheetInfo {
+  name: string;
+  index: number;
+  rowCount: number;
+  sampleData: any[];
+}
+
+interface SheetSelectionResponse {
+  success: boolean;
+  message?: string;
+  fileType?: string;
+  sheets?: SheetInfo[];
+  fileId?: string;
+  fileName?: string;
+}
+
 // Types for the wine data we'll receive from the backend
 interface ProcessedWine {
   rowIndex: number;
