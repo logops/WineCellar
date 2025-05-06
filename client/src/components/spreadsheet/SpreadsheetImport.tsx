@@ -1080,7 +1080,29 @@ const SpreadsheetImport: React.FC = () => {
               <>
                 {prioritizedWines.length > 0 && (
                   <div className="space-y-4">
-                    <h4 className="font-medium">Wines Pending Review ({prioritizedWines.length})</h4>
+                    <div className="flex flex-wrap items-center justify-between">
+                      <h4 className="font-medium">Wines Pending Review ({prioritizedWines.length})</h4>
+                      <div className="flex items-center space-x-2 mt-2 md:mt-0">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={toggleSelectAll}
+                          className="text-xs h-8"
+                        >
+                          {selectedWines.size === prioritizedWines.length ? 'Deselect All' : 'Select All'}
+                        </Button>
+                        {selectedWines.size > 0 && (
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            onClick={handleImportSelected}
+                            className="text-xs h-8"
+                          >
+                            Import {selectedWines.size} Selected
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                     <div className="space-y-4">
                       {prioritizedWines.map((wine) => (
                         <WineImportCard
@@ -1091,6 +1113,9 @@ const SpreadsheetImport: React.FC = () => {
                           onEdit={() => handleEditWine(wine)}
                           allProcessedWines={allProcessedWines}
                           setAllProcessedWines={setAllProcessedWines}
+                          selectable={true}
+                          isSelected={selectedWines.has(wine.rowIndex)}
+                          onSelect={handleWineSelection}
                         />
                       ))}
                     </div>
@@ -1156,11 +1181,23 @@ const SpreadsheetImport: React.FC = () => {
               {approvedWines.length} wines have been successfully added to your collection.
             </p>
             
-            <div className="pt-6">
-              <Button onClick={handleReset}>
-                <Upload className="mr-2 h-4 w-4" />
-                Import Another Spreadsheet
-              </Button>
+            <div className="pt-6 flex flex-col md:flex-row gap-4 justify-center">
+              {partiallyImported && allProcessedWines.length > 0 ? (
+                <>
+                  <Button onClick={handleContinueReviewing} variant="outline">
+                    Continue Reviewing ({allProcessedWines.length} wines remaining)
+                  </Button>
+                  <Button onClick={handleReset}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import Another Spreadsheet
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={handleReset}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Another Spreadsheet
+                </Button>
+              )}
             </div>
           </div>
         </TabsContent>

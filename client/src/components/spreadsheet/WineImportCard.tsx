@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Check, X, AlertCircle, Edit } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/ui/dialog-confirm';
@@ -63,6 +64,9 @@ interface WineImportCardProps {
   editable?: boolean;
   allProcessedWines?: WineData[];
   setAllProcessedWines?: React.Dispatch<React.SetStateAction<WineData[]>>;
+  selectable?: boolean;
+  isSelected?: boolean;
+  onSelect?: (rowIndex: number) => void;
 }
 
 const WineImportCard: React.FC<WineImportCardProps> = ({
@@ -72,7 +76,10 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
   onEdit,
   editable = true,
   allProcessedWines = [],
-  setAllProcessedWines
+  setAllProcessedWines,
+  selectable = false,
+  isSelected = false,
+  onSelect
 }) => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -138,24 +145,35 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
   };
 
   return (
-    <Card className={`mb-4 ${wine.needsVerification ? 'border-amber-500' : ''}`}>
+    <Card className={`mb-4 ${wine.needsVerification ? 'border-amber-500' : ''} ${isSelected ? 'ring-2 ring-primary' : ''}`}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">
-              {/* Display vintage */}
-              {wine.mappedData.vintage && wine.mappedData.vintage !== 'NV' 
-                ? wine.mappedData.vintage 
-                : wine.mappedData.vintage === 'NV' 
-                  ? 'NV'
-                  : 'Unknown Vintage'}
-              {/* Display producer */}
-              {' '}{wine.mappedData.producer || 'Unknown Producer'}
-              {/* Always display the name if it exists, even if it's similar to producer */}
-              {wine.mappedData.name && ` ${wine.mappedData.name}`}
-            </CardTitle>
-            <div className="text-sm text-muted-foreground mt-1">
-              {wine.mappedData.type || 'Unknown Type'} {wine.mappedData.region ? `• ${wine.mappedData.region}` : ''}
+          <div className="flex items-start gap-3">
+            {selectable && (
+              <div className="mt-1.5">
+                <Checkbox 
+                  checked={isSelected} 
+                  onCheckedChange={() => onSelect && onSelect(wine.rowIndex)} 
+                  id={`select-wine-${wine.rowIndex}`}
+                />
+              </div>
+            )}
+            <div>
+              <CardTitle className="text-lg">
+                {/* Display vintage */}
+                {wine.mappedData.vintage && wine.mappedData.vintage !== 'NV' 
+                  ? wine.mappedData.vintage 
+                  : wine.mappedData.vintage === 'NV' 
+                    ? 'NV'
+                    : 'Unknown Vintage'}
+                {/* Display producer */}
+                {' '}{wine.mappedData.producer || 'Unknown Producer'}
+                {/* Always display the name if it exists, even if it's similar to producer */}
+                {wine.mappedData.name && ` ${wine.mappedData.name}`}
+              </CardTitle>
+              <div className="text-sm text-muted-foreground mt-1">
+                {wine.mappedData.type || 'Unknown Type'} {wine.mappedData.region ? `• ${wine.mappedData.region}` : ''}
+              </div>
             </div>
           </div>
           <div className="flex items-center space-x-2">
