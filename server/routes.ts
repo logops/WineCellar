@@ -864,6 +864,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const batchSize = parseInt(req.body.batchSize || '100');
       const useAiDrinkingWindows = req.body.useAiDrinkingWindows === 'true';
       
+      // Get selected sheet index if provided
+      let sheetIndex;
+      if (req.body.sheetIndex !== undefined) {
+        console.log('Using user-selected sheet index:', req.body.sheetIndex);
+        sheetIndex = parseInt(req.body.sheetIndex);
+      }
+      
       // Field mappings are optional - if provided, use them, otherwise detect automatically
       let fieldMappings;
       if (req.body.fieldMappings) {
@@ -883,7 +890,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startRow: batchIndex,
         batchSize,
         fieldMappings,
-        useAiColumnMapping
+        useAiColumnMapping,
+        sheetIndex // Include selected sheet index if provided
       });
 
       return res.status(result.success ? 200 : 400).json(result);
