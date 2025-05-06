@@ -319,12 +319,16 @@ export function worksheetToJson(worksheet: XLSX.WorkSheet): any[] {
       return [];
     }
     
-    // If the worksheet doesn't have a reference range, try to determine it
+    // If the worksheet doesn't have a reference range or any cells, don't try to process it
     if (!worksheet['!ref']) {
       console.log('Worksheet missing !ref, attempting to determine range');
       
       // Look for any cells in the worksheet
-      const keys = Object.keys(worksheet).filter(key => key[0] !== '!' && /^[A-Z]+[0-9]+$/.test(key));
+      const allKeys = Object.keys(worksheet);
+      console.log(`Worksheet keys: ${allKeys.slice(0, 10).join(', ')}${allKeys.length > 10 ? '...' : ''}`);
+      
+      const keys = allKeys.filter(key => key[0] !== '!' && /^[A-Z]+[0-9]+$/.test(key));
+      console.log(`Found ${keys.length} valid cell keys`);
       
       if (keys.length > 0) {
         // Find the highest row and column
@@ -341,16 +345,28 @@ export function worksheetToJson(worksheet: XLSX.WorkSheet): any[] {
           }
         });
         
+        // Ensure row is at least 1 and col is at least 0
+        maxRow = Math.max(1, maxRow);
+        
         // Set the reference range
         worksheet['!ref'] = XLSX.utils.encode_range(
           {c: 0, r: 0},
-          {c: maxCol, r: maxRow - 1}
+          {c: maxCol, r: maxRow}
         );
         
         console.log(`Determined worksheet range: ${worksheet['!ref']}`);
       } else {
-        console.error('Worksheet appears to be empty - no cells found');
-        return [];
+        // Try alternative approach for certain Excel formats
+        console.log('No standard cells found, trying alternative approach with direct content extraction');
+        
+        // Create a simple sheet with at least a header row and one data row
+        try {
+          worksheet['!ref'] = 'A1:Z100'; // Set a default range for extraction attempt
+          console.log('Set default range for extraction attempt: A1:Z100');
+        } catch (e) {
+          console.error('Failed to set default range:', e);
+          return [];
+        }
       }
     }
     
