@@ -209,9 +209,13 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType, sheetIndex:
     // Find the sheet to use - prefer the following sheet names for wine collections if present
     const preferredSheetNames = [
       'master_new', 'master new', 'updated', // Most likely to contain updated data
-      'wines', 'wine', 'collection', 'cellar', 'inventory', 'master', 'main',
+      'wines', 'wine', 'collection', 'cellar', 'inventory', 'master', 'main', 
+      'updated 122223', // Specific sheet we've seen in the uploaded file
       'wine list', 'wine collection', 'master inventory'
     ];
+    
+    // Explicitly EXCLUDE sheets with these keywords as they likely don't contain the main wine collection
+    const excludeSheetNames = ['wish list', 'wishlist', 'wish-list'];
     
     // Look for non-empty sheets - we'll check each sheet until we find one with data
     console.log('Checking sheets for data');
@@ -221,6 +225,13 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType, sheetIndex:
     // First try our preferred names
     for (let i = 0; i < sheetNames.length; i++) {
       const lowerName = sheetNames[i].toLowerCase();
+      
+      // Skip sheets specifically marked for exclusion like wish lists
+      if (excludeSheetNames.some(name => lowerName.includes(name))) {
+        console.log(`Skipping excluded sheet: ${sheetNames[i]}`);
+        continue; 
+      }
+      
       if (preferredSheetNames.some(name => lowerName.includes(name))) {
         console.log(`Checking preferred sheet: ${sheetNames[i]}`);
         const sheet = workbook.Sheets[sheetNames[i]];
@@ -238,9 +249,17 @@ export function parseSpreadsheet(buffer: Buffer, fileType: FileType, sheetIndex:
       }
     }
     
-    // If no preferred sheet has data, check all sheets
+    // If no preferred sheet has data, check all sheets (except excluded ones)
     if (!worksheetWithData) {
       for (let i = 0; i < sheetNames.length; i++) {
+        const lowerName = sheetNames[i].toLowerCase();
+        
+        // Skip sheets specifically marked for exclusion like wish lists
+        if (excludeSheetNames.some(name => lowerName.includes(name))) {
+          console.log(`Skipping excluded sheet: ${sheetNames[i]}`);
+          continue; 
+        }
+        
         console.log(`Checking sheet: ${sheetNames[i]}`);
         const sheet = workbook.Sheets[sheetNames[i]];
         
