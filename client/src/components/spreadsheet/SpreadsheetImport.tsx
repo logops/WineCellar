@@ -109,6 +109,48 @@ const SpreadsheetImport: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // New state for sheet selection
+  const [sheetInfo, setSheetInfo] = useState<SheetSelectionResponse | null>(null);
+  const [selectedSheetIndex, setSelectedSheetIndex] = useState<number | null>(null);
+  const [selectedColumnMappings, setSelectedColumnMappings] = useState<FieldMapping[]>([]);
+  const [fileId, setFileId] = useState<string | null>(null);
+  
+  // Get sheet information mutation
+  const getSheetInfoMutation = useMutation({
+    mutationFn: async (fileData: FormData) => {
+      const response = await uploadFile('/api/spreadsheet/sheets', fileData);
+      return response.json();
+    },
+    onSuccess: (data: SheetSelectionResponse) => {
+      if (data.success && data.sheets && data.sheets.length > 0) {
+        setSheetInfo(data);
+        setFileId(data.fileId || null);
+        setActiveTab('select-sheet');
+        setLoading(false);
+        
+        toast({
+          title: "File analyzed successfully",
+          description: `Found ${data.sheets.length} sheets in your file. Please select which one contains your wine data.`,
+        });
+      } else {
+        toast({
+          title: "Analysis failed",
+          description: data.message || "Could not find any sheets in the uploaded file.",
+          variant: "destructive",
+        });
+        setLoading(false);
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "File analysis failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  });
+  
   // Upload file mutation
   const uploadMutation = useMutation({
     mutationFn: async (fileData: FormData) => {
@@ -143,6 +185,11 @@ const SpreadsheetImport: React.FC = () => {
         formData.append('batchSize', batchSize.toString());
         formData.append('useAiColumnMapping', 'true'); // Enable AI-powered column mapping
         formData.append('useAiDrinkingWindows', 'true'); // Enable AI recommendations for drinking windows
+        
+        // Add sheet index if it's selected
+        if (selectedSheetIndex !== null) {
+          formData.append('sheetIndex', selectedSheetIndex.toString());
+        }
         
         try {
           console.log('Uploading file for batch processing:', file.name, 'size:', file.size);
@@ -281,42 +328,28 @@ const SpreadsheetImport: React.FC = () => {
     setLoading(true);
     setUploadProgress(0);
     
-    // Start the initial upload progress - faster at first to indicate file transmission
+    // Start the initial upload progress
     const uploadInterval = setInterval(() => {
       setUploadProgress(prev => {
         if (prev >= 60) {
           clearInterval(uploadInterval);
           return 60;
         }
-        return prev + 10; // Move faster initially
+        return prev + 10;
       });
     }, 100);
     
-    // Set a timeout to indicate processing is happening
-    setTimeout(() => {
-      toast({
-        title: "Processing data",
-        description: "Analyzing columns and wine data. This may take a minute..."
-      });
-      
-      // Start a slower processing indicator
-      const processingInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(processingInterval);
-            return 90;
-          }
-          return prev + 1; // Move slower during processing
-        });
-      }, 700);
-      
-      // Clean up processing interval when component unmounts
-      return () => clearInterval(processingInterval);
-    }, 2000);
+    toast({
+      title: "Analyzing spreadsheet",
+      description: "Identifying sheets and data structure. This may take a moment..."
+    });
     
-    // Process the file in a single batch
-    setTotalBatches(1);
-    processBatch(0);
+    // Create FormData with the file
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Get sheet information instead of direct processing
+    getSheetInfoMutation.mutate(formData);
   };
 
   const processBatch = (batchIndex: number) => {
@@ -390,6 +423,12 @@ const SpreadsheetImport: React.FC = () => {
     setCurrentBatchIndex(0);
     setTotalBatches(1);
     setImportFinished(false);
+    // Clear sheet selection information
+    setSheetInfo(null);
+    setSelectedSheetIndex(null);
+    setSelectedColumnMappings([]);
+    setFileId(null);
+    // Return to upload tab
     setActiveTab('upload');
     
     if (fileInputRef.current) {
@@ -631,8 +670,9 @@ const SpreadsheetImport: React.FC = () => {
       </Dialog>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 grid w-full grid-cols-3">
+        <TabsList className="mb-6 grid w-full grid-cols-4">
           <TabsTrigger value="upload" disabled={loading}>Upload</TabsTrigger>
+          <TabsTrigger value="select-sheet" disabled={!sheetInfo || loading}>Select Sheet</TabsTrigger>
           <TabsTrigger 
             value="review" 
             disabled={allProcessedWines.length === 0 && approvedWines.length === 0 && rejectedWines.length === 0}
@@ -738,6 +778,159 @@ const SpreadsheetImport: React.FC = () => {
                     </span>
                   </div>
                   <Progress value={(currentBatchIndex / totalBatches) * 100} />
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="select-sheet" className="mt-0">
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 justify-between">
+              <div>
+                <h3 className="text-lg font-medium mb-1">Select a Sheet</h3>
+                <p className="text-muted-foreground">
+                  Your file contains multiple sheets. Please select which one contains your wine collection data.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleReset}
+                  disabled={loading}
+                >
+                  <Ban className="mr-1 h-4 w-4" />
+                  Cancel
+                </Button>
+              </div>
+            </div>
+            
+            {sheetInfo && sheetInfo.sheets && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4">
+                  {sheetInfo.sheets.map((sheet, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${selectedSheetIndex === sheet.index ? 'border-primary bg-primary/5' : 'hover:border-primary/50'}`}
+                      onClick={() => setSelectedSheetIndex(sheet.index)}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <FileSpreadsheet className="h-5 w-5 text-primary" />
+                        <h4 className="font-medium">{sheet.name}</h4>
+                        <div className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
+                          {sheet.rowCount} cells
+                        </div>
+                        {selectedSheetIndex === sheet.index && (
+                          <div className="ml-auto">
+                            <Check className="h-5 w-5 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {sheet.sampleData && sheet.sampleData.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <div className="inline-block min-w-full align-middle">
+                            <div className="overflow-hidden border rounded-md">
+                              <table className="min-w-full divide-y divide-border">
+                                <thead className="bg-muted">
+                                  <tr>
+                                    {sheet.sampleData[0]?.map((cell: any, cellIdx: number) => (
+                                      <th
+                                        key={cellIdx}
+                                        scope="col"
+                                        className="px-3 py-2 text-left text-xs font-medium text-muted-foreground tracking-wider"
+                                      >
+                                        {cell || `Column ${cellIdx + 1}`}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-card divide-y divide-border">
+                                  {sheet.sampleData.slice(1).map((row: any[], rowIdx: number) => (
+                                    <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-muted/50' : 'bg-card'}>
+                                      {row.map((cell: any, cellIdx: number) => (
+                                        <td
+                                          key={cellIdx}
+                                          className="px-3 py-2 whitespace-nowrap text-sm text-foreground"
+                                        >
+                                          {cell || '-'}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-xs text-muted-foreground text-right italic">
+                            Preview showing first {sheet.sampleData.length} rows
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center p-4 border border-dashed rounded-md">
+                          <p className="text-muted-foreground text-sm">No preview data available for this sheet</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => {
+                      if (selectedSheetIndex === null) {
+                        toast({
+                          title: "No sheet selected",
+                          description: "Please select a sheet from your file",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      setLoading(true);
+                      toast({
+                        title: "Processing sheet",
+                        description: "Analyzing wine data. This may take a moment..."
+                      });
+                      
+                      // Process the selected sheet
+                      const formData = new FormData();
+                      
+                      if (file) {
+                        formData.append('file', file);
+                        // Add the selected sheet index
+                        formData.append('sheetIndex', selectedSheetIndex.toString());
+                        formData.append('useAiColumnMapping', 'true');
+                        formData.append('useAiDrinkingWindows', 'true');
+                        
+                        // Start processing with the first batch
+                        setTotalBatches(1);
+                        processBatchMutation.mutate({ index: 0 });
+                      } else {
+                        setLoading(false);
+                        toast({
+                          title: "Error",
+                          description: "File is no longer available. Please try uploading again.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    disabled={selectedSheetIndex === null || loading}
+                    className="px-6 py-5 text-base font-medium"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="mr-2 h-5 w-5" />
+                        Continue with Selected Sheet
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             )}
