@@ -107,6 +107,8 @@ const SpreadsheetImport: React.FC = () => {
   const [importFinished, setImportFinished] = useState(false);
   const [editingWine, setEditingWine] = useState<ProcessedWine | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedWines, setSelectedWines] = useState<Set<number>>(new Set());
+  const [partiallyImported, setPartiallyImported] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // New state for sheet selection
@@ -254,9 +256,18 @@ const SpreadsheetImport: React.FC = () => {
         title: "Import successful",
         description: `${data.importedCount} wines have been added to your collection.`,
       });
+      
       setImportFinished(true);
-      setActiveTab('complete');
       queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
+      
+      // If it's a partial import and there are still wines to review
+      if (partiallyImported && allProcessedWines.length > 0) {
+        // Clear selection after import
+        setSelectedWines(new Set());
+      } else {
+        // Normal flow - complete the import process
+        setActiveTab('complete');
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -398,7 +409,8 @@ const SpreadsheetImport: React.FC = () => {
     });
   };
 
-  const handleImport = () => {
+  // Import all approved wines
+  const handleImportAll = () => {
     if (approvedWines.length === 0) {
       toast({
         title: "No wines to import",
@@ -409,6 +421,48 @@ const SpreadsheetImport: React.FC = () => {
     }
     
     importWinesMutation.mutate(approvedWines);
+  };
+  
+  // Import only selected wines
+  const handleImportSelected = () => {
+    if (selectedWines.size === 0) {
+      toast({
+        title: "No wines selected",
+        description: "Please select at least one wine to import.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Filter wines that are in the selected set
+    const winesToImport = allProcessedWines.filter(wine => selectedWines.has(wine.rowIndex));
+    
+    if (winesToImport.length === 0) {
+      toast({
+        title: "No wines to import",
+        description: "Please select at least one wine from the pending list to import.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Move selected wines to approved
+    for (const wine of winesToImport) {
+      handleApproveWine(wine);
+    }
+    
+    // Set flag for partial import
+    setPartiallyImported(true);
+    
+    // Import the wines
+    importWinesMutation.mutate(winesToImport);
+  };
+  
+  // Continue reviewing after partial import
+  const handleContinueReviewing = () => {
+    setPartiallyImported(false);
+    setImportFinished(false);
+    setActiveTab('review');
   };
 
   const handleReset = () => {
@@ -423,6 +477,8 @@ const SpreadsheetImport: React.FC = () => {
     setCurrentBatchIndex(0);
     setTotalBatches(1);
     setImportFinished(false);
+    setSelectedWines(new Set());
+    setPartiallyImported(false);
     // Clear sheet selection information
     setSheetInfo(null);
     setSelectedSheetIndex(null);
@@ -433,6 +489,31 @@ const SpreadsheetImport: React.FC = () => {
     
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+  
+  // Handle wine selection for batch import
+  const handleWineSelection = (wineRowIndex: number) => {
+    setSelectedWines(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(wineRowIndex)) {
+        newSelected.delete(wineRowIndex);
+      } else {
+        newSelected.add(wineRowIndex);
+      }
+      return newSelected;
+    });
+  };
+  
+  // Toggle selection of all wines
+  const toggleSelectAll = () => {
+    if (selectedWines.size === allProcessedWines.length) {
+      // If all are selected, clear selection
+      setSelectedWines(new Set());
+    } else {
+      // Otherwise select all
+      const allIndexes = allProcessedWines.map(w => w.rowIndex);
+      setSelectedWines(new Set(allIndexes));
     }
   };
 
@@ -959,7 +1040,7 @@ const SpreadsheetImport: React.FC = () => {
                 <Button 
                   variant="default" 
                   size="sm" 
-                  onClick={handleImport}
+                  onClick={handleImportAll}
                   disabled={loading || approvedWines.length === 0}
                 >
                   <ArrowRight className="mr-1 h-4 w-4" />
