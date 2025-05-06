@@ -1588,7 +1588,8 @@ export async function processBatchFromFile(
     batchSize?: number,
     fieldMappings?: FieldMapping[],
     useAiDrinkingWindows: boolean,
-    useAiColumnMapping?: boolean
+    useAiColumnMapping?: boolean,
+    sheetIndex?: number
   }
 ): Promise<{
   success: boolean;
@@ -1605,14 +1606,21 @@ export async function processBatchFromFile(
       };
     }
     
-    // Parse the spreadsheet
-    const worksheet = parseSpreadsheet(fileBuffer, fileType);
+    // Parse the spreadsheet with the specified sheet index if provided
+    const { worksheet, sheetNames, selectedSheetName } = parseSpreadsheet(
+      fileBuffer, 
+      fileType, 
+      options.sheetIndex !== undefined ? options.sheetIndex : 0
+    );
+    
     if (!worksheet) {
       return {
         success: false,
         message: 'Failed to parse the spreadsheet. Please check the file format.'
       };
     }
+    
+    console.log(`Processing sheet: ${selectedSheetName || 'unknown'} (index: ${options.sheetIndex !== undefined ? options.sheetIndex : 'auto-selected'})`);
     
     // Convert to JSON
     const data = worksheetToJson(worksheet);
