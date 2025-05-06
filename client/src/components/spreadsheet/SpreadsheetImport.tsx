@@ -252,18 +252,24 @@ const SpreadsheetImport: React.FC = () => {
       }
     },
     onSuccess: (data) => {
+      const importCount = data.importedCount || 0;
+      
       toast({
         title: "Import successful",
-        description: `${data.importedCount} wines have been added to your collection.`,
+        description: `${importCount} wines have been added to your collection.`,
       });
       
       setImportFinished(true);
       queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
       
+      // Always clear approved wines after successful import
+      // to avoid confusion about what has and hasn't been imported
+      setApprovedWines([]);
+      
       // If it's a partial import and there are still wines to review
       if (partiallyImported && allProcessedWines.length > 0) {
-        // Clear selection after import
-        setSelectedWines(new Set());
+        // Stay on review tab with the remaining wines
+        setActiveTab('review');
       } else {
         // Normal flow - complete the import process
         setActiveTab('complete');
@@ -446,16 +452,23 @@ const SpreadsheetImport: React.FC = () => {
       return;
     }
     
-    // Move selected wines to approved
-    for (const wine of winesToImport) {
-      handleApproveWine(wine);
-    }
+    // Create a copy of the wines to import for mutation
+    const winesToImportCopy = [...winesToImport];
     
-    // Set flag for partial import
-    setPartiallyImported(true);
+    // Set flag for partial import if there will be remaining wines
+    const willHaveRemainingWines = allProcessedWines.length > winesToImport.length;
+    setPartiallyImported(willHaveRemainingWines);
+    
+    // Clear the selection set before importing
+    setSelectedWines(new Set());
+    
+    // Remove selected wines from processed list but don't add to approved yet
+    // This prevents the UI from showing them as pending and approved at the same time
+    const remainingWines = allProcessedWines.filter(wine => !selectedWines.has(wine.rowIndex));
+    setAllProcessedWines(remainingWines);
     
     // Import the wines
-    importWinesMutation.mutate(winesToImport);
+    importWinesMutation.mutate(winesToImportCopy);
   };
   
   // Continue reviewing after partial import
@@ -1176,10 +1189,27 @@ const SpreadsheetImport: React.FC = () => {
               <Check className="h-8 w-8" />
             </div>
             
-            <h3 className="text-xl font-medium">Import Complete!</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              {approvedWines.length} wines have been successfully added to your collection.
-            </p>
+            <h3 className="text-xl font-medium">Import Successful!</h3>
+            
+            {partiallyImported && allProcessedWines.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Your selected wines have been added to your collection.
+                </p>
+                <div className="flex justify-center gap-3 text-sm">
+                  <div className="bg-green-50 text-green-800 px-3 py-1.5 rounded-full">
+                    <span className="font-bold">{importWinesMutation.data?.importedCount || 0}</span> wines imported
+                  </div>
+                  <div className="bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full">
+                    <span className="font-bold">{allProcessedWines.length}</span> wines still pending
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground max-w-md mx-auto">
+                <span className="font-medium text-primary">{importWinesMutation.data?.importedCount || 0}</span> wines have been successfully added to your collection.
+              </p>
+            )}
             
             <div className="pt-6 flex flex-col md:flex-row gap-4 justify-center">
               {partiallyImported && allProcessedWines.length > 0 ? (
