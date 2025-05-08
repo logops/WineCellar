@@ -897,6 +897,59 @@ const SpreadsheetImport: React.FC = () => {
                   <Ban className="mr-1 h-4 w-4" />
                   Cancel
                 </Button>
+                <Button
+                  onClick={() => {
+                    if (selectedSheetIndex === null) {
+                      toast({
+                        title: "No sheet selected",
+                        description: "Please select a sheet from your file",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    setLoading(true);
+                    toast({
+                      title: "Processing sheet",
+                      description: "Analyzing wine data. This may take a moment..."
+                    });
+                    
+                    // Process the selected sheet
+                    const formData = new FormData();
+                    
+                    if (file) {
+                      formData.append('file', file);
+                      // Add the selected sheet index
+                      formData.append('sheetIndex', selectedSheetIndex.toString());
+                      formData.append('useAiColumnMapping', 'true');
+                      formData.append('useAiDrinkingWindows', 'true');
+                      
+                      // Start processing with the first batch
+                      setTotalBatches(1);
+                      processBatchMutation.mutate({ index: 0 });
+                    } else {
+                      setLoading(false);
+                      toast({
+                        title: "Error",
+                        description: "File is no longer available. Please try uploading again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  disabled={selectedSheetIndex === null || loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="mr-2 h-5 w-5" />
+                      Continue with Selected Sheet
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
             
@@ -970,62 +1023,7 @@ const SpreadsheetImport: React.FC = () => {
                   ))}
                 </div>
                 
-                <div className="flex justify-end">
-                  <Button
-                    onClick={() => {
-                      if (selectedSheetIndex === null) {
-                        toast({
-                          title: "No sheet selected",
-                          description: "Please select a sheet from your file",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      setLoading(true);
-                      toast({
-                        title: "Processing sheet",
-                        description: "Analyzing wine data. This may take a moment..."
-                      });
-                      
-                      // Process the selected sheet
-                      const formData = new FormData();
-                      
-                      if (file) {
-                        formData.append('file', file);
-                        // Add the selected sheet index
-                        formData.append('sheetIndex', selectedSheetIndex.toString());
-                        formData.append('useAiColumnMapping', 'true');
-                        formData.append('useAiDrinkingWindows', 'true');
-                        
-                        // Start processing with the first batch
-                        setTotalBatches(1);
-                        processBatchMutation.mutate({ index: 0 });
-                      } else {
-                        setLoading(false);
-                        toast({
-                          title: "Error",
-                          description: "File is no longer available. Please try uploading again.",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                    disabled={selectedSheetIndex === null || loading}
-                    className="px-6 py-5 text-base font-medium"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRight className="mr-2 h-5 w-5" />
-                        Continue with Selected Sheet
-                      </>
-                    )}
-                  </Button>
-                </div>
+
               </div>
             )}
           </div>
