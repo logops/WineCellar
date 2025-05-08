@@ -534,6 +534,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Producer reference routes
+  app.get('/api/producers', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      const query = req.query.search as string;
+      
+      let producers;
+      if (query) {
+        // Search for producers matching the query
+        producers = await dbStorage.findMatchingProducers(query);
+      } else {
+        // Get all producers if no search query
+        producers = await dbStorage.getProducers();
+      }
+      
+      res.json(producers);
+    } catch (err) {
+      console.error('Error fetching producers:', err);
+      res.status(500).json({ message: 'Failed to fetch producers' });
+    }
+  });
+  
+  app.get('/api/producers/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      const id = Number(req.params.id);
+      const producer = await dbStorage.getProducer(id);
+      
+      if (!producer) {
+        return res.status(404).json({ message: 'Producer not found' });
+      }
+      
+      res.json(producer);
+    } catch (err) {
+      console.error('Error fetching producer:', err);
+      res.status(500).json({ message: 'Failed to fetch producer' });
+    }
+  });
+  
+  app.post('/api/producers', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      // Check if producer already exists
+      const existingProducer = await dbStorage.getProducerByName(req.body.name);
+      if (existingProducer) {
+        return res.status(400).json({ message: 'Producer with this name already exists' });
+      }
+      
+      // Create producer
+      const producer = await dbStorage.createProducer(req.body);
+      res.status(201).json(producer);
+    } catch (err) {
+      console.error('Error creating producer:', err);
+      res.status(500).json({ message: 'Failed to create producer' });
+    }
+  });
+  
+  app.post('/api/producers/bulk', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      const producers = req.body;
+      if (!Array.isArray(producers)) {
+        return res.status(400).json({ message: 'Expected an array of producers' });
+      }
+      
+      const count = await dbStorage.bulkCreateProducers(producers);
+      res.status(201).json({ inserted: count });
+    } catch (err) {
+      console.error('Error bulk creating producers:', err);
+      res.status(500).json({ message: 'Failed to bulk create producers' });
+    }
+  });
+
   // Wine label recognition routes
   app.post('/api/analyze-wine-label', isAuthenticated, handleWineLabelAnalysis);
   
