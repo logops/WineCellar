@@ -8,7 +8,7 @@ import {
   producers, type Producer, type InsertProducer
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, or, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 
@@ -485,6 +485,86 @@ export class DatabaseStorage implements IStorage {
       pool,
       createTableIfMissing: true
     });
+  }
+  
+  // Producer reference operations
+  async getProducers(): Promise<Producer[]> {
+    return db.select().from(producers);
+  }
+  
+  async getProducer(id: number): Promise<Producer | undefined> {
+    const [producer] = await db.select().from(producers).where(eq(producers.id, id));
+    return producer;
+  }
+  
+  async getProducerByName(name: string): Promise<Producer | undefined> {
+    const [producer] = await db.select().from(producers).where(eq(producers.name, name));
+    return producer;
+  }
+  
+  async createProducer(insertProducer: InsertProducer): Promise<Producer> {
+    // Ensure alternateNames is always an array
+    const formattedProducer = {
+      ...insertProducer,
+      alternateNames: insertProducer.alternateNames || []
+    };
+    
+    const [producer] = await db.insert(producers).values(formattedProducer).returning();
+    return producer;
+  }
+  
+  async bulkCreateProducers(insertProducers: InsertProducer[]): Promise<number> {
+    let count = 0;
+    
+    // Process in batches to avoid transaction timeouts
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < insertProducers.length; i += BATCH_SIZE) {
+      const batch = insertProducers.slice(i, i + BATCH_SIZE);
+      
+      // Filter out producers that already exist
+      const existingProducers = await Promise.all(
+        batch.map(p => this.getProducerByName(p.name))
+      );
+      
+      const newProducers = batch.filter((_, index) => !existingProducers[index]);
+      
+      if (newProducers.length > 0) {
+        const formattedProducers = newProducers.map(p => ({
+          ...p,
+          alternateNames: p.alternateNames || [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+        
+        const result = await db.insert(producers).values(formattedProducers).returning();
+        count += result.length;
+      }
+    }
+    
+    return count;
+  }
+  
+  async findMatchingProducers(searchTerm: string): Promise<Producer[]> {
+    if (!searchTerm || searchTerm.trim() === '') {
+      return [];
+    }
+    
+    const normalizedSearch = searchTerm.toLowerCase().trim();
+    
+    // Search in both name and alternateNames using ILIKE
+    return db.select()
+      .from(producers)
+      .where(
+        or(
+          sql`LOWER(${producers.name}) LIKE ${`%${normalizedSearch}%`}`,
+          sql`${producers.alternateNames} @> ARRAY[${searchTerm}]::text[]`,
+          sql`EXISTS (
+            SELECT 1 FROM unnest(${producers.alternateNames}) AS alt_name
+            WHERE LOWER(alt_name) LIKE ${`%${normalizedSearch}%`}
+          )`
+        )
+      )
+      .limit(20);
   }
 
   // User operations
