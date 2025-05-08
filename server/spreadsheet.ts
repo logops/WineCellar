@@ -58,11 +58,19 @@ export interface ProcessedWine {
   duplicateId?: number;
   needsVerification: boolean;
   storageLocation?: string;
+  producerVerified?: boolean;
+  originalProducer?: string;
   aiDrinkingWindowRecommendation?: {
     start?: string;
     end?: string;
     confidence: ConfidenceLevel;
     reasoning: string;
+    grapeVarieties?: string | null;
+    region?: string | null;
+    subregion?: string | null;
+    notes?: string | null;
+    cellaring?: string | null;
+    pairings?: string | null;
   };
 }
 
@@ -1327,7 +1335,7 @@ async function verifyProducersInBatch(processedWines: ProcessedWine[]): Promise<
   // Find wines that need producer verification
   const winesNeedingVerification = processedWines.filter(wine => 
     wine.mappedData.producer && 
-    ((wine.mappedData as any).needsProducerVerification === true || 
+    (((wine.mappedData as any).needsProducerVerification === true) || 
     wine.confidence !== ConfidenceLevel.HIGH)
   );
   
@@ -1356,8 +1364,8 @@ async function verifyProducersInBatch(processedWines: ProcessedWine[]): Promise<
         wine.mappedData.producer = matchingProducer.name;
         
         // Add metadata to show the user this was enhanced
-        (wine as any).producerVerified = true;
-        (wine as any).originalProducer = originalProducer;
+        wine.producerVerified = true;
+        wine.originalProducer = originalProducer;
         
         // If we have confidence in this match, improve the wine's overall confidence
         if (wine.confidence === ConfidenceLevel.LOW) {
@@ -1498,7 +1506,14 @@ async function addAiDrinkingWindowRecommendations(processedWines: ProcessedWine[
                 : recommendation.confidence === 'medium'
                   ? ConfidenceLevel.MEDIUM
                   : ConfidenceLevel.LOW,
-              reasoning: recommendation.reasoning
+              reasoning: recommendation.reasoning,
+              // Include additional properties if they exist in the recommendation
+              grapeVarieties: recommendation.grapeVarieties || null,
+              region: recommendation.region || null,
+              subregion: recommendation.subregion || null,
+              notes: recommendation.notes || null,
+              cellaring: recommendation.cellaring || null,
+              pairings: recommendation.pairings || null
             };
             
             console.log(`Added drinking window recommendation: ${recommendation.start}-${recommendation.end}`);
