@@ -499,3 +499,191 @@ export function processWineTitle<T extends { name?: string | null; grapeVarietie
     vineyard: extractedVineyard || wine.vineyard || null
   };
 }
+
+/**
+ * Normalize a producer name for more effective matching
+ * @param name Producer name to normalize
+ * @returns Normalized producer name
+ */
+export function normalizeProducerName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\b(winery|vineyard|vineyards|cellars|cellar|wines|wine|estate|estates|chateau|domaine|clos|bodega|weingut|cantina|vina|maison)\b/g, '')
+    .replace(/[^\w\s]/g, '') // Remove special characters
+    .replace(/\s+/g, ' ')    // Normalize whitespace
+    .trim();
+}
+
+/**
+ * Calculate string similarity between two strings using Levenshtein distance
+ * @param str1 First string to compare
+ * @param str2 Second string to compare
+ * @returns Similarity score between 0 and 1 (1 being identical)
+ */
+export function stringSimilarity(str1: string, str2: string): number {
+  if (!str1 || !str2) return 0;
+  
+  const normalizedStr1 = normalizeProducerName(str1);
+  const normalizedStr2 = normalizeProducerName(str2);
+  
+  // Check for exact match or containment after normalization
+  if (normalizedStr1 === normalizedStr2) return 1;
+  if (normalizedStr1.includes(normalizedStr2) || normalizedStr2.includes(normalizedStr1)) {
+    return 0.9;
+  }
+  
+  // Simple Levenshtein distance implementation
+  const len1 = normalizedStr1.length;
+  const len2 = normalizedStr2.length;
+  
+  // If one string is empty, the distance is the length of the other
+  if (len1 === 0) return 0;
+  if (len2 === 0) return 0;
+  
+  // Maximum length for normalization
+  const maxLen = Math.max(len1, len2);
+  
+  // Avoid calculating Levenshtein for very different length strings
+  if (Math.abs(len1 - len2) / maxLen > 0.5) return 0;
+  
+  // For longer strings, check if they start with the same characters
+  const commonPrefixLength = getCommonPrefixLength(normalizedStr1, normalizedStr2);
+  if (commonPrefixLength > 3 && commonPrefixLength / maxLen > 0.6) {
+    return 0.7 + (0.3 * commonPrefixLength / maxLen);
+  }
+  
+  // For short strings, compute a simplified similarity
+  if (maxLen < 10) {
+    const commonChars = normalizedStr1.split('').filter(char => normalizedStr2.includes(char)).length;
+    return commonChars / maxLen;
+  }
+  
+  // For longer strings, words in common can be a good indicator
+  const words1 = normalizedStr1.split(' ');
+  const words2 = normalizedStr2.split(' ');
+  const commonWords = words1.filter(word => words2.includes(word)).length;
+  const totalWords = Math.max(words1.length, words2.length);
+  
+  if (totalWords > 1 && commonWords > 0) {
+    return 0.5 + (0.5 * commonWords / totalWords);
+  }
+  
+  // Default lower similarity for strings that don't match by previous methods
+  return 0.3;
+}
+
+/**
+ * Get the length of the common prefix between two strings
+ */
+function getCommonPrefixLength(str1: string, str2: string): number {
+  const minLength = Math.min(str1.length, str2.length);
+  for (let i = 0; i < minLength; i++) {
+    if (str1[i] !== str2[i]) {
+      return i;
+    }
+  }
+  return minLength;
+}
+
+/**
+ * Find the best matching producer from the producer reference database
+ * @param producerName The producer name to look up
+ * @param storage The storage interface to use for database access
+ * @returns The best matching producer, or null if no match found
+ */
+export async function findMatchingProducer(producerName: string, storage: any) {
+  if (!producerName) return null;
+  
+  // First try an exact match (case insensitive)
+  const exactMatch = await storage.getProducerByName(producerName);
+  if (exactMatch) {
+    return exactMatch;
+  }
+  
+  // Try finding by normalized name
+  const normalizedName = normalizeProducerName(producerName);
+  const matchingProducers = await storage.findMatchingProducers(normalizedName);
+  
+  if (!matchingProducers || matchingProducers.length === 0) {
+    return null;
+  }
+  
+  // Score each producer
+  const scoredProducers = matchingProducers.map(producer => {
+    const mainNameScore = stringSimilarity(producerName, producer.name);
+    
+    // Check alternate names if available
+    let alternateScore = 0;
+    if (producer.alternateNames && Array.isArray(producer.alternateNames)) {
+      alternateScore = Math.max(
+        0,
+        ...producer.alternateNames.map(altName => stringSimilarity(producerName, altName))
+      );
+    }
+    
+    // Use the higher score between main name and alternate names
+    const score = Math.max(mainNameScore, alternateScore);
+    
+    return {
+      producer,
+      score,
+      isExact: score > 0.9
+    };
+  });
+  
+  // Sort by score
+  scoredProducers.sort((a, b) => b.score - a.score);
+  
+  // Return the best match if it's good enough
+  return scoredProducers[0]?.score > 0.6 ? scoredProducers[0].producer : null;
+}
+
+/**
+ * Identify or verify producer using both database reference and AI
+ * @param producerName The producer name to identify
+ * @param storageInstance The storage interface for database access
+ * @param useAI Whether to use AI for verification if database lookup fails
+ * @returns The identified producer information
+ */
+export async function identifyProducer(
+  producerName: string, 
+  storageInstance: any,
+  useAI: boolean = false
+) {
+  // First try to match using the database
+  const matchedProducer = await findMatchingProducer(producerName, storageInstance);
+  
+  if (matchedProducer) {
+    return {
+      name: matchedProducer.name,
+      region: matchedProducer.region,
+      country: matchedProducer.country,
+      confidence: 'high',
+      source: 'reference_database',
+      isVerified: matchedProducer.isVerified || false
+    };
+  }
+  
+  if (!useAI) {
+    return {
+      name: producerName,
+      region: null,
+      country: null,
+      confidence: 'low',
+      source: 'user_input',
+      isVerified: false
+    };
+  }
+  
+  // If we get here, we'll need to implement AI identification
+  // This would be an extension point for future improvements
+  
+  return {
+    name: producerName,
+    region: null,
+    country: null,
+    confidence: 'low',
+    source: 'user_input',
+    isVerified: false
+  };
+}
