@@ -609,7 +609,7 @@ export async function findMatchingProducer(producerName: string, storage: any) {
   }
   
   // Score each producer
-  const scoredProducers = matchingProducers.map(producer => {
+  const scoredProducers = matchingProducers.map((producer) => {
     const mainNameScore = stringSimilarity(producerName, producer.name);
     
     // Check alternate names if available
@@ -617,7 +617,7 @@ export async function findMatchingProducer(producerName: string, storage: any) {
     if (producer.alternateNames && Array.isArray(producer.alternateNames)) {
       alternateScore = Math.max(
         0,
-        ...producer.alternateNames.map(altName => stringSimilarity(producerName, altName))
+        ...producer.alternateNames.map((altName: string) => stringSimilarity(producerName, altName))
       );
     }
     
@@ -632,7 +632,7 @@ export async function findMatchingProducer(producerName: string, storage: any) {
   });
   
   // Sort by score
-  scoredProducers.sort((a, b) => b.score - a.score);
+  scoredProducers.sort((a: any, b: any) => b.score - a.score);
   
   // Return the best match if it's good enough
   return scoredProducers[0]?.score > 0.6 ? scoredProducers[0].producer : null;

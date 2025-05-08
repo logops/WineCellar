@@ -42,6 +42,8 @@ interface WineData {
   duplicateId?: number;
   needsVerification: boolean;
   storageLocation?: string;
+  producerVerified?: boolean;
+  originalProducer?: string;
   aiDrinkingWindowRecommendation?: {
     start?: string;
     end?: string;
@@ -208,10 +210,28 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
         )}
         
         {/* Identification Tags */}
-        {(wine.mappedData.grapeVarieties || wine.mappedData.vineyard || wine.mappedData.region || wine.mappedData.subregion) && (
+        {(wine.mappedData.grapeVarieties || wine.mappedData.vineyard || wine.mappedData.region || wine.mappedData.subregion || wine.producerVerified) && (
           <div className="mb-3">
             <p className="text-xs text-muted-foreground mb-1">Auto-identified:</p>
             <div className="flex flex-wrap gap-1.5">
+              {wine.producerVerified && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="text-xs bg-amber-50 border-amber-200">
+                        <Check className="h-3 w-3 mr-1 text-amber-600" />
+                        <span className="text-amber-600">Verified Producer</span>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Producer name "{wine.mappedData.producer}" verified against our reference database</p>
+                      {wine.originalProducer && wine.originalProducer !== wine.mappedData.producer && (
+                        <p className="text-xs mt-1">Original: {wine.originalProducer}</p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               {wine.mappedData.grapeVarieties && (
                 <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200">
                   <span className="text-blue-600">Grapes:</span> {wine.mappedData.grapeVarieties}
