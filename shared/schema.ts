@@ -126,3 +126,24 @@ export const labelAnalytics = pgTable("label_analytics", {
   drinkingWindowAccepted: boolean("drinking_window_accepted").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Producer reference table for wine import matching
+export const producers = pgTable("producers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  alternateNames: text("alternate_names").array(),
+  isVerified: boolean("is_verified").default(true),
+  region: text("region"),
+  country: text("country"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProducerSchema = createInsertSchema(producers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type Producer = typeof producers.$inferSelect;
+export type InsertProducer = z.infer<typeof insertProducerSchema>;

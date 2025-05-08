@@ -4,7 +4,8 @@ import {
   consumptions, type Consumption, type InsertConsumption,
   wishlist, type Wishlist, type InsertWishlist,
   labelAnalytics,
-  recommendationHistory, type RecommendationHistory, type InsertRecommendationHistory
+  recommendationHistory, type RecommendationHistory, type InsertRecommendationHistory,
+  producers, type Producer, type InsertProducer
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -49,6 +50,14 @@ export interface IStorage {
   // Label recognition analytics
   recordLabelAnalytics(userId: number, imageHash: string, originalPrediction: any, userCorrection: any | null, wasAccurate: boolean, drinkingWindowAccepted?: boolean): Promise<void>;
   
+  // Producer reference operations
+  getProducers(): Promise<Producer[]>;
+  getProducer(id: number): Promise<Producer | undefined>;
+  getProducerByName(name: string): Promise<Producer | undefined>;
+  createProducer(producer: InsertProducer): Promise<Producer>;
+  bulkCreateProducers(producers: InsertProducer[]): Promise<number>;
+  findMatchingProducers(searchTerm: string): Promise<Producer[]>;
+  
   // Session store for authentication
   sessionStore: session.Store;
 }
@@ -60,11 +69,13 @@ export class MemStorage implements IStorage {
   private consumptions: Map<number, Consumption>;
   private wishlistItems: Map<number, Wishlist>;
   private recommendationHistoryItems: Map<number, RecommendationHistory>;
+  private producers: Map<number, Producer>;
   private userId: number;
   private wineId: number;
   private consumptionId: number;
   private wishlistId: number;
   private recommendationHistoryId: number;
+  private producerId: number;
   sessionStore: session.Store;
 
   constructor() {
@@ -73,11 +84,13 @@ export class MemStorage implements IStorage {
     this.consumptions = new Map();
     this.wishlistItems = new Map();
     this.recommendationHistoryItems = new Map();
+    this.producers = new Map();
     this.userId = 1;
     this.wineId = 1;
     this.consumptionId = 1;
     this.wishlistId = 1;
     this.recommendationHistoryId = 1;
+    this.producerId = 1;
     
     // Create a memory session store
     const MemoryStore = require('memorystore')(session);
@@ -240,6 +253,70 @@ export class MemStorage implements IStorage {
     const history: RecommendationHistory = { ...insertHistory, id, createdAt };
     this.recommendationHistoryItems.set(id, history);
     return history;
+  }
+  
+  // Producer reference operations
+  async getProducers(): Promise<Producer[]> {
+    return Array.from(this.producers.values());
+  }
+  
+  async getProducer(id: number): Promise<Producer | undefined> {
+    return this.producers.get(id);
+  }
+  
+  async getProducerByName(name: string): Promise<Producer | undefined> {
+    return Array.from(this.producers.values()).find(
+      producer => producer.name.toLowerCase() === name.toLowerCase()
+    );
+  }
+  
+  async createProducer(insertProducer: InsertProducer): Promise<Producer> {
+    const id = this.producerId++;
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    const producer: Producer = { 
+      ...insertProducer, 
+      id, 
+      createdAt,
+      updatedAt,
+      alternateNames: insertProducer.alternateNames || [] 
+    };
+    this.producers.set(id, producer);
+    return producer;
+  }
+  
+  async bulkCreateProducers(insertProducers: InsertProducer[]): Promise<number> {
+    let count = 0;
+    for (const producer of insertProducers) {
+      // Check if producer already exists by name
+      const existingProducer = await this.getProducerByName(producer.name);
+      if (!existingProducer) {
+        await this.createProducer(producer);
+        count++;
+      }
+    }
+    return count;
+  }
+  
+  async findMatchingProducers(searchTerm: string): Promise<Producer[]> {
+    if (!searchTerm) return [];
+    
+    const normalizedSearchTerm = searchTerm.toLowerCase();
+    return Array.from(this.producers.values()).filter(producer => {
+      // Check main name
+      if (producer.name.toLowerCase().includes(normalizedSearchTerm)) {
+        return true;
+      }
+      
+      // Check alternate names
+      if (producer.alternateNames && producer.alternateNames.some(
+        altName => altName.toLowerCase().includes(normalizedSearchTerm)
+      )) {
+        return true;
+      }
+      
+      return false;
+    });
   }
 
   // Initialize sample data
