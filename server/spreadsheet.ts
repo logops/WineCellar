@@ -13,7 +13,10 @@ import {
   processWineTitle, 
   getRegionFromAppellation, 
   getCountryFromRegion, 
-  isLikelyWine 
+  isLikelyWine,
+  identifyProducer,
+  findMatchingProducer,
+  normalizeProducerName
 } from './wineUtils';
 
 // Use anthropic client from anthropic.ts file
@@ -843,33 +846,21 @@ export async function processBatch(
           mappedData.producer = producer.trim();
           mappedData.name = name.trim();
         } else {
-          // Check for known multi-word producers first
-          const knownProducers = [
-            "Casa Lapostolle",
-            "Domaine Serene",
-            "Chateau Margaux",
-            "Silver Oak",
-            "Opus One",
-            "Stag's Leap",
-            "Penfolds Grange",
-            "Caymus Vineyards"
-          ];
+          // Use our producer reference system to look for matches
+          // We'll make this async function handling later in the process
+          // as the current spreadsheet processing is synchronous
           
-          // Check for known multi-word producers
-          const matchedProducer = knownProducers.find(producer => 
-            producerValue.toLowerCase().includes(producer.toLowerCase())
-          );
+          // Placeholder for now - we'll call the findMatchingProducer function
+          // in the async processBatch function
           
-          if (matchedProducer) {
-            // Split the name using the known producer
-            const regex = new RegExp(`^(.*?${matchedProducer})\\s+(.+)$`, 'i');
-            const match = producerValue.match(regex);
-            
-            if (match) {
-              const [_, producer, name] = match;
-              mappedData.producer = producer.trim();
-              mappedData.name = name.trim();
-            }
+          // For now, use the standard pattern - we'll enhance with DB lookups later
+          const producerPattern = /^([A-Za-z\u00C0-\u00FF\s'&]+?)(?:\s+)([A-Za-z0-9\u00C0-\u00FF\s'.,-]+)$/;
+          const match = producerValue.match(producerPattern);
+          
+          if (match) {
+            const [_, producer, name] = match;
+            mappedData.producer = producer.trim();
+            mappedData.name = name.trim();
           } else {
             // Try to extract just producer and name (no vintage)
             // Look for patterns like "Producer Wine Name" where we can split on the first occurrence of key words
@@ -921,35 +912,21 @@ export async function processBatch(
     if (mappedData.name && !mappedData.producer) {
       const nameValue = String(mappedData.name);
       
-      // Look for known multi-word producers first
-      const knownProducers = [
-        "Casa Lapostolle",
-        "Domaine Serene",
-        "Chateau Margaux",
-        "Silver Oak",
-        "Opus One",
-        "Stag's Leap",
-        "Penfolds Grange",
-        "Caymus Vineyards",
-        "Alice et Olivier De Moor", // Add the specific producer we need to handle
-        "Alice et Olivier"
-      ];
+      // Similarly to above, we'll use our producer reference system
+      // in the processBatch function where we can perform async operations
       
-      // Check for known multi-word producers
-      const matchedProducer = knownProducers.find(producer => 
-        nameValue.toLowerCase().includes(producer.toLowerCase())
-      );
+      // For now, use a simplified pattern matching approach
+      // Extract producer name using standard patterns
+      const producerNamePattern = /^([A-Za-z\u00C0-\u00FF\s'&.,]{2,30}?)(?:\s+)([A-Za-z0-9\u00C0-\u00FF\s'.,-]{3,})$/;
+      const match = nameValue.match(producerNamePattern);
       
-      if (matchedProducer) {
-        // Split the name using the known producer
-        const regex = new RegExp(`^(.*?${matchedProducer})\\s+(.+)$`, 'i');
-        const match = nameValue.match(regex);
+      if (match) {
+        const [_, producerPart, namePart] = match;
+        mappedData.producer = producerPart.trim();
+        mappedData.name = namePart.trim();
         
-        if (match) {
-          const [_, producer, name] = match;
-          mappedData.producer = producer.trim();
-          mappedData.name = name.trim();
-        }
+        // Mark for producer verification in our async process
+        (mappedData as any).needsProducerVerification = true;
       } else {
         // Look for a pattern like "Casa Lapostolle Le Petit Clos Apalta"
         // Common producers are typically 1-3 words
@@ -1300,6 +1277,9 @@ export async function processBatch(
     await addAiDrinkingWindowRecommendations(result.processedWines);
   }
   
+  // Process producer verification for all wines with needsProducerVerification flag
+  await verifyProducersInBatch(result.processedWines);
+  
   // Final critical check: Make sure producer names are not duplicated as wine names
   // This addresses a common issue in imports
   for (const processedWine of result.processedWines) {
@@ -1333,6 +1313,63 @@ export async function processBatch(
   }
   
   return result;
+}
+
+/**
+ * Verify and enhance producer information for all wines that need it
+ * Uses the producer reference database to find matches for producer names
+ */
+async function verifyProducersInBatch(processedWines: ProcessedWine[]): Promise<void> {
+  // Import wineUtils for producer identification
+  const { findMatchingProducer } = await import('./wineUtils');
+  const { storage } = await import('./storage');
+  
+  // Find wines that need producer verification
+  const winesNeedingVerification = processedWines.filter(wine => 
+    wine.mappedData.producer && 
+    ((wine.mappedData as any).needsProducerVerification === true || 
+    wine.confidence !== ConfidenceLevel.HIGH)
+  );
+  
+  if (winesNeedingVerification.length === 0) {
+    console.log('No wines need producer verification');
+    return;
+  }
+  
+  console.log(`Verifying producers for ${winesNeedingVerification.length} wines`);
+  
+  // Process each wine
+  for (const wine of winesNeedingVerification) {
+    if (!wine.mappedData.producer) continue;
+    
+    try {
+      // Store original producer name for reference
+      const originalProducer = wine.mappedData.producer;
+      
+      // Try to find a matching producer in our database
+      const matchingProducer = await findMatchingProducer(originalProducer, storage);
+      
+      if (matchingProducer) {
+        console.log(`Producer verification: '${originalProducer}' matched to '${matchingProducer.name}'`);
+        
+        // Update the producer name to the verified version
+        wine.mappedData.producer = matchingProducer.name;
+        
+        // Add metadata to show the user this was enhanced
+        (wine as any).producerVerified = true;
+        (wine as any).originalProducer = originalProducer;
+        
+        // If we have confidence in this match, improve the wine's overall confidence
+        if (wine.confidence === ConfidenceLevel.LOW) {
+          wine.confidence = ConfidenceLevel.MEDIUM;
+        }
+      } else {
+        console.log(`No matching producer found in reference database for: ${originalProducer}`);
+      }
+    } catch (error) {
+      console.error('Error verifying producer:', error);
+    }
+  }
 }
 
 /**
