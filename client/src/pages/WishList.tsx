@@ -75,7 +75,7 @@ export default function WishList() {
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Add Wine to Wish List</DialogTitle>
+            <DialogTitle className="font-serif">Add Wine to Wish List</DialogTitle>
           </DialogHeader>
           <WishlistForm 
             onSuccess={() => {
