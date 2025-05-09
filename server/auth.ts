@@ -48,9 +48,10 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        // Try to get user by email (since username field now contains email)
+        const user = await storage.getUserByEmail(username);
         if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Incorrect username or password" });
+          return done(null, false, { message: "Incorrect email or password" });
         } else {
           return done(null, user);
         }
@@ -75,22 +76,22 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Check for existing username
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
+      const email = req.body.email;
       
       // Check for existing email
-      const existingEmail = await storage.getUserByEmail(req.body.email);
+      const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
         return res.status(400).json({ message: "Email already in use" });
       }
 
-      const user = await storage.createUser({
+      // Use email as username
+      const userData = {
         ...req.body,
+        username: email,
         password: await hashPassword(req.body.password),
-      });
+      };
+
+      const user = await storage.createUser(userData);
 
       req.login(user, (err) => {
         if (err) return next(err);
@@ -104,7 +105,7 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate("local", (err: Error | null, user: SchemaUser | false, info: { message: string } | undefined) => {
       if (err) return next(err);
-      if (!user) return res.status(401).json({ message: info?.message || "Authentication failed" });
+      if (!user) return res.status(401).json({ message: info?.message || "Incorrect email or password" });
       
       req.login(user, (err) => {
         if (err) return next(err);
