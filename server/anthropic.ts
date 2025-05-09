@@ -995,6 +995,22 @@ export async function lookupWineInformation(wineName: string, producer?: string,
       temperature: 0.1,
       system: `You are a wine expert assistant providing comprehensive information about wines. Based on the wine name and details provided, analyze the wine and provide detailed information.
       
+      IMPORTANT GUIDELINES FOR GRAPE VARIETIES:
+      1. Always list grape varieties using ONLY the grape variety names, separated by commas, with no additional text. 
+         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc"
+         - INCORRECT: "Primarily Cabernet Sauvignon with some Merlot"
+         - INCORRECT: "80% Cabernet Sauvignon and 20% Merlot"
+      
+      2. Do not include qualifying words like "primarily", "predominantly", "likely", "possibly", "may contain", etc.
+      
+      3. For Quintarelli wines from Valpolicella, ALWAYS use: "Corvina, Corvinone, Rondinella"
+      
+      4. For Bordeaux blends where specific percentages are unknown, use the grape names separated by commas:
+         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec"
+         - INCORRECT: "Bordeaux blend of mostly Cabernet Sauvignon"
+         
+      5. For region and subregion, provide only definitive information without qualifying words.
+      
       Respond in JSON format with the following fields:
       {
         "grapeVarieties": "Grape varieties used in this wine, comma separated",
@@ -1014,13 +1030,18 @@ export async function lookupWineInformation(wineName: string, producer?: string,
           content: `Please provide detailed information about this wine: ${wineInfo}
           
           I need to know:
-          1. What grape varieties are used in this wine? (comma separated list)
+          1. What grape varieties are used in this wine? (ONLY list grape names separated by commas, with no qualifiers like "primarily" or "predominantly")
           2. Is there any specific vineyard information for this wine?
           3. What's the wine region and subregion (if available)?
           4. What are the typical flavor profile and tasting notes?
           5. What foods would pair well with this wine?
           6. What's the recommended drinking window?
           7. Are there any notable production methods or techniques used?
+          
+          IMPORTANT FOR GRAPE VARIETIES:
+          - Remember that for Quintarelli wines from Valpolicella, use: "Corvina, Corvinone, Rondinella"
+          - For Bordeaux blends, list the specific grapes, not just "Bordeaux blend"
+          - Do NOT include percentages or qualifiers, only the grape variety names
           
           If certain information isn't available or you're uncertain, provide your best educated assessment based on similar wines from the same producer, region, or style. Indicate your confidence level accordingly.
           
