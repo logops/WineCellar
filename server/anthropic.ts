@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import { Wine } from '@shared/schema';
 
 // Import utility functions for data cleaning
-import { cleanGrapeVarieties, cleanLocation } from '../client/src/lib/wineUtils';
+import { cleanGrapeVarieties, cleanLocation } from '@shared/wineUtils';
 
 // Initialize Anthropic client with API key
 export const anthropic = new Anthropic({
@@ -31,6 +31,21 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
       max_tokens: 1024,
       system: `You are a wine expert assistant. Based on the wine details provided, analyze the wine and recommend an appropriate drinking window (start year and end year). 
       Additionally, identify grape varieties, region, and other key information if they weren't provided.
+      
+      IMPORTANT GUIDELINES FOR GRAPE VARIETIES:
+      1. Always list grape varieties using ONLY the grape variety names, separated by commas, with no additional text. 
+         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc"
+         - INCORRECT: "Primarily Cabernet Sauvignon with some Merlot"
+         - INCORRECT: "80% Cabernet Sauvignon and 20% Merlot"
+      
+      2. Do not include qualifying words like "primarily", "predominantly", "likely", "possibly", "may contain", etc.
+      
+      3. For Quintarelli wines from Valpolicella, ALWAYS use: "Corvina, Corvinone, Rondinella"
+      
+      4. For Bordeaux blends where specific percentages are unknown, use the grape names separated by commas:
+         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec"
+         - INCORRECT: "Bordeaux blend of mostly Cabernet Sauvignon"
+      
       Respond in JSON format with the following fields:
       {
         "start": 2025, // Year to start drinking (numeric)
@@ -57,7 +72,9 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
           
           Respond only with JSON as specified. Use numeric values for years, not strings.
           For any fields where you're uncertain, provide your best estimate based on similar wines.
-          If you have absolutely no information to determine a field, use null for that field.`
+          If you have absolutely no information to determine a field, use null for that field.
+          
+          Remember to ONLY list grape varieties as comma-separated names with NO qualifying words.`
         }
       ],
     });
@@ -178,9 +195,25 @@ export async function analyzeWineLabel(imageBase64: string) {
                 }
               }
               
+              IMPORTANT GUIDELINES FOR GRAPE VARIETIES:
+              1. Always list grape varieties using ONLY the grape variety names, separated by commas, with no additional text. 
+                 - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc"
+                 - INCORRECT: "Primarily Cabernet Sauvignon with some Merlot"
+                 - INCORRECT: "80% Cabernet Sauvignon and 20% Merlot"
+              
+              2. Do not include qualifying words like "primarily", "predominantly", "likely", "possibly", "may contain", etc.
+              
+              3. For Quintarelli wines from Valpolicella, ALWAYS use: "Corvina, Corvinone, Rondinella"
+              
+              4. For Bordeaux blends where specific percentages are unknown, use the grape names separated by commas:
+                 - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec"
+                 - INCORRECT: "Bordeaux blend of mostly Cabernet Sauvignon"
+              
               For the recommendedDrinkingWindow, use your expertise on wine aging potential based on the producer, vintage, region, and grape varieties. Calculate when the wine will be at its best drinking period. For example, many Bordeaux reds need 10-20 years to mature while Beaujolais are often best consumed young. If the wine is already past its prime drinking window, set isPastPrime to true.
               
               For grape varieties that aren't explicitly stated on the label, use your knowledge to make an educated guess based on the region, producer style, and any visual cues from the label. For example, if it's a red wine from Barolo, it's likely Nebbiolo.
+              
+              For region and subregion, provide only definitive information without qualifying words like "likely" or "probably".
               
               Provide comprehensive tasting notes and characteristics based on the typical profile of this type of wine. Include all details that would help a wine enthusiast understand the wine's style and flavor profile.
               
