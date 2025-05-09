@@ -118,7 +118,7 @@ export function WineFilters({
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h3 className="font-serif text-gray-800">Filters</h3>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-7 px-2 text-xs text-gray-600">
+            <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-7 px-2 text-xs text-gray-600 font-elegant">
               Clear All
             </Button>
             <Button variant="ghost" size="sm" onClick={onToggle} className="h-7 w-7 p-0">
@@ -156,7 +156,7 @@ export function WineFilters({
             
             {/* Regions */}
             <div>
-              <h4 className="text-sm font-medium mb-3 text-gray-700">Region</h4>
+              <h4 className="text-sm font-serif mb-3 text-gray-700">Region</h4>
               <div className="space-y-2">
                 {Object.entries(regionCounts).slice(0, 6).map(([region, count]) => (
                   <div key={region} className="flex items-center space-x-2">
@@ -181,7 +181,7 @@ export function WineFilters({
             
             {/* Vintage */}
             <div>
-              <h4 className="text-sm font-medium mb-3 text-gray-700">Vintage</h4>
+              <h4 className="text-sm font-serif mb-3 text-gray-700">Vintage</h4>
               <div className="space-y-2">
                 {Object.entries(vintageCounts).slice(0, 5).map(([vintage, count]) => (
                   <div key={vintage} className="flex items-center space-x-2">
@@ -206,7 +206,7 @@ export function WineFilters({
             
             {/* Price Range */}
             <div>
-              <h4 className="text-sm font-medium mb-3 text-gray-700">Price Range</h4>
+              <h4 className="text-sm font-serif mb-3 text-gray-700">Price Range</h4>
               <div className="px-2">
                 <Slider
                   defaultValue={[0, 500]}
@@ -227,7 +227,7 @@ export function WineFilters({
             
             {/* Rating Range */}
             <div>
-              <h4 className="text-sm font-medium mb-3 text-gray-700">Rating</h4>
+              <h4 className="text-sm font-serif mb-3 text-gray-700">Rating</h4>
               <div className="px-2">
                 <Slider
                   defaultValue={[80, 100]}
@@ -252,7 +252,7 @@ export function WineFilters({
               <>
                 <Separator />
                 <div>
-                  <h4 className="text-sm font-medium mb-3 text-gray-700">Active Filters</h4>
+                  <h4 className="text-sm font-serif mb-3 text-gray-700">Active Filters</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedFilters.regions.map(region => (
                       <Badge key={region} variant="outline" className="bg-cream-50 text-xs py-0 h-6">
