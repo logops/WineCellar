@@ -179,6 +179,11 @@
     font-family: "Montserrat", "Open Sans", ui-sans-serif, system-ui, sans-serif;
   }
   
+  /* Elegant body font option */
+  .font-elegant {
+    font-family: "Cormorant Garamond", "Libre Baskerville", "Playfair Display", "Times New Roman", serif;
+  }
+  
   /* Legacy class support */
   .font-montserrat {
     font-family: "Montserrat", "Open Sans", ui-sans-serif, system-ui, sans-serif;

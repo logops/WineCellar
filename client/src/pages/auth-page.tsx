@@ -91,25 +91,25 @@ export default function AuthPage() {
           </div>
           <h1 className="text-4xl font-serif font-bold text-primary mb-4">Cellar Master</h1>
           <h2 className="text-2xl font-medium mb-6">Your Digital Wine Collection</h2>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground mb-4 font-elegant text-lg">
             Manage your wine collection with ease. Keep track of your wines, drinking windows, and personal tasting notes.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
             <div className="p-4 bg-card rounded-lg shadow-sm">
               <h3 className="font-bold mb-2">Track Your Collection</h3>
-              <p className="text-sm text-muted-foreground">Catalog wines with detailed information and consumption history.</p>
+              <p className="text-sm text-muted-foreground font-elegant">Catalog wines with detailed information and consumption history.</p>
             </div>
             <div className="p-4 bg-card rounded-lg shadow-sm">
               <h3 className="font-bold mb-2">Drinking Windows</h3>
-              <p className="text-sm text-muted-foreground">Know exactly when your wines are ready to drink.</p>
+              <p className="text-sm text-muted-foreground font-elegant">Know exactly when your wines are ready to drink.</p>
             </div>
             <div className="p-4 bg-card rounded-lg shadow-sm">
               <h3 className="font-bold mb-2">Advanced Search</h3>
-              <p className="text-sm text-muted-foreground">Find the perfect wine for any occasion with powerful filters.</p>
+              <p className="text-sm text-muted-foreground font-elegant">Find the perfect wine for any occasion with powerful filters.</p>
             </div>
             <div className="p-4 bg-card rounded-lg shadow-sm">
               <h3 className="font-bold mb-2">Collection Insights</h3>
-              <p className="text-sm text-muted-foreground">Get valuable insights about your wine collection.</p>
+              <p className="text-sm text-muted-foreground font-elegant">Get valuable insights about your wine collection.</p>
             </div>
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function AuthPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="font-serif text-3xl">Welcome to Cellar Master</CardTitle>
-            <CardDescription>
+            <CardDescription className="font-elegant text-base">
               Login or create an account to manage your wine collection
             </CardDescription>
           </CardHeader>
@@ -226,7 +226,7 @@ export default function AuthPage() {
             </Tabs>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <p className="text-sm text-center text-muted-foreground">
+            <p className="text-sm text-center text-muted-foreground font-elegant">
               {activeTab === "login" 
                 ? "Don't have an account?" 
                 : "Already have an account?"}
