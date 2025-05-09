@@ -633,7 +633,6 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
               // Use the cleanLocation utility to remove qualifying words
               const cleanedSubregion = cleanLocation(wine.aiDrinkingWindowRecommendation.subregion);
               updatedMappedData.subregion = cleanedSubregion || wine.aiDrinkingWindowRecommendation.subregion;
-              updatedMappedData.subregion = cleanSubregion;
             }
             
             // Combine notes information if it exists and current notes are empty
