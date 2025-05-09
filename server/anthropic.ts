@@ -6,6 +6,9 @@ import os from 'os';
 import { randomUUID } from 'crypto';
 import { Wine } from '@shared/schema';
 
+// Import utility functions for data cleaning
+import { cleanGrapeVarieties, cleanLocation } from '../client/src/lib/wineUtils';
+
 // Initialize Anthropic client with API key
 export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -75,6 +78,14 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
         
         // Extract and convert all fields with appropriate fallbacks
         // Make sure all expected fields exist in the response
+        // Clean up grape varieties and locations 
+        const cleanedGrapeVarieties = cleanGrapeVarieties(recommendation.grapeVarieties);
+        const cleanedRegion = cleanLocation(recommendation.region);
+        const cleanedSubregion = cleanLocation(recommendation.subregion);
+        
+        console.log('Original grape varieties:', recommendation.grapeVarieties);
+        console.log('Cleaned grape varieties:', cleanedGrapeVarieties);
+        
         return {
           success: true,
           data: {
@@ -84,10 +95,10 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
             confidence: recommendation.confidence || recommendation.confidenceLevel || 'medium',
             reasoning: recommendation.reasoning || 'Based on the wine characteristics.',
             
-            // Additional wine information
-            grapeVarieties: recommendation.grapeVarieties || null,
-            region: recommendation.region || null,
-            subregion: recommendation.subregion || null,
+            // Additional wine information with cleaned data
+            grapeVarieties: cleanedGrapeVarieties || null,
+            region: cleanedRegion || null,
+            subregion: cleanedSubregion || null,
             notes: recommendation.notes || null,
             cellaring: recommendation.cellaring || null,
             pairings: recommendation.pairings || null
@@ -205,6 +216,21 @@ export async function analyzeWineLabel(imageBase64: string) {
     
     // Parse the extracted JSON
     const wineData = JSON.parse(jsonMatch[0]);
+    
+    // Clean up grape varieties and location data
+    if (wineData.grapeVarieties) {
+      console.log('Original grape varieties:', wineData.grapeVarieties);
+      wineData.grapeVarieties = cleanGrapeVarieties(wineData.grapeVarieties);
+      console.log('Cleaned grape varieties:', wineData.grapeVarieties);
+    }
+    
+    if (wineData.region) {
+      wineData.region = cleanLocation(wineData.region);
+    }
+    
+    if (wineData.subregion) {
+      wineData.subregion = cleanLocation(wineData.subregion);
+    }
     
     return {
       success: true,
