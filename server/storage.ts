@@ -11,9 +11,12 @@ import { db } from "./db";
 import { eq, and, desc, or, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
-
-// Interface for storage operations
 import session from "express-session";
+// Import for memory storage session
+import * as memorystore from "memorystore";
+
+// Create MemoryStore for session
+const MemoryStore = memorystore.default(session);
 
 export interface IStorage {
   // User operations
@@ -94,7 +97,6 @@ export class MemStorage implements IStorage {
     this.producerId = 1;
     
     // Create a memory session store
-    const MemoryStore = require('memorystore')(session);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
@@ -832,5 +834,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use DatabaseStorage instead of MemStorage
-export const storage = new DatabaseStorage();
+// Temporarily use MemStorage to avoid database migration issues
+export const storage = new MemStorage();
