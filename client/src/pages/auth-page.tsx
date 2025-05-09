@@ -119,7 +119,7 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 p-8 flex items-center justify-center order-2 md:order-1">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Welcome to Cellar Master</CardTitle>
+            <CardTitle className="font-serif text-3xl">Welcome to Cellar Master</CardTitle>
             <CardDescription>
               Login or create an account to manage your wine collection
             </CardDescription>
@@ -127,8 +127,8 @@ export default function AuthPage() {
           <CardContent>
             <Tabs defaultValue="login" value={activeTab} onValueChange={(value) => setActiveTab(value as "login" | "register")}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login" className="font-serif">Login</TabsTrigger>
+                <TabsTrigger value="register" className="font-serif">Register</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login" className="mt-0">
@@ -162,7 +162,7 @@ export default function AuthPage() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      className="w-full font-serif" 
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending ? "Logging in..." : "Login"}
@@ -233,7 +233,7 @@ export default function AuthPage() {
             </p>
             <Button 
               variant="outline" 
-              className="w-full" 
+              className="w-full font-serif" 
               onClick={() => setActiveTab(activeTab === "login" ? "register" : "login")}
             >
               {activeTab === "login" ? "Create an account" : "Login"}
