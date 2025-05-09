@@ -611,17 +611,37 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
             updatedMappedData.drinkingWindowStart = wine.aiDrinkingWindowRecommendation.start || '';
             updatedMappedData.drinkingWindowEnd = wine.aiDrinkingWindowRecommendation.end || '';
             
-            // Apply other fields if they were provided and current values are empty
-            if (wine.aiDrinkingWindowRecommendation.grapeVarieties && !updatedMappedData.grapeVarieties) {
-              updatedMappedData.grapeVarieties = wine.aiDrinkingWindowRecommendation.grapeVarieties;
+            // Always apply AI analysis recommendations when confirmed, overwriting existing data
+            if (wine.aiDrinkingWindowRecommendation.grapeVarieties) {
+              // Remove qualifying words like "primarily" or "likely with" from grape varieties
+              let cleanGrapeVarieties = wine.aiDrinkingWindowRecommendation.grapeVarieties;
+              cleanGrapeVarieties = cleanGrapeVarieties
+                .replace(/primarily\s+/i, '')
+                .replace(/\s*likely\s+with\s+/i, ', ')
+                .replace(/\s*with\s+possible\s+additions\s+of\s+/i, ', ')
+                .replace(/\s*with\s+/i, ', ')
+                .replace(/\s*and\s+other\s+local\s+varieties/i, '')
+                .replace(/\s*and\s+other\s+varieties/i, '')
+                .replace(/\s*such\s+as\s+/i, ', ');
+                
+              updatedMappedData.grapeVarieties = cleanGrapeVarieties;
             }
             
-            if (wine.aiDrinkingWindowRecommendation.region && !updatedMappedData.region) {
-              updatedMappedData.region = wine.aiDrinkingWindowRecommendation.region;
+            if (wine.aiDrinkingWindowRecommendation.region) {
+              // Remove qualifying words like "likely" from region
+              let cleanRegion = wine.aiDrinkingWindowRecommendation.region;
+              cleanRegion = cleanRegion.replace(/likely\s+/i, '').trim();
+              updatedMappedData.region = cleanRegion;
             }
             
-            if (wine.aiDrinkingWindowRecommendation.subregion && !updatedMappedData.subregion) {
-              updatedMappedData.subregion = wine.aiDrinkingWindowRecommendation.subregion;
+            if (wine.aiDrinkingWindowRecommendation.subregion) {
+              // Remove qualifying words like "likely" from subregion
+              let cleanSubregion = wine.aiDrinkingWindowRecommendation.subregion;
+              cleanSubregion = cleanSubregion
+                .replace(/likely\s+/i, '')
+                .replace(/\s*\(where.*?\)/i, '')
+                .trim();
+              updatedMappedData.subregion = cleanSubregion;
             }
             
             // Combine notes information if it exists and current notes are empty

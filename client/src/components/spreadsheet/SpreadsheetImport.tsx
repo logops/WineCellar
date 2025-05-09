@@ -576,7 +576,7 @@ const SpreadsheetImport: React.FC = () => {
     <div className="container mx-auto p-4">
       {/* Edit Wine Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Wine Data</DialogTitle>
           </DialogHeader>
