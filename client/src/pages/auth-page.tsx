@@ -19,8 +19,8 @@ import { GlassWater } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 const loginSchema = z.object({
-  username: z.string().min(3, {
-    message: "Username must be at least 3 characters.",
+  username: z.string().email({
+    message: "Please enter a valid email address.",
   }),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
@@ -28,9 +28,6 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, {
-    message: "Username must be at least 3 characters.",
-  }),
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
@@ -63,7 +60,6 @@ export default function AuthPage() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -75,8 +71,9 @@ export default function AuthPage() {
   }
 
   function onRegisterSubmit(values: RegisterFormValues) {
-    const { username, email, password } = values;
-    registerMutation.mutate({ username, email, password });
+    const { email, password } = values;
+    // Use email as the username
+    registerMutation.mutate({ username: email, email, password });
   }
 
   // If user is already logged in, redirect to home page
@@ -142,9 +139,9 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="Your username" {...field} />
+                            <Input type="email" placeholder="Your email address" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -177,19 +174,6 @@ export default function AuthPage() {
               <TabsContent value="register" className="mt-0">
                 <Form {...registerForm}>
                   <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6">
-                    <FormField
-                      control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Choose a username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <FormField
                       control={registerForm.control}
                       name="email"
