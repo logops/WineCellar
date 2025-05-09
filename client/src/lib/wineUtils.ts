@@ -325,17 +325,46 @@ export interface WineInfoLookupResponse {
 export function cleanGrapeVarieties(grapeVarieties: string | null | undefined): string | undefined {
   if (!grapeVarieties) return undefined;
   
+  let cleanedText = grapeVarieties;
+  
+  // Handle the special case of "Bordeaux components" or similar vague descriptions
+  if (cleanedText.toLowerCase().includes("bordeaux component") || 
+      cleanedText.toLowerCase().includes("bordeaux blend") ||
+      cleanedText.toLowerCase().includes("bordeaux-style") ||
+      cleanedText.toLowerCase().includes("bordeaux style")) {
+    
+    // If we know some specific varietals (typically mentioned alongside "Bordeaux components")
+    if (cleanedText.toLowerCase().includes("cabernet sauvignon") || 
+        cleanedText.toLowerCase().includes("merlot") ||
+        cleanedText.toLowerCase().includes("cabernet franc")) {
+      
+      // Replace the vague "Bordeaux components" with specific Bordeaux varietals if not already mentioned
+      let components = [];
+      if (cleanedText.toLowerCase().includes("cabernet sauvignon")) components.push("Cabernet Sauvignon");
+      if (cleanedText.toLowerCase().includes("merlot")) components.push("Merlot");
+      if (cleanedText.toLowerCase().includes("cabernet franc")) components.push("Cabernet Franc");
+      if (!cleanedText.toLowerCase().includes("petit verdot") && 
+          (cleanedText.toLowerCase().includes("bordeaux"))) components.push("Petit Verdot");
+      if (!cleanedText.toLowerCase().includes("malbec") && 
+          (cleanedText.toLowerCase().includes("bordeaux"))) components.push("Malbec");
+      
+      // Only add it if it wasn't specified explicitly
+      cleanedText = components.join(", ");
+    } else {
+      // If no specific varietals are mentioned, standardize to "Bordeaux Blend"
+      cleanedText = "Bordeaux Blend";
+    }
+  }
+  
   // List of qualifying words and phrases to remove
   const qualifiers = [
     'dominant', 'primarily', 'mainly', 'predominantly', 'primary', 'mostly',
     'likely', 'possibly', 'probably', 'appears to be', 'seems to be', 'may contain',
     'small amounts of', 'small amount of', 'tiny amounts of', 'tiny amount of',
     'with some', 'with a bit of', 'with traces of', 'with a touch of',
-    'blend', 'blend of', 'blended with', 'blended from',
+    'blend of', 'blended with', 'blended from',
     'other', 'plus', 'including', 'such as', 'along with'
   ];
-  
-  let cleanedText = grapeVarieties;
   
   // Remove qualifying phrases
   qualifiers.forEach(qualifier => {
@@ -354,6 +383,9 @@ export function cleanGrapeVarieties(grapeVarieties: string | null | undefined): 
   // Remove common extra words
   cleanedText = cleanedText.replace(/varieties/gi, '');
   cleanedText = cleanedText.replace(/variety/gi, '');
+  
+  // Replace "and" with commas for better filtering
+  cleanedText = cleanedText.replace(/\s+and\s+/gi, ', ');
   
   // Clean up commas and spaces
   cleanedText = cleanedText.replace(/\s*,\s*/g, ', '); // Standardize spaces around commas
