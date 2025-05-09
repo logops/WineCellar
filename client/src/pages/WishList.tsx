@@ -29,7 +29,7 @@ export default function WishList() {
       
       <div className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-montserrat font-semibold text-burgundy-700">My Wish List</h1>
+          <h1 className="text-2xl font-serif font-medium text-burgundy-700">My Wish List</h1>
           <Button onClick={() => setShowAddModal(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add to Wish List
@@ -60,8 +60,8 @@ export default function WishList() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium mb-2">Your Wish List is Empty</h3>
-              <p className="text-gray-600 mb-6">Add wines you'd like to acquire in the future</p>
+              <h3 className="text-lg font-serif font-medium mb-2">Your Wish List is Empty</h3>
+              <p className="text-gray-600 mb-6 font-elegant">Add wines you'd like to acquire in the future</p>
               <Button onClick={() => setShowAddModal(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Your First Wish List Wine

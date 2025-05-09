@@ -103,7 +103,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   if (!wines || wines.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-5 text-center">
-        <h2 className="text-xl font-montserrat font-semibold mb-4 text-burgundy-700">My Cellar</h2>
+        <h2 className="text-xl font-serif font-medium mb-4 text-burgundy-700">My Cellar</h2>
         <p className="text-gray-600">Your cellar is empty. Add some wines to get started!</p>
       </div>
     );
