@@ -23,7 +23,7 @@ export default function Dashboard() {
             <CollectionStats />
             
             <div className="bg-white rounded-lg shadow-sm p-5 mb-6">
-              <h2 className="text-xl font-montserrat font-semibold mb-4 text-burgundy-700">Quick Actions</h2>
+              <h2 className="text-xl font-serif font-medium mb-4 text-burgundy-700">Quick Actions</h2>
               <QuickActions />
             </div>
             
