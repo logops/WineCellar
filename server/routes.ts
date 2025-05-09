@@ -79,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   // Set up authentication
   setupAuth(app);
-
+  
   // Middleware to check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
@@ -87,6 +87,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
+  
+  // Admin routes for user management
+  app.get('/api/admin/users', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Only allow admin users to access this endpoint
+      const currentUser = req.user;
+      if (!currentUser || currentUser.id !== 1) { // Simple admin check - user ID 1 is admin
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
+      
+      const users = await dbStorage.getAllUsers();
+      
+      // Sanitize user data by removing passwords
+      const sanitizedUsers = users.map(user => ({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        // Don't include password in the response
+      }));
+      
+      res.status(200).json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
 
   // Error handler function
   const handleZodError = (err: unknown, res: Response) => {
