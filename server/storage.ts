@@ -19,6 +19,7 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
   // Wine operations
@@ -110,6 +111,12 @@ export class MemStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.username === username,
+    );
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
     );
   }
 
@@ -322,7 +329,12 @@ export class MemStorage implements IStorage {
   // Initialize sample data
   private initializeData() {
     // Create sample user
-    const user: User = { id: this.userId++, username: 'demo', password: 'demo123' };
+    const user: User = { 
+      id: this.userId++, 
+      username: 'demo', 
+      email: 'demo@example.com',
+      password: 'demo123' 
+    };
     this.users.set(user.id, user);
 
     // Sample wines from the design
