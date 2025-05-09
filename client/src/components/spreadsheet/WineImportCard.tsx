@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ConfirmDialog } from '@/components/ui/dialog-confirm';
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
-import { extractGrapeVarieties, extractVineyard } from '@/lib/wineUtils';
+import { extractGrapeVarieties, extractVineyard, cleanGrapeVarieties, cleanLocation } from '@/lib/wineUtils';
 
 interface WineData {
   rowIndex: number;
@@ -394,19 +394,24 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
                             };
                             
                             // Also update the mapped data with any new information
-                            // Only update fields that are currently empty
                             const updatedMappedData = { ...updatedWine.mappedData };
                             
-                            if (grapeVarieties && !updatedMappedData.grapeVarieties) {
-                              updatedMappedData.grapeVarieties = grapeVarieties;
+                            // Always clean up the grape varieties data to remove qualifying words
+                            if (grapeVarieties) {
+                              const cleanedGrapes = cleanGrapeVarieties(grapeVarieties);
+                              updatedMappedData.grapeVarieties = cleanedGrapes || updatedMappedData.grapeVarieties;
                             }
                             
-                            if (region && !updatedMappedData.region) {
-                              updatedMappedData.region = region;
+                            // Clean up region data
+                            if (region) {
+                              const cleanedRegion = cleanLocation(region);
+                              updatedMappedData.region = cleanedRegion || updatedMappedData.region;
                             }
                             
-                            if (subregion && !updatedMappedData.subregion) {
-                              updatedMappedData.subregion = subregion;
+                            // Clean up subregion data
+                            if (subregion) {
+                              const cleanedSubregion = cleanLocation(subregion);
+                              updatedMappedData.subregion = cleanedSubregion || updatedMappedData.subregion;
                             }
                             
                             // Include useful notes information if notes are empty
@@ -613,34 +618,21 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
             
             // Always apply AI analysis recommendations when confirmed, overwriting existing data
             if (wine.aiDrinkingWindowRecommendation.grapeVarieties) {
-              // Remove qualifying words like "primarily" or "likely with" from grape varieties
-              let cleanGrapeVarieties = wine.aiDrinkingWindowRecommendation.grapeVarieties;
-              cleanGrapeVarieties = cleanGrapeVarieties
-                .replace(/primarily\s+/i, '')
-                .replace(/\s*likely\s+with\s+/i, ', ')
-                .replace(/\s*with\s+possible\s+additions\s+of\s+/i, ', ')
-                .replace(/\s*with\s+/i, ', ')
-                .replace(/\s*and\s+other\s+local\s+varieties/i, '')
-                .replace(/\s*and\s+other\s+varieties/i, '')
-                .replace(/\s*such\s+as\s+/i, ', ');
-                
-              updatedMappedData.grapeVarieties = cleanGrapeVarieties;
+              // Use the cleanGrapeVarieties utility to remove qualifying words
+              const cleanedGrapes = cleanGrapeVarieties(wine.aiDrinkingWindowRecommendation.grapeVarieties);
+              updatedMappedData.grapeVarieties = cleanedGrapes || wine.aiDrinkingWindowRecommendation.grapeVarieties;
             }
             
             if (wine.aiDrinkingWindowRecommendation.region) {
-              // Remove qualifying words like "likely" from region
-              let cleanRegion = wine.aiDrinkingWindowRecommendation.region;
-              cleanRegion = cleanRegion.replace(/likely\s+/i, '').trim();
-              updatedMappedData.region = cleanRegion;
+              // Use the cleanLocation utility to remove qualifying words
+              const cleanedRegion = cleanLocation(wine.aiDrinkingWindowRecommendation.region);
+              updatedMappedData.region = cleanedRegion || wine.aiDrinkingWindowRecommendation.region;
             }
             
             if (wine.aiDrinkingWindowRecommendation.subregion) {
-              // Remove qualifying words like "likely" from subregion
-              let cleanSubregion = wine.aiDrinkingWindowRecommendation.subregion;
-              cleanSubregion = cleanSubregion
-                .replace(/likely\s+/i, '')
-                .replace(/\s*\(where.*?\)/i, '')
-                .trim();
+              // Use the cleanLocation utility to remove qualifying words
+              const cleanedSubregion = cleanLocation(wine.aiDrinkingWindowRecommendation.subregion);
+              updatedMappedData.subregion = cleanedSubregion || wine.aiDrinkingWindowRecommendation.subregion;
               updatedMappedData.subregion = cleanSubregion;
             }
             
