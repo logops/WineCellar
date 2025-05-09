@@ -210,7 +210,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
               <Button 
                 variant={!showDashboard ? 'default' : 'ghost'}
                 onClick={() => setShowDashboard(false)}
-                className={`rounded-sm ${!showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                className={`rounded-sm font-elegant ${!showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
                 size="sm"
               >
                 My Wines
@@ -218,7 +218,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
               <Button 
                 variant={showDashboard ? 'default' : 'ghost'}
                 onClick={() => setShowDashboard(true)}
-                className={`rounded-sm ${showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+                className={`rounded-sm font-elegant ${showDashboard ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
                 size="sm"
               >
                 Dashboard
@@ -328,7 +328,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="mt-4 text-gray-600"
+                      className="mt-4 text-gray-600 font-elegant"
                       onClick={() => {
                         setSearchQuery('');
                       }}
@@ -404,7 +404,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
         <Dialog open={searchVisible} onOpenChange={setSearchVisible}>
           <DialogContent className="sm:max-w-md p-6">
             <DialogHeader className="pb-4">
-              <DialogTitle className="text-xl font-medium text-gray-800">Search Wines</DialogTitle>
+              <DialogTitle className="text-xl font-serif text-gray-800">Search Wines</DialogTitle>
             </DialogHeader>
             <div className="space-y-5">
               <div>
@@ -433,7 +433,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="border-gray-200 text-gray-600"
+                  className="border-gray-200 text-gray-600 font-elegant"
                   onClick={() => {
                     setSearchQuery('');
                     setSearchVisible(false);
@@ -443,7 +443,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
                 </Button>
                 <Button 
                   size="sm"
-                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white font-elegant"
                   onClick={() => {
                     setCurrentPage(1);
                     setSearchVisible(false);

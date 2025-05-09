@@ -116,7 +116,7 @@ export function WineFilters({
       {/* Filter Panel */}
       <div id="wine-filter-panel" className="w-64 bg-white shadow-md rounded-r-md border border-gray-200 h-[calc(100vh-7rem)] fixed left-0 top-28 z-20">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h3 className="font-medium text-gray-800">Filters</h3>
+          <h3 className="font-serif text-gray-800">Filters</h3>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-7 px-2 text-xs text-gray-600">
               Clear All
@@ -131,7 +131,7 @@ export function WineFilters({
           <div className="space-y-6 pb-4">
             {/* Wine Types */}
             <div>
-              <h4 className="text-sm font-medium mb-3 text-gray-700">Wine Type</h4>
+              <h4 className="text-sm font-serif mb-3 text-gray-700">Wine Type</h4>
               <div className="space-y-2">
                 {Object.entries(typeCounts).map(([type, count]) => (
                   <div key={type} className="flex items-center space-x-2">
