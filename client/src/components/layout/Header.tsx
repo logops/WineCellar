@@ -36,7 +36,7 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
             </svg>
           </button>
           <Link href={user ? "/" : "/auth"} className="flex items-center">
-            <span className="text-xl font-bold tracking-tight">Cellar</span>
+            <span className="text-xl font-serif font-bold tracking-tight">Cellar</span>
             <span className="ml-1 py-0.5 px-2 bg-cream-500 text-burgundy-600 text-xs font-bold rounded-sm">MASTER</span>
           </Link>
         </div>
@@ -80,7 +80,7 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
           <div className="hidden md:flex items-center space-x-4">
             <Link 
               href="/auth" 
-              className="bg-cream-500 text-burgundy-600 hover:bg-cream-600 font-medium py-2 px-4 rounded"
+              className="bg-cream-500 text-burgundy-600 hover:bg-cream-600 font-serif font-medium py-2 px-4 rounded"
             >
               Login
             </Link>
