@@ -174,7 +174,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
           <Button
             variant="outline"
             size="sm"
-            className="border-gray-200"
+            className="border-gray-200 font-elegant"
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter className="mr-2 h-4 w-4" />
@@ -189,7 +189,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
                 setActiveTab('in-cellar');
                 setShowDashboard(false);
               }}
-              className={`rounded-sm ${activeTab === 'in-cellar' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+              className={`rounded-sm font-elegant ${activeTab === 'in-cellar' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
               size="sm"
             >
               Collection
@@ -197,7 +197,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
             <Button 
               variant={activeTab === 'consumed' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('consumed')}
-              className={`rounded-sm ${activeTab === 'consumed' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
+              className={`rounded-sm font-elegant ${activeTab === 'consumed' ? 'bg-burgundy-700 text-white hover:bg-burgundy-800' : ''}`}
               size="sm"
             >
               Recent Activity
