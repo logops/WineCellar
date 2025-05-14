@@ -196,12 +196,21 @@ export function MultiBottleWizard({
     const skippedCount = skippedBottles.length;
     const totalCount = bottleData.bottles.length;
     
+    // Debug logging to make sure we're using edited bottles
+    console.log("Final edited bottles map before batch processing:", editedBottlesMap);
+    console.log("Bottles marked to add:", bottlesToAdd);
+    
     // Batch add all the bottles that are queued for addition
     if (bottlesToAddCount > 0) {
       // For each bottle marked to add, process it with addToCollection=true
       bottlesToAdd.forEach(index => {
-        // Check if this bottle has edits
+        // Check if this bottle has edits - IMPORTANT: always prioritize edited data
         const bottleToProcess = editedBottlesMap[index] || bottleData.bottles[index];
+        
+        // Log the exact data we're using for this bottle
+        console.log(`Processing bottle ${index} with data:`, bottleToProcess);
+        
+        // Send the bottle to be processed with addToCollection=true
         onProcessBottle(bottleToProcess, index + 1, totalCount, true);
       });
       

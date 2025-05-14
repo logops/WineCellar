@@ -738,15 +738,25 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         drinkingWindowEnd: drinkingWindowEnd ? new Date(drinkingWindowEnd).toISOString() : null,
       };
 
+      // Debug information
+      console.log("Form submission data:", wineData);
+      
       if (wine?.id) {
-        // Update existing wine
-        await apiRequest("PATCH", `/api/wines/${wine.id}`, wineData);
+        // Update existing wine - all fields
+        console.log("Updating wine ID:", wine.id, "with data:", wineData);
+        
+        // Send all the fields, not just the ones that changed
+        const response = await apiRequest("PATCH", `/api/wines/${wine.id}`, wineData);
+        console.log("Update response:", response);
+        
         toast({
           title: "Wine Updated",
           description: `${values.vintage} ${values.producer} ${values.name} has been updated.`,
         });
       } else {
         // Create new wine
+        console.log("Creating new wine with data:", wineData);
+        
         await apiRequest("POST", "/api/wines", wineData);
         toast({
           title: "Wine Added",

@@ -221,26 +221,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
       
-      // Create update object with all editable fields
+      // Allow updating all wine fields that are in the request body
       const updateFields: Partial<Wine> = {};
       
-      // Allow updating all wine attributes
-      const editableFields = [
-        'name', 'producer', 'vintage', 'type', 'country', 'region', 'subregion',
-        'vineyard', 'grapeVarieties', 'alcoholContent', 'purchaseDate', 'purchaseLocation',
-        'purchasePrice', 'quantity', 'consumedStatus', 'rating', 'notes', 'bottleSize',
-        'bottleLocation', 'drinkingStatus', 'drinkingWindowStart', 'drinkingWindowEnd'
-      ];
+      // Copy all fields from the request body to the update object
+      // This will ensure we update all fields that the user has edited
+      const keysToExclude = ['id', 'userId', 'createdAt'];
       
-      // Add fields that exist in the request body
-      editableFields.forEach(field => {
-        if (field in req.body) {
-          // Use type assertion to avoid TypeScript errors
-          updateFields[field as keyof typeof updateFields] = req.body[field];
+      for (const key in req.body) {
+        if (!keysToExclude.includes(key)) {
+          // Use a direct type cast here 
+          const wineKey = key as keyof Wine;
+          updateFields[wineKey] = req.body[key];
         }
-      });
+      }
       
-      console.log("Updating wine with fields:", updateFields);
+      // Make sure we log the entire update operation
+      console.log("Updating wine ID:", id, "with fields:", JSON.stringify(updateFields, null, 2));
       
       const updatedWine = await dbStorage.updateWine(id, updateFields);
       
