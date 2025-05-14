@@ -13,7 +13,7 @@ import { extractGrapeVarieties, extractVineyard, lookupWineInformation } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { WineLabelRecognition } from "@/components/wines/WineLabelRecognition";
-import { MultiBottleFlow } from "@/components/wines/MultiBottleFlow";
+// Using a simpler approach for multiple bottle detection
 import {
   AlertDialog,
   AlertDialogAction,
@@ -124,6 +124,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
   const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
   const [comprehensiveWineData, setComprehensiveWineData] = useState<ComprehensiveWineData | null>(null);
+  const [showMultiBottleDialog, setShowMultiBottleDialog] = useState(false);
+  const [detectedBottleCount, setDetectedBottleCount] = useState(0);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -637,6 +639,25 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
 
   return (
     <div className="p-1 relative">
+      {/* Multiple Bottle Detection Dialog */}
+      <AlertDialog open={showMultiBottleDialog} onOpenChange={setShowMultiBottleDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Multiple Wine Bottles Detected</AlertDialogTitle>
+            <AlertDialogDescription>
+              We've detected {detectedBottleCount} wine bottles in your image. We're adding the first bottle now.
+              <br /><br />
+              To add the remaining bottles, you can take another photo of each bottle individually or use the same photo again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowMultiBottleDialog(false)}>
+              Got It
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       {/* Close button removed in favor of click-outside functionality */}
       
       <Tabs defaultValue="manual" value={entryMethod} onValueChange={setEntryMethod} className="mb-6">
@@ -1329,6 +1350,9 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                     title: "Duplicate Wine Detected",
                     description: "This wine appears to already exist in your collection. Quantity has been increased to 2.",
                   });
+                } else {
+                  // For new wines, ensure quantity is 1
+                  form.setValue("quantity", 1);
                 }
                 
                 // Store comprehensive wine data if available
@@ -1413,14 +1437,12 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                   }
                 }
                 
-                // If multiple bottles are detected, inform the user
+                // If multiple bottles are detected, show dialog with info
                 if (recognitionResult.multipleBottlesDetected) {
-                  toast({
-                    title: "Multiple Bottles Detected",
-                    description: `We've detected ${recognitionResult.bottleCount} wine bottles in your image. Adding the first bottle now.`,
-                  });
+                  setDetectedBottleCount(recognitionResult.bottleCount || 0);
+                  setShowMultiBottleDialog(true);
                   
-                  // We'll just add the first bottle for now
+                  // We'll still use data from the first bottle
                 }
                 
                 // Switch to manual entry form to allow user to edit or complete missing fields
