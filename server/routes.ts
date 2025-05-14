@@ -235,7 +235,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add fields that exist in the request body
       editableFields.forEach(field => {
         if (field in req.body) {
-          updateFields[field] = req.body[field];
+          // Use type assertion to avoid TypeScript errors
+          updateFields[field as keyof typeof updateFields] = req.body[field];
         }
       });
       

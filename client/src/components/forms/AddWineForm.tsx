@@ -822,7 +822,13 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         }}
         isEnhancingWithAI={isEnhancingWithAI}
         onProcessBottle={(bottle, index, total, addToCollection = false) => {
-          // Update the form with the current bottle data
+          console.log("Processing bottle with data:", bottle);
+          
+          // First reset all form values to ensure we start fresh
+          form.reset();
+          
+          // Now set form values from the bottle data
+          // This ensures every field gets set from the edited bottle
           form.setValue("producer", bottle.producer || "");
           form.setValue("name", bottle.name || "");
           form.setValue("vintage", bottle.vintage || new Date().getFullYear());
@@ -830,6 +836,10 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
           form.setValue("subregion", bottle.subregion || "");
           form.setValue("grapeVarieties", bottle.grapeVarieties || "");
           form.setValue("type", bottle.type?.toLowerCase() || "red");
+          
+          if (bottle.notes) {
+            form.setValue("notes", bottle.notes);
+          }
           
           // Handle recommended drinking window if available
           if (bottle.recommendedDrinkingWindow) {
@@ -857,6 +867,9 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
           // Only submit the form if explicitly told to add to collection
           // This allows us to batch process at the end
           if (addToCollection) {
+            // Log the final form values before submission
+            console.log("Submitting form with values:", form.getValues());
+            
             // Submit the form with the current bottle data
             onSubmit(form.getValues());
           }
