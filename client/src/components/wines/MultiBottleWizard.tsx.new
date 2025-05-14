@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface WineBottleData {
   producer: string | null;
@@ -311,198 +312,221 @@ export function MultiBottleWizard({
           </CardDescription>
         </CardHeader>
       
-      <CardContent>
-        <Progress value={calculateProgress()} className="w-full mb-2" />
-        
-        {/* Batch processing status */}
-        <div className="mb-4 flex justify-between text-xs text-muted-foreground">
-          <span>Queued for addition: {bottlesToAdd.length}</span>
-          <span>Skipped: {skippedBottles.length}</span>
-        </div>
-        
-        {displayBottle && (
-          <div className="space-y-4 p-4 border rounded-md">
-            {!isEditMode ? (
-              // View mode - display data
-              <>
-                <p className="text-sm">
-                  <span className="font-semibold">Producer:</span> {displayBottle.producer || 'Unknown'}
-                </p>
-                <p className="text-sm">
-                  <span className="font-semibold">Wine:</span> {displayBottle.name || 'Unknown'}
-                </p>
-                <p className="text-sm">
-                  <span className="font-semibold">Vintage:</span> {displayBottle.vintage || 'Unknown'}
-                </p>
-                <p className="text-sm">
-                  <span className="font-semibold">Region:</span> {displayBottle.region || 'Unknown'}
-                </p>
-                <p className="text-sm">
-                  <span className="font-semibold">Grape Varieties:</span> {displayBottle.grapeVarieties || 'Unknown'}
-                </p>
-                <p className="text-sm">
-                  <span className="font-semibold">Type:</span> {displayBottle.type || 'Unknown'}
-                </p>
-              </>
-            ) : (
-              // Edit mode - show editable fields
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="producer">Producer</Label>
-                  <Input 
-                    id="producer" 
-                    value={editedBottle?.producer || ''} 
-                    onChange={(e) => handleFieldChange('producer', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="name">Wine Name</Label>
-                  <Input 
-                    id="name" 
-                    value={editedBottle?.name || ''} 
-                    onChange={(e) => handleFieldChange('name', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="vintage">Vintage</Label>
-                  <Input 
-                    id="vintage" 
-                    type="number"
-                    value={editedBottle?.vintage || ''} 
-                    onChange={(e) => handleFieldChange('vintage', e.target.value ? parseInt(e.target.value) : null)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="region">Region</Label>
-                  <Input 
-                    id="region" 
-                    value={editedBottle?.region || ''} 
-                    onChange={(e) => handleFieldChange('region', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="grapeVarieties">Grape Varieties</Label>
-                  <Input 
-                    id="grapeVarieties" 
-                    value={editedBottle?.grapeVarieties || ''} 
-                    onChange={(e) => handleFieldChange('grapeVarieties', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="type">Wine Type</Label>
-                  <Select 
-                    value={editedBottle?.type?.toLowerCase() || 'red'} 
-                    onValueChange={(value) => handleFieldChange('type', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select wine type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="red">Red Wine</SelectItem>
-                      <SelectItem value="white">White Wine</SelectItem>
-                      <SelectItem value="rose">Rosé</SelectItem>
-                      <SelectItem value="sparkling">Sparkling</SelectItem>
-                      <SelectItem value="dessert">Dessert</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
-            
-            {isDuplicate && !isEditMode && (
-              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
-                This wine already exists in your collection. Adding it will increase its quantity.
-              </div>
-            )}
+        <CardContent>
+          <Progress value={calculateProgress()} className="w-full mb-2" />
+          
+          {/* Batch processing status */}
+          <div className="mb-4 flex justify-between text-xs text-muted-foreground">
+            <span>Queued for addition: {bottlesToAdd.length}</span>
+            <span>Skipped: {skippedBottles.length}</span>
           </div>
-        )}
-      </CardContent>
-      
-      <CardFooter className="flex justify-between">
-        {!isEditMode ? (
-          // View mode buttons
-          <>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleCancel}
-                variant="outline"
-                size="sm"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSkip}
-                variant="outline"
-                size="sm"
-              >
-                <SkipForward className="mr-1 h-4 w-4" />
-                Skip
-              </Button>
-              <Button 
-                onClick={handleEdit}
-                variant="outline"
-                size="sm"
-              >
-                <Pencil className="mr-1 h-4 w-4" />
-                Edit
-              </Button>
-              {onEnhanceWithAI && (
-                <Button
-                  onClick={() => onEnhanceWithAI(currentBottle)}
-                  disabled={isEnhancingWithAI}
-                  variant="outline"
-                  size="sm"
-                  className="border-burgundy-600 text-burgundy-700 hover:bg-burgundy-50"
-                >
-                  {isEnhancingWithAI ? (
-                    <>
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                      Enhancing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-1 h-4 w-4" />
-                      Enhance with AI
-                    </>
+          
+          {displayBottle && (
+            <div className="space-y-4 p-4 border rounded-md">
+              {!isEditMode ? (
+                // View mode - display data
+                <>
+                  <p className="text-sm">
+                    {isDuplicate && (
+                      <Badge variant="outline" className="mb-2 text-xs bg-amber-50 border-amber-200 text-amber-700">
+                        Duplicate - Already in your collection
+                      </Badge>
+                    )}
+                  </p>
+                  
+                  <h3 className="font-serif font-semibold text-lg">
+                    {displayBottle.vintage ? `${displayBottle.vintage} ` : ''}
+                    {displayBottle.producer || 'Unknown Producer'}
+                    {displayBottle.name ? ` ${displayBottle.name}` : ''}
+                  </h3>
+                  
+                  <p className="text-sm text-muted-foreground">
+                    {displayBottle.region && <span>{displayBottle.region}</span>}
+                    {displayBottle.region && displayBottle.subregion && <span>, </span>}
+                    {displayBottle.subregion && <span>{displayBottle.subregion}</span>}
+                  </p>
+                  
+                  {displayBottle.grapeVarieties && (
+                    <p className="text-sm">
+                      <span className="font-medium">Grapes:</span> {displayBottle.grapeVarieties}
+                    </p>
                   )}
-                </Button>
+                  
+                  {displayBottle.type && (
+                    <p className="text-sm">
+                      <span className="font-medium">Type:</span> {displayBottle.type.charAt(0).toUpperCase() + displayBottle.type.slice(1)} Wine
+                    </p>
+                  )}
+                  
+                  {displayBottle.recommendedDrinkingWindow && (
+                    <div className="mt-2 p-2 bg-slate-50 border border-slate-200 rounded text-sm">
+                      <p className="font-medium">Recommended Drinking Window:</p>
+                      <p>{displayBottle.recommendedDrinkingWindow.startYear} - {displayBottle.recommendedDrinkingWindow.endYear}</p>
+                      {displayBottle.recommendedDrinkingWindow.isPastPrime && (
+                        <p className="text-red-600 mt-1">Past prime drinking window</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                // Edit mode - show form fields
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="producer">Producer</Label>
+                    <Input 
+                      id="producer" 
+                      value={editedBottle?.producer || ''} 
+                      onChange={(e) => handleFieldChange('producer', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Wine Name</Label>
+                    <Input 
+                      id="name" 
+                      value={editedBottle?.name || ''} 
+                      onChange={(e) => handleFieldChange('name', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="vintage">Vintage</Label>
+                    <Input 
+                      id="vintage" 
+                      type="number" 
+                      value={editedBottle?.vintage || ''} 
+                      onChange={(e) => handleFieldChange('vintage', e.target.value ? parseInt(e.target.value) : null)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Region</Label>
+                    <Input 
+                      id="region" 
+                      value={editedBottle?.region || ''} 
+                      onChange={(e) => handleFieldChange('region', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="grapeVarieties">Grape Varieties</Label>
+                    <Input 
+                      id="grapeVarieties" 
+                      value={editedBottle?.grapeVarieties || ''} 
+                      onChange={(e) => handleFieldChange('grapeVarieties', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Wine Type</Label>
+                    <Select 
+                      value={editedBottle?.type?.toLowerCase() || 'red'} 
+                      onValueChange={(value) => handleFieldChange('type', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select wine type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="red">Red Wine</SelectItem>
+                        <SelectItem value="white">White Wine</SelectItem>
+                        <SelectItem value="rose">Rosé</SelectItem>
+                        <SelectItem value="sparkling">Sparkling</SelectItem>
+                        <SelectItem value="dessert">Dessert</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+              
+              {isDuplicate && !isEditMode && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
+                  This wine already exists in your collection. Adding it will increase its quantity.
+                </div>
               )}
             </div>
-            <Button 
-              onClick={handleProcessBottle}
-              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-            >
-              Queue for Addition
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </>
-        ) : (
-          // Edit mode buttons
-          <>
-            <Button 
-              onClick={handleCancelEdit}
-              variant="outline"
-            >
-              Cancel Edit
-            </Button>
-            <Button 
-              onClick={() => {
-                setIsEditMode(false);
-                handleProcessBottle();
-              }}
-              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-            >
-              Save & Add to Collection
-            </Button>
-          </>
-        )}
-      </CardFooter>
-    </Card>
+          )}
+        </CardContent>
+        
+        <CardFooter className="flex justify-between">
+          {!isEditMode ? (
+            // View mode buttons
+            <>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleCancel}
+                  variant="outline"
+                  size="sm"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSkip}
+                  variant="outline"
+                  size="sm"
+                >
+                  <SkipForward className="mr-1 h-4 w-4" />
+                  Skip
+                </Button>
+                <Button 
+                  onClick={handleEdit}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Pencil className="mr-1 h-4 w-4" />
+                  Edit
+                </Button>
+                {onEnhanceWithAI && (
+                  <Button
+                    onClick={() => onEnhanceWithAI(currentBottle)}
+                    disabled={isEnhancingWithAI}
+                    variant="outline"
+                    size="sm"
+                    className="border-burgundy-600 text-burgundy-700 hover:bg-burgundy-50"
+                  >
+                    {isEnhancingWithAI ? (
+                      <>
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-1 h-4 w-4" />
+                        Enhance with AI
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <Button 
+                onClick={handleProcessBottle}
+                className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+              >
+                Queue for Addition
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            // Edit mode buttons
+            <>
+              <Button 
+                onClick={handleCancelEdit}
+                variant="outline"
+              >
+                Cancel Edit
+              </Button>
+              <Button 
+                onClick={() => {
+                  setIsEditMode(false);
+                  handleProcessBottle();
+                }}
+                className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+              >
+                Save & Queue for Addition
+              </Button>
+            </>
+          )}
+        </CardFooter>
+      </Card>
     </div>
   );
 }
