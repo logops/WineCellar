@@ -48,14 +48,29 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Try to get user by email (since username field now contains email)
+        console.log(`Attempting login with username: ${username}`);
+        
+        // Try to get user by email (since username field contains email)
         const user = await storage.getUserByEmail(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        
+        if (!user) {
+          console.log(`No user found with email: ${username}`);
           return done(null, false, { message: "Incorrect email or password" });
-        } else {
-          return done(null, user);
         }
+        
+        console.log(`User found: ${user.id} (${user.email})`);
+        
+        // Check password
+        const passwordValid = await comparePasswords(password, user.password);
+        if (!passwordValid) {
+          console.log('Password validation failed');
+          return done(null, false, { message: "Incorrect email or password" });
+        }
+        
+        console.log('Password validation succeeded');
+        return done(null, user);
       } catch (error) {
+        console.error('Login error:', error);
         return done(error as Error);
       }
     }),
@@ -76,11 +91,27 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log('Registration attempt with data:', {
+        ...req.body,
+        password: req.body.password ? '[REDACTED]' : undefined
+      });
+      
       const email = req.body.email;
+      
+      if (!email) {
+        console.log('Registration failed: Missing email');
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      if (!req.body.password) {
+        console.log('Registration failed: Missing password');
+        return res.status(400).json({ message: "Password is required" });
+      }
       
       // Check for existing email
       const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
+        console.log(`Registration failed: Email already exists: ${email}`);
         return res.status(400).json({ message: "Email already in use" });
       }
 
@@ -91,24 +122,51 @@ export function setupAuth(app: Express) {
         password: await hashPassword(req.body.password),
       };
 
+      console.log(`Creating user with email: ${email}`);
       const user = await storage.createUser(userData);
+      console.log(`User created successfully with ID: ${user.id}`);
 
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error('Error during login after registration:', err);
+          return next(err);
+        }
+        console.log(`User ${user.id} automatically logged in after registration`);
         return res.status(201).json(user);
       });
     } catch (error) {
+      console.error('Registration error:', error);
       next(error);
     }
   });
 
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
+    console.log('Login attempt with username:', req.body.username);
+    
+    if (!req.body.username || !req.body.password) {
+      console.log('Login failed: Missing username or password');
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+    
     passport.authenticate("local", (err: Error | null, user: SchemaUser | false, info: { message: string } | undefined) => {
-      if (err) return next(err);
-      if (!user) return res.status(401).json({ message: info?.message || "Incorrect email or password" });
+      if (err) {
+        console.error('Login error:', err);
+        return next(err);
+      }
+      
+      if (!user) {
+        console.log('Login failed: Authentication failed', info);
+        return res.status(401).json({ message: info?.message || "Incorrect email or password" });
+      }
+      
+      console.log(`User ${(user as SchemaUser).id} authenticated successfully`);
       
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error('Login session error:', err);
+          return next(err);
+        }
+        console.log(`Login session created for user ${(user as SchemaUser).id}`);
         return res.status(200).json(user);
       });
     })(req, res, next);

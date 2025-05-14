@@ -7,14 +7,15 @@ async function testAuth() {
   
   // Test Registration
   console.log('\n--- Testing Registration ---');
+  const timestamp = Date.now();
+  const testEmail = `test_${timestamp}@example.com`;
   const testUser = {
-    username: `test_user_${Date.now()}`,
-    email: `test_${Date.now()}@example.com`,
+    email: testEmail,
     password: 'Test12345!'
   };
   
   try {
-    console.log(`Registering user: ${testUser.username} / ${testUser.email}`);
+    console.log(`Registering user with email: ${testUser.email}`);
     const registerRes = await fetch(`${baseUrl}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -37,7 +38,7 @@ async function testAuth() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        username: testUser.username,
+        username: testEmail, // Using email as username
         password: testUser.password
       })
     });
@@ -48,6 +49,25 @@ async function testAuth() {
     
     if (loginRes.status === 200) {
       console.log('Login successful!');
+      
+      // Test getting user data after login
+      console.log('\n--- Testing User Data ---');
+      const userRes = await fetch(`${baseUrl}/api/user`, {
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cookie': loginRes.headers.get('set-cookie')
+        }
+      });
+      
+      if (userRes.status === 200) {
+        const userData = await userRes.json();
+        console.log('User Data:', userData);
+        console.log('User endpoint test successful!');
+      } else {
+        console.log(`User Response Status: ${userRes.status}`);
+        console.log('Failed to get user data');
+      }
     } else {
       console.log('Login failed.');
     }
