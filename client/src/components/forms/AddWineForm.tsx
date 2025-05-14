@@ -124,8 +124,6 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
   const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
   const [comprehensiveWineData, setComprehensiveWineData] = useState<ComprehensiveWineData | null>(null);
-  const [showMultiBottleFlow, setShowMultiBottleFlow] = useState(false);
-  const [multiBottleImageData, setMultiBottleImageData] = useState<string | null>(null);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -635,81 +633,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       setIsSubmitting(false);
     }
   }
-  // If in multi-bottle flow, show the MultiBottleFlow component
-  if (showMultiBottleFlow && multiBottleImageData) {
-    return (
-      <MultiBottleFlow
-        imageData={multiBottleImageData}
-        onComplete={() => {
-          setShowMultiBottleFlow(false);
-          setMultiBottleImageData(null);
-          // Return to the collection view after all bottles are processed
-          if (onSuccess) onSuccess();
-        }}
-        onCancel={() => {
-          setShowMultiBottleFlow(false);
-          setMultiBottleImageData(null);
-          setEntryMethod("manual");
-        }}
-        onBottleSelected={(bottle, index, total) => {
-          // Handle each bottle selection - update the form with the current bottle's data
-          form.setValue("producer", bottle.producer || "");
-          form.setValue("name", bottle.name || "");
-          form.setValue("vintage", bottle.vintage || new Date().getFullYear());
-          form.setValue("region", bottle.region || "");
-          form.setValue("subregion", bottle.subregion || "");
-          form.setValue("grapeVarieties", bottle.grapeVarieties || "");
-          form.setValue("type", bottle.type?.toLowerCase() || "red");
-          form.setValue("quantity", 1);
-          
-          // Handle recommended drinking window if available
-          if (bottle.recommendedDrinkingWindow) {
-            const { startYear, endYear, isPastPrime, notes } = bottle.recommendedDrinkingWindow;
-            
-            if (isPastPrime) {
-              form.setValue("drinkingStatus", "drink_now");
-            } else {
-              form.setValue("drinkingStatus", "custom");
-              form.setValue("drinkingWindowStartYear", startYear);
-              form.setValue("drinkingWindowEndYear", endYear);
-            }
-          }
-          
-          // Check if this is a duplicate wine to increase quantity
-          const isDuplicate = existingWines.some((existingWine: any) => 
-            existingWine.producer === bottle.producer &&
-            existingWine.name === bottle.name &&
-            existingWine.vintage === bottle.vintage
-          );
-          
-          if (isDuplicate) {
-            // For duplicates, we'll update quantity via API later
-            toast({
-              title: "Duplicate Wine Detected",
-              description: "This wine appears to already exist in your collection. We'll increase its quantity.",
-            });
-          }
-          
-          // Submit the form automatically for each bottle
-          const values = form.getValues();
-          
-          // Prevent empty submissions and ensure essential data
-          if (!values.producer || !values.name) {
-            toast({
-              title: "Missing Information",
-              description: "Unable to add this wine due to missing information. Skipping to next bottle.",
-              variant: "destructive"
-            });
-            return;
-          }
-          
-          // Submit the form with current bottle data
-          onSubmit(values);
-        }}
-        existingWines={existingWines}
-      />
-    );
-  }
+  // We're going to use a more straightforward approach for multi-bottle detection
 
   return (
     <div className="p-1 relative">
@@ -1489,20 +1413,14 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                   }
                 }
                 
-                // If multiple bottles are detected, switch to multi-bottle flow
+                // If multiple bottles are detected, inform the user
                 if (recognitionResult.multipleBottlesDetected) {
                   toast({
                     title: "Multiple Bottles Detected",
-                    description: `We've detected ${recognitionResult.bottleCount} wine bottles in your image. We'll help you add them all.`,
+                    description: `We've detected ${recognitionResult.bottleCount} wine bottles in your image. Adding the first bottle now.`,
                   });
                   
-                  // Set state for multi-bottle flow
-                  setShowMultiBottleFlow(true);
-                  // Store the image data from the parent component
-                  setMultiBottleImageData(recognitionResult.imageData || null);
-                  
-                  // Keep the existing data for the first bottle
-                  return;
+                  // We'll just add the first bottle for now
                 }
                 
                 // Switch to manual entry form to allow user to edit or complete missing fields
