@@ -1467,7 +1467,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                     });
                   }}
                   onCancel={() => setEntryMethod("manual")}
-                  wines={[]}
+                  wines={existingWines}
                 />
               </TabsContent>
             </Tabs>
