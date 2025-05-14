@@ -13,7 +13,7 @@ import { extractGrapeVarieties, extractVineyard, lookupWineInformation } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { WineLabelRecognition } from "@/components/wines/WineLabelRecognition";
-// Using a simpler approach for multiple bottle detection
+import { MultiBottleWizard } from "@/components/wines/MultiBottleWizard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -124,8 +124,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
   const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
   const [comprehensiveWineData, setComprehensiveWineData] = useState<ComprehensiveWineData | null>(null);
-  const [showMultiBottleDialog, setShowMultiBottleDialog] = useState(false);
-  const [detectedBottleCount, setDetectedBottleCount] = useState(0);
+  const [showMultiBottleWizard, setShowMultiBottleWizard] = useState(false);
+  const [multiBottleData, setMultiBottleData] = useState<any>(null);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -637,26 +637,65 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   }
   // We're going to use a more straightforward approach for multi-bottle detection
 
+  // Show multi-bottle wizard if needed
+  if (showMultiBottleWizard && multiBottleData) {
+    return (
+      <MultiBottleWizard
+        bottleData={multiBottleData}
+        onComplete={() => {
+          setShowMultiBottleWizard(false);
+          setMultiBottleData(null);
+          // Return to the collection view after all bottles are processed
+          if (onSuccess) onSuccess();
+        }}
+        onCancel={() => {
+          setShowMultiBottleWizard(false);
+          setMultiBottleData(null);
+          setEntryMethod("manual");
+        }}
+        onProcessBottle={(bottle, index, total) => {
+          // Update the form with the current bottle data
+          form.setValue("producer", bottle.producer || "");
+          form.setValue("name", bottle.name || "");
+          form.setValue("vintage", bottle.vintage || new Date().getFullYear());
+          form.setValue("region", bottle.region || "");
+          form.setValue("subregion", bottle.subregion || "");
+          form.setValue("grapeVarieties", bottle.grapeVarieties || "");
+          form.setValue("type", bottle.type?.toLowerCase() || "red");
+          
+          // Handle recommended drinking window if available
+          if (bottle.recommendedDrinkingWindow) {
+            const { startYear, endYear, isPastPrime } = bottle.recommendedDrinkingWindow;
+            
+            if (isPastPrime) {
+              form.setValue("drinkingStatus", "drink_now");
+            } else {
+              form.setValue("drinkingStatus", "custom");
+              form.setValue("drinkingWindowStartYear", startYear);
+              form.setValue("drinkingWindowEndYear", endYear);
+            }
+          }
+          
+          // Check if this is a duplicate wine
+          const isDuplicate = existingWines.some((existingWine: any) => 
+            existingWine.producer === bottle.producer &&
+            existingWine.name === bottle.name &&
+            existingWine.vintage === bottle.vintage
+          );
+          
+          // Set quantity based on whether it's a duplicate
+          form.setValue("quantity", isDuplicate ? 2 : 1);
+          
+          // Submit the form with the current bottle data
+          onSubmit(form.getValues());
+        }}
+        existingWines={existingWines}
+      />
+    );
+  }
+
   return (
     <div className="p-1 relative">
-      {/* Multiple Bottle Detection Dialog */}
-      <AlertDialog open={showMultiBottleDialog} onOpenChange={setShowMultiBottleDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Multiple Wine Bottles Detected</AlertDialogTitle>
-            <AlertDialogDescription>
-              We've detected {detectedBottleCount} wine bottles in your image. We're adding the first bottle now.
-              <br /><br />
-              To add the remaining bottles, you can take another photo of each bottle individually or use the same photo again.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowMultiBottleDialog(false)}>
-              Got It
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       
       {/* Close button removed in favor of click-outside functionality */}
       
@@ -1437,12 +1476,52 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                   }
                 }
                 
-                // If multiple bottles are detected, show dialog with info
-                if (recognitionResult.multipleBottlesDetected) {
-                  setDetectedBottleCount(recognitionResult.bottleCount || 0);
-                  setShowMultiBottleDialog(true);
+                // If multiple bottles are detected, launch multi-bottle wizard
+                if (recognitionResult.multipleBottlesDetected && recognitionResult.imageData) {
+                  // We need to fetch all bottle data
+                  toast({
+                    title: "Multiple Bottles Detected",
+                    description: `We've detected ${recognitionResult.bottleCount} wine bottles. Preparing to review them...`,
+                  });
                   
-                  // We'll still use data from the first bottle
+                  // Make an API call to analyze all bottles
+                  fetch('/api/analyze-wine-label?detectMultiple=true', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                      imageData: recognitionResult.imageData,
+                      checkForDuplicates: true 
+                    }),
+                    credentials: 'include'
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.success && data.data && data.data.bottles) {
+                      // Store the multi-bottle data and show the wizard
+                      setMultiBottleData(data.data);
+                      setShowMultiBottleWizard(true);
+                      
+                      // The form data will be updated for each bottle in the wizard
+                      return;
+                    } else {
+                      throw new Error("Failed to analyze all bottles");
+                    }
+                  })
+                  .catch(error => {
+                    console.error("Multi-bottle analysis error:", error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to analyze all bottles. Only the first bottle will be added.",
+                      variant: "destructive"
+                    });
+                    
+                    // Continue with the first bottle
+                    setEntryMethod("manual");
+                  });
+                  
+                  return; // Stop here and wait for multi-bottle processing
                 }
                 
                 // Switch to manual entry form to allow user to edit or complete missing fields
