@@ -32,19 +32,20 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
       system: `You are a wine expert assistant. Based on the wine details provided, analyze the wine and recommend an appropriate drinking window (start year and end year). 
       Additionally, identify grape varieties, region, and other key information if they weren't provided.
       
-      IMPORTANT GUIDELINES FOR GRAPE VARIETIES:
-      1. Always list grape varieties using ONLY the grape variety names, separated by commas, with no additional text. 
-         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc"
-         - INCORRECT: "Primarily Cabernet Sauvignon with some Merlot"
-         - INCORRECT: "80% Cabernet Sauvignon and 20% Merlot"
+      FORMAT REQUIREMENTS FOR GRAPE VARIETIES:
+      For the "grapeVarieties" field, list ONLY the grape variety names themselves, separated by commas.
+      Do not include any of the following in your grape varieties response:
+      - Percentages or proportions
+      - Qualifiers like "primarily", "mainly", "predominantly", etc.
+      - Words like "blend", "variety", "components", etc.
+      - Uncertainty markers like "likely", "possibly", "appears to be", etc.
       
-      2. Do not include qualifying words like "primarily", "predominantly", "likely", "possibly", "may contain", etc.
+      For wines from classic regions with known blends:
+      - For Bordeaux blends: List the actual grape varieties (e.g., "Cabernet Sauvignon, Merlot, Cabernet Franc")
+      - For Valpolicella: List the actual grape varieties (e.g., "Corvina, Corvinone, Rondinella")
+      - For Champagne: List the actual grape varieties (e.g., "Chardonnay, Pinot Noir, Pinot Meunier")
       
-      3. For Quintarelli wines from Valpolicella, ALWAYS use: "Corvina, Corvinone, Rondinella"
-      
-      4. For Bordeaux blends where specific percentages are unknown, use the grape names separated by commas:
-         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec"
-         - INCORRECT: "Bordeaux blend of mostly Cabernet Sauvignon"
+      For region and subregion, provide only definitive information without qualifying words.
       
       Respond in JSON format with the following fields:
       {
@@ -52,7 +53,7 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
         "end": 2030,   // Year to stop drinking (numeric)
         "confidence": "high/medium/low", // Your confidence in this recommendation
         "reasoning": "Brief explanation of your recommendation",
-        "grapeVarieties": "...", // Identified grape varieties or likely grapes based on region and style
+        "grapeVarieties": "...", // Identified grape varieties - ONLY grape names separated by commas
         "region": "...", // Region if it can be identified from context
         "subregion": "...", // Subregion if it can be identified
         "notes": "...", // Brief tasting notes or characteristics of this wine
@@ -70,11 +71,15 @@ export async function generateDrinkingWindowRecommendation(wine: Wine) {
           
           Today's date is ${new Date().toISOString().split('T')[0]}.
           
+          For grape varieties:
+          - List ONLY the actual grape varietal names themselves, separated by commas
+          - For wines from classic regions (like Bordeaux, Valpolicella, Champagne), list the specific grape varieties they typically contain
+          - Do NOT use qualifiers, percentages, or uncertainty markers
+          - Simply list the grape names themselves, comma-separated
+          
           Respond only with JSON as specified. Use numeric values for years, not strings.
           For any fields where you're uncertain, provide your best estimate based on similar wines.
-          If you have absolutely no information to determine a field, use null for that field.
-          
-          Remember to ONLY list grape varieties as comma-separated names with NO qualifying words.`
+          If you have absolutely no information to determine a field, use null for that field.`
         }
       ],
     });
@@ -195,23 +200,22 @@ export async function analyzeWineLabel(imageBase64: string) {
                 }
               }
               
-              IMPORTANT GUIDELINES FOR GRAPE VARIETIES:
-              1. Always list grape varieties using ONLY the grape variety names, separated by commas, with no additional text. 
-                 - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc"
-                 - INCORRECT: "Primarily Cabernet Sauvignon with some Merlot"
-                 - INCORRECT: "80% Cabernet Sauvignon and 20% Merlot"
+              FORMAT REQUIREMENTS FOR GRAPE VARIETIES:
+              For the "grapeVarieties" field, list ONLY the grape variety names themselves, separated by commas.
+              Do not include any of the following in your grape varieties response:
+              - Percentages or proportions
+              - Qualifiers like "primarily", "mainly", "predominantly", etc.
+              - Words like "blend", "variety", "components", etc.
+              - Uncertainty markers like "likely", "possibly", "appears to be", etc.
               
-              2. Do not include qualifying words like "primarily", "predominantly", "likely", "possibly", "may contain", etc.
-              
-              3. For Quintarelli wines from Valpolicella, ALWAYS use: "Corvina, Corvinone, Rondinella"
-              
-              4. For Bordeaux blends where specific percentages are unknown, use the grape names separated by commas:
-                 - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec"
-                 - INCORRECT: "Bordeaux blend of mostly Cabernet Sauvignon"
+              For wines from classic regions with known blends:
+              - For Bordeaux blends: List the actual grape varieties (e.g., "Cabernet Sauvignon, Merlot, Cabernet Franc")
+              - For Valpolicella: List the actual grape varieties (e.g., "Corvina, Corvinone, Rondinella")
+              - For Champagne: List the actual grape varieties (e.g., "Chardonnay, Pinot Noir, Pinot Meunier")
               
               For the recommendedDrinkingWindow, use your expertise on wine aging potential based on the producer, vintage, region, and grape varieties. Calculate when the wine will be at its best drinking period. For example, many Bordeaux reds need 10-20 years to mature while Beaujolais are often best consumed young. If the wine is already past its prime drinking window, set isPastPrime to true.
               
-              For grape varieties that aren't explicitly stated on the label, use your knowledge to make an educated guess based on the region, producer style, and any visual cues from the label. For example, if it's a red wine from Barolo, it's likely Nebbiolo.
+              For grape varieties that aren't explicitly stated on the label, use your knowledge to make an educated guess based on the region, producer style, and any visual cues from the label. Remember to list ONLY the grape names themselves, separated by commas.
               
               For region and subregion, provide only definitive information without qualifying words like "likely" or "probably".
               
@@ -995,25 +999,24 @@ export async function lookupWineInformation(wineName: string, producer?: string,
       temperature: 0.1,
       system: `You are a wine expert assistant providing comprehensive information about wines. Based on the wine name and details provided, analyze the wine and provide detailed information.
       
-      IMPORTANT GUIDELINES FOR GRAPE VARIETIES:
-      1. Always list grape varieties using ONLY the grape variety names, separated by commas, with no additional text. 
-         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc"
-         - INCORRECT: "Primarily Cabernet Sauvignon with some Merlot"
-         - INCORRECT: "80% Cabernet Sauvignon and 20% Merlot"
+      FORMAT REQUIREMENTS FOR GRAPE VARIETIES:
+      For the "grapeVarieties" field, list ONLY the grape variety names themselves, separated by commas.
+      Do not include any of the following in your grape varieties response:
+      - Percentages or proportions
+      - Qualifiers like "primarily", "mainly", "predominantly", etc.
+      - Words like "blend", "variety", "components", etc.
+      - Uncertainty markers like "likely", "possibly", "appears to be", etc.
       
-      2. Do not include qualifying words like "primarily", "predominantly", "likely", "possibly", "may contain", etc.
+      For wines from classic regions with known blends:
+      - For Bordeaux blends: List the actual grape varieties (e.g., "Cabernet Sauvignon, Merlot, Cabernet Franc")
+      - For Valpolicella: List the actual grape varieties (e.g., "Corvina, Corvinone, Rondinella")
+      - For Champagne: List the actual grape varieties (e.g., "Chardonnay, Pinot Noir, Pinot Meunier")
       
-      3. For Quintarelli wines from Valpolicella, ALWAYS use: "Corvina, Corvinone, Rondinella"
-      
-      4. For Bordeaux blends where specific percentages are unknown, use the grape names separated by commas:
-         - CORRECT: "Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec"
-         - INCORRECT: "Bordeaux blend of mostly Cabernet Sauvignon"
-         
-      5. For region and subregion, provide only definitive information without qualifying words.
+      For region and subregion, provide only definitive information without qualifying words.
       
       Respond in JSON format with the following fields:
       {
-        "grapeVarieties": "Grape varieties used in this wine, comma separated",
+        "grapeVarieties": "Grape variety names only, comma separated, no qualifiers",
         "vineyard": "Vineyard information if available",
         "region": "Wine region, appellation, or growing area",
         "subregion": "More specific location within the region, if available",
@@ -1030,7 +1033,7 @@ export async function lookupWineInformation(wineName: string, producer?: string,
           content: `Please provide detailed information about this wine: ${wineInfo}
           
           I need to know:
-          1. What grape varieties are used in this wine? (ONLY list grape names separated by commas, with no qualifiers like "primarily" or "predominantly")
+          1. What grape varieties are used in this wine? (ONLY list the actual grape varietal names themselves, separated by commas)
           2. Is there any specific vineyard information for this wine?
           3. What's the wine region and subregion (if available)?
           4. What are the typical flavor profile and tasting notes?
@@ -1038,10 +1041,11 @@ export async function lookupWineInformation(wineName: string, producer?: string,
           6. What's the recommended drinking window?
           7. Are there any notable production methods or techniques used?
           
-          IMPORTANT FOR GRAPE VARIETIES:
-          - Remember that for Quintarelli wines from Valpolicella, use: "Corvina, Corvinone, Rondinella"
-          - For Bordeaux blends, list the specific grapes, not just "Bordeaux blend"
-          - Do NOT include percentages or qualifiers, only the grape variety names
+          For grape varieties, remember:
+          - For classic regional wines, list the specific grape varieties they contain by name
+          - For Bordeaux blends, list the individual grapes (not "Bordeaux blend")
+          - Do NOT use qualifiers, percentages, or uncertainty markers
+          - Simply list the grape names themselves, comma-separated
           
           If certain information isn't available or you're uncertain, provide your best educated assessment based on similar wines from the same producer, region, or style. Indicate your confidence level accordingly.
           

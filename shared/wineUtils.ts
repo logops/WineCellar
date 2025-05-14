@@ -13,39 +13,14 @@ export function cleanGrapeVarieties(grapeVarieties: string | null | undefined): 
   
   let cleanedText = grapeVarieties;
   
-  // Handle the special case of "Bordeaux components" or similar vague descriptions
-  if (cleanedText.toLowerCase().includes("bordeaux component") || 
-      cleanedText.toLowerCase().includes("bordeaux blend") ||
-      cleanedText.toLowerCase().includes("bordeaux-style") ||
-      cleanedText.toLowerCase().includes("bordeaux style")) {
-    
-    // If we know some specific varietals (typically mentioned alongside "Bordeaux components")
-    if (cleanedText.toLowerCase().includes("cabernet sauvignon") || 
-        cleanedText.toLowerCase().includes("merlot") ||
-        cleanedText.toLowerCase().includes("cabernet franc")) {
-      
-      // Replace the vague "Bordeaux components" with specific Bordeaux varietals if not already mentioned
-      let components = [];
-      if (cleanedText.toLowerCase().includes("cabernet sauvignon")) components.push("Cabernet Sauvignon");
-      if (cleanedText.toLowerCase().includes("merlot")) components.push("Merlot");
-      if (cleanedText.toLowerCase().includes("cabernet franc")) components.push("Cabernet Franc");
-      if (!cleanedText.toLowerCase().includes("petit verdot") && 
-          (cleanedText.toLowerCase().includes("bordeaux"))) components.push("Petit Verdot");
-      if (!cleanedText.toLowerCase().includes("malbec") && 
-          (cleanedText.toLowerCase().includes("bordeaux"))) components.push("Malbec");
-      
-      // Only add it if it wasn't specified explicitly
-      cleanedText = components.join(", ");
-    } else {
-      // If no specific varietals are mentioned, standardize to "Bordeaux Blend"
-      cleanedText = "Bordeaux Blend";
+  // Handle "Bordeaux blend" terminology consistently
+  if (cleanedText.toLowerCase().includes("bordeaux blend")) {
+    // If specific varietals are already mentioned, keep them
+    if (!cleanedText.toLowerCase().includes("cabernet") && 
+        !cleanedText.toLowerCase().includes("merlot")) {
+      // Otherwise, standardize to common Bordeaux varietals
+      cleanedText = "Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec";
     }
-  }
-  
-  // For Quintarelli wines, they are typically Corvina, Corvinone, and Rondinella blend
-  if (cleanedText.toLowerCase().includes("quintarelli") && 
-      cleanedText.toLowerCase().includes("valpolicella")) {
-    cleanedText = "Corvina, Corvinone, Rondinella";
   }
   
   // List of qualifying words and phrases to remove
