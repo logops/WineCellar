@@ -119,7 +119,19 @@ export async function analyzeMultipleWineBottles(base64Image: string): Promise<M
     });
 
     // Parse the response to get the bottles information
-    const responseText = response.content[0].text;
+    let responseText = '';
+    
+    if (response.content && response.content.length > 0) {
+      // Safely extract text from the response
+      const contentBlock = response.content[0];
+      if (typeof contentBlock === 'object' && contentBlock !== null) {
+        if ('text' in contentBlock) {
+          responseText = contentBlock.text as string;
+        } else {
+          responseText = JSON.stringify(response.content);
+        }
+      }
+    }
     
     // Extract JSON object from the response
     let jsonMatch = responseText.match(/\{[\s\S]*\}/);

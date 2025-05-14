@@ -1,6 +1,7 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { format } from "date-fns";
 import { CalendarIcon, Wine } from "lucide-react";
@@ -123,6 +124,19 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
   const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
   const [comprehensiveWineData, setComprehensiveWineData] = useState<ComprehensiveWineData | null>(null);
+  
+  // Fetch wines for duplicate detection in multi-bottle recognition
+  const { data: existingWines = [] } = useQuery({
+    queryKey: ['/api/wines', 'in_cellar'],
+    queryFn: async () => {
+      const response = await fetch('/api/wines?consumedStatus=in_cellar', {
+        credentials: 'include'
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   
   // Get autocomplete suggestions
   const suggestions = useAutocompleteSuggestions();
