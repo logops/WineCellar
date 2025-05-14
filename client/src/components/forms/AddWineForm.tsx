@@ -851,27 +851,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         <TabsContent value="manual">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* AI enhancement button at the top */}
-              <div className="flex justify-end mb-4">
-                <Button
-                  type="button"
-                  onClick={handleEnhanceWithAI}
-                  disabled={isEnhancingWithAI}
-                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-                >
-                  {isEnhancingWithAI ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enhancing with AI...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Enhance with AI
-                    </>
-                  )}
-                </Button>
-              </div>
+
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -1423,7 +1403,28 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                   </Button>
                 )}
                 
-                {/* Cancel button removed in favor of click-outside to close */}
+                {/* Add AI enhancement button when we have producer and vintage data */}
+                {(form.getValues("producer") && form.getValues("vintage")) && (
+                  <Button
+                    type="button"
+                    onClick={handleEnhanceWithAI}
+                    disabled={isEnhancingWithAI}
+                    variant="outline"
+                    className="border-burgundy-600 text-burgundy-700 hover:bg-burgundy-50"
+                  >
+                    {isEnhancingWithAI ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Enhance with AI
+                      </>
+                    )}
+                  </Button>
+                )}
                 
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : wine ? "Update Wine" : "Add to Cellar"}
@@ -1624,27 +1625,6 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         
         <TabsContent value="label">
           <div className="space-y-6">
-            {/* AI enhancement button at the top */}
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={handleEnhanceWithAI}
-                disabled={isEnhancingWithAI}
-                className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-              >
-                {isEnhancingWithAI ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enhancing with AI...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Enhance with AI
-                  </>
-                )}
-              </Button>
-            </div>
             <WineLabelRecognition 
               onResult={(recognitionResult) => {
                 // Store the original prediction for analytics
