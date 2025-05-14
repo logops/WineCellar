@@ -43,7 +43,7 @@ interface MultiBottleWizardProps {
   bottleData: MultiBottleData;
   onComplete: () => void;
   onCancel: () => void;
-  onProcessBottle: (bottle: WineBottleData, index: number, total: number) => void;
+  onProcessBottle: (bottle: WineBottleData, index: number, total: number, addToCollection?: boolean) => void;
   onEnhanceWithAI?: (bottle: WineBottleData) => void;
   isEnhancingWithAI?: boolean;
   existingWines?: any[];
@@ -61,6 +61,7 @@ export function MultiBottleWizard({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skippedBottles, setSkippedBottles] = useState<number[]>([]);
   const [processedBottles, setProcessedBottles] = useState<number[]>([]);
+  const [bottlesToAdd, setBottlesToAdd] = useState<number[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedBottle, setEditedBottle] = useState<WineBottleData | null>(null);
   const { toast } = useToast();
@@ -94,20 +95,23 @@ export function MultiBottleWizard({
 
   // Handle processing the current bottle
   const handleProcessBottle = () => {
-    // Add this bottle to processed list
+    // Add this bottle to processed list and mark it for addition
     setProcessedBottles(prev => [...prev, currentIndex]);
+    setBottlesToAdd(prev => [...prev, currentIndex]);
     
-    // Send the bottle data for processing
     // Use the edited bottle data if in edit mode, otherwise use the original
     const bottleToProcess = isEditMode && editedBottle ? editedBottle : currentBottle;
-    onProcessBottle(bottleToProcess, currentIndex + 1, bottleData.bottles.length);
     
-    // Show success message
+    // Instead of adding to collection immediately, just save the data for batch processing
+    // Set the flag to false to indicate we're just collecting data, not adding yet
+    onProcessBottle(bottleToProcess, currentIndex + 1, bottleData.bottles.length, false);
+    
+    // Show message that the wine is queued for addition
     toast({
-      title: "Wine Added",
+      title: "Wine Queued for Addition",
       description: isDuplicate 
-        ? "This wine already exists in your collection. The quantity has been increased."
-        : "The wine has been added to your collection.",
+        ? "This wine will be added to your collection with increased quantity."
+        : "This wine will be added to your collection.",
     });
     
     // Move to the next bottle
