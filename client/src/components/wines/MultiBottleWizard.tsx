@@ -7,6 +7,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface WineBottleData {
   producer: string | null;
@@ -64,6 +74,8 @@ export function MultiBottleWizard({
   const [bottlesToAdd, setBottlesToAdd] = useState<number[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedBottle, setEditedBottle] = useState<WineBottleData | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [hasEdits, setHasEdits] = useState(false);
   const { toast } = useToast();
 
   // Calculate progress percentage
@@ -93,14 +105,37 @@ export function MultiBottleWizard({
     existingWine.vintage === displayBottle?.vintage
   );
 
-  // Handle processing the current bottle
+  // Handle initiating the bottle processing flow
   const handleProcessBottle = () => {
+    // Check if we have edits and are in edit mode and need confirmation
+    if (isEditMode && hasEdits) {
+      // Open the confirmation dialog instead of processing immediately
+      setShowConfirmDialog(true);
+      return;
+    }
+    
+    // If no confirmation needed, process the bottle directly
+    processBottleWithEdits();
+  };
+  
+  // Function to actually process the bottle after any confirmations
+  const processBottleWithEdits = () => {
     // Add this bottle to processed list and mark it for addition
     setProcessedBottles(prev => [...prev, currentIndex]);
     setBottlesToAdd(prev => [...prev, currentIndex]);
     
     // Use the edited bottle data if in edit mode, otherwise use the original
     const bottleToProcess = isEditMode && editedBottle ? editedBottle : currentBottle;
+    
+    // If we're in edit mode, update the original data in the bottleData array to preserve edits
+    if (isEditMode && editedBottle) {
+      // Make a deep copy of the bottles array
+      const updatedBottles = [...bottleData.bottles];
+      // Update the current bottle with the edited version
+      updatedBottles[currentIndex] = editedBottle;
+      // Update the bottleData object
+      bottleData.bottles = updatedBottles;
+    }
     
     // Instead of adding to collection immediately, just save the data for batch processing
     // Set the flag to false to indicate we're just collecting data, not adding yet
@@ -113,6 +148,10 @@ export function MultiBottleWizard({
         ? "This wine will be added to your collection with increased quantity."
         : "This wine will be added to your collection.",
     });
+    
+    // Reset the dialog and edit tracking state
+    setShowConfirmDialog(false);
+    setHasEdits(false);
     
     // Move to the next bottle
     handleNext();
@@ -146,6 +185,7 @@ export function MultiBottleWizard({
       if (bottlesToAddCount > 0) {
         // For each bottle marked to add, process it with addToCollection=true
         bottlesToAdd.forEach(index => {
+          // Use the potentially updated bottle data from the bottleData array
           const bottleToProcess = bottleData.bottles[index];
           onProcessBottle(bottleToProcess, index + 1, totalCount, true);
         });
@@ -196,15 +236,47 @@ export function MultiBottleWizard({
       setEditedBottle({...currentBottle});
     }
     setIsEditMode(false);
+    setHasEdits(false);
+  };
+  
+  // Discard edits and process with original data
+  const handleDiscardEdits = () => {
+    if (currentBottle) {
+      // Reset the edited bottle to match the original
+      setEditedBottle({...currentBottle});
+      setHasEdits(false);
+      setIsEditMode(false);
+      
+      // Process with the original data
+      processBottleWithEdits();
+    }
   };
   
   // Update edited bottle field
   const handleFieldChange = (field: keyof WineBottleData, value: any) => {
     if (editedBottle) {
+      // Check if the value is actually different from the original 
+      const originalValue = currentBottle?.[field];
+      const valueHasChanged = originalValue !== value;
+      
+      // Update the edited bottle data
       setEditedBottle({
         ...editedBottle,
         [field]: value
       });
+      
+      // If any field is different from the original, mark as having edits
+      if (valueHasChanged) {
+        setHasEdits(true);
+      } else {
+        // Check if any other fields still have edits
+        const otherFieldsEdited = Object.keys(editedBottle).some(key => {
+          if (key === field) return false; // Skip the current field
+          const k = key as keyof WineBottleData;
+          return currentBottle?.[k] !== editedBottle[k];
+        });
+        setHasEdits(otherFieldsEdited);
+      }
     }
   };
 
