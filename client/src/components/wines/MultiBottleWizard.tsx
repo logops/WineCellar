@@ -77,6 +77,8 @@ export function MultiBottleWizard({
   const [editedBottle, setEditedBottle] = useState<WineBottleData | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasEdits, setHasEdits] = useState(false);
+  const [editedBottlesMap, setEditedBottlesMap] = useState<{[index: number]: WineBottleData}>({});
+  const [showSummary, setShowSummary] = useState(false);
   const { toast } = useToast();
 
   // Calculate progress percentage
@@ -128,14 +130,12 @@ export function MultiBottleWizard({
     // Use the edited bottle data if in edit mode, otherwise use the original
     const bottleToProcess = isEditMode && editedBottle ? editedBottle : currentBottle;
     
-    // If we're in edit mode, update the original data in the bottleData array to preserve edits
+    // Store the edited bottle in our map for later use in batch processing
     if (isEditMode && editedBottle) {
-      // Make a deep copy of the bottles array
-      const updatedBottles = [...bottleData.bottles];
-      // Update the current bottle with the edited version
-      updatedBottles[currentIndex] = editedBottle;
-      // Update the bottleData object
-      bottleData.bottles = updatedBottles;
+      setEditedBottlesMap(prev => ({
+        ...prev,
+        [currentIndex]: {...editedBottle}
+      }));
     }
     
     // Instead of adding to collection immediately, just save the data for batch processing
@@ -177,32 +177,8 @@ export function MultiBottleWizard({
     const newIndex = currentIndex + 1;
     
     if (newIndex >= bottleData.bottles.length) {
-      // We've processed all bottles, now do the batch processing
-      const bottlesToAddCount = bottlesToAdd.length;
-      const skippedCount = skippedBottles.length;
-      const totalCount = bottleData.bottles.length;
-      
-      // Batch add all the bottles that are queued for addition
-      if (bottlesToAddCount > 0) {
-        // For each bottle marked to add, process it with addToCollection=true
-        bottlesToAdd.forEach(index => {
-          // Use the potentially updated bottle data from the bottleData array
-          const bottleToProcess = bottleData.bottles[index];
-          onProcessBottle(bottleToProcess, index + 1, totalCount, true);
-        });
-        
-        toast({
-          title: "Batch Processing Complete",
-          description: `Added ${bottlesToAddCount} wine bottle${bottlesToAddCount !== 1 ? 's' : ''} to your collection. ${skippedCount > 0 ? `Skipped ${skippedCount} bottle${skippedCount !== 1 ? 's' : ''}.` : ''}`,
-        });
-      } else {
-        toast({
-          title: "Processing Complete",
-          description: `No wines were added to the collection. ${skippedCount > 0 ? `Skipped ${skippedCount} bottle${skippedCount !== 1 ? 's' : ''}.` : ''}`,
-        });
-      }
-      
-      onComplete();
+      // We've processed all bottles, show the summary screen
+      setShowSummary(true);
       return;
     }
     
@@ -211,6 +187,36 @@ export function MultiBottleWizard({
     // Reset edit mode for the new bottle
     setIsEditMode(false);
     setEditedBottle(null);
+  };
+  
+  // Handle final confirmation and batch processing
+  const handleFinishBatch = () => {
+    // We've processed all bottles, now do the batch processing
+    const bottlesToAddCount = bottlesToAdd.length;
+    const skippedCount = skippedBottles.length;
+    const totalCount = bottleData.bottles.length;
+    
+    // Batch add all the bottles that are queued for addition
+    if (bottlesToAddCount > 0) {
+      // For each bottle marked to add, process it with addToCollection=true
+      bottlesToAdd.forEach(index => {
+        // Check if this bottle has edits
+        const bottleToProcess = editedBottlesMap[index] || bottleData.bottles[index];
+        onProcessBottle(bottleToProcess, index + 1, totalCount, true);
+      });
+      
+      toast({
+        title: "Batch Processing Complete",
+        description: `Added ${bottlesToAddCount} wine bottle${bottlesToAddCount !== 1 ? 's' : ''} to your collection. ${skippedCount > 0 ? `Skipped ${skippedCount} bottle${skippedCount !== 1 ? 's' : ''}.` : ''}`,
+      });
+    } else {
+      toast({
+        title: "Processing Complete",
+        description: `No wines were added to the collection. ${skippedCount > 0 ? `Skipped ${skippedCount} bottle${skippedCount !== 1 ? 's' : ''}.` : ''}`,
+      });
+    }
+    
+    onComplete();
   };
 
   // Handle cancelling the wizard
@@ -280,6 +286,93 @@ export function MultiBottleWizard({
       }
     }
   };
+
+  // Function to render a bottle item in the summary
+  const renderBottleItem = (index: number, isSkipped: boolean = false) => {
+    const bottle = editedBottlesMap[index] || bottleData.bottles[index];
+    
+    return (
+      <div key={index} className="p-3 border rounded-md mb-2">
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="font-semibold">
+              {bottle.vintage ? `${bottle.vintage} ` : ''}
+              {bottle.producer || 'Unknown Producer'}
+              {bottle.name ? ` ${bottle.name}` : ''}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {bottle.region || ''}{bottle.region && bottle.subregion ? ', ' : ''}{bottle.subregion || ''}
+            </p>
+            {bottle.grapeVarieties && <p className="text-xs">{bottle.grapeVarieties}</p>}
+          </div>
+          {isSkipped ? (
+            <Badge variant="outline" className="bg-slate-100">Skipped</Badge>
+          ) : (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Queued</Badge>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render summary screen if we're at the end
+  if (showSummary) {
+    return (
+      <div>
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-burgundy-700">
+              <Wine className="h-5 w-5" />
+              Wine Import Summary
+            </CardTitle>
+            <CardDescription>
+              Review the wines below before adding them to your collection
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            <div>
+              <h3 className="text-base font-medium mb-2">Wines to Add ({bottlesToAdd.length})</h3>
+              <div className="max-h-60 overflow-y-auto">
+                {bottlesToAdd.length > 0 ? (
+                  bottlesToAdd.map(index => renderBottleItem(index))
+                ) : (
+                  <p className="text-sm text-muted-foreground p-2">No wines selected for addition</p>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-base font-medium mb-2">Skipped Wines ({skippedBottles.length})</h3>
+              <div className="max-h-40 overflow-y-auto">
+                {skippedBottles.length > 0 ? (
+                  skippedBottles.map(index => renderBottleItem(index, true))
+                ) : (
+                  <p className="text-sm text-muted-foreground p-2">No wines were skipped</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex justify-between">
+            <Button 
+              onClick={handleCancel}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleFinishBatch}
+              className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+              disabled={bottlesToAdd.length === 0}
+            >
+              Add {bottlesToAdd.length} {bottlesToAdd.length === 1 ? 'Wine' : 'Wines'} to Collection
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div>
