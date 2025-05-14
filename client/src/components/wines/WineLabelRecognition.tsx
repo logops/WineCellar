@@ -52,6 +52,7 @@ interface RecognitionResult {
   // Multiple bottle detection flags
   multipleBottlesDetected?: boolean;
   bottleCount?: number;
+  imageData?: string;
 }
 
 interface WineLabelRecognitionProps {

@@ -13,7 +13,7 @@ import { extractGrapeVarieties, extractVineyard, lookupWineInformation } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { WineLabelRecognition } from "@/components/wines/WineLabelRecognition";
-import { MultiBottleRecognition } from "@/components/wines/MultiBottleRecognition";
+import { MultiBottleFlow } from "@/components/wines/MultiBottleFlow";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -124,6 +124,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
   const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
   const [comprehensiveWineData, setComprehensiveWineData] = useState<ComprehensiveWineData | null>(null);
+  const [showMultiBottleFlow, setShowMultiBottleFlow] = useState(false);
+  const [multiBottleImageData, setMultiBottleImageData] = useState<string | null>(null);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -1416,10 +1418,14 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                 if (recognitionResult.multipleBottlesDetected) {
                   toast({
                     title: "Multiple Bottles Detected",
-                    description: "We've detected multiple wine bottles in your image. Let's add them one by one.",
+                    description: `We've detected ${recognitionResult.bottleCount} wine bottles in your image. We'll help you add them all.`,
                   });
                   
-                  // Handle multiple bottle recognition flow
+                  // Set state for multi-bottle flow
+                  setShowMultiBottleFlow(true);
+                  // Store the image data from the parent component
+                  setMultiBottleImageData(recognitionResult.imageData || null);
+                  
                   // Keep the existing data for the first bottle
                   return;
                 }

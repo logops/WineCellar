@@ -84,9 +84,13 @@ export function MultiBottleFlow({
         // Select the first bottle
         selectBottle(0, result.data.bottles);
       } catch (error) {
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : 'Failed to analyze wine bottles';
+        
         toast({
           title: 'Error',
-          description: error.message,
+          description: errorMessage,
           variant: 'destructive'
         });
         onCancel();
