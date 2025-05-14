@@ -111,7 +111,9 @@ export function cleanLocation(location: string | null | undefined): string | und
   // List of qualifying words and phrases to remove
   const qualifiers = [
     'likely', 'possibly', 'probably', 'appears to be', 'seems to be', 'may be',
-    'most likely', 'potentially', 'presumably', 'where', 'located in', 'based in'
+    'most likely', 'potentially', 'presumably', 'where', 'located in', 'based in',
+    'from', 'situated in', 'originating from', 'produced in', 'believed to be',
+    'thought to be', 'suspected to be', 'apparently', 'reportedly', 'purportedly'
   ];
   
   let cleanedText = location;
@@ -129,6 +131,8 @@ export function cleanLocation(location: string | null | undefined): string | und
   // Clean up commas and spaces
   cleanedText = cleanedText.replace(/\s*,\s*/g, ', '); // Standardize spaces around commas
   cleanedText = cleanedText.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
+  cleanedText = cleanedText.replace(/^\s*,\s*/g, ''); // Remove leading commas
+  cleanedText = cleanedText.replace(/\s*,\s*$/g, ''); // Remove trailing commas
   
   // Trim whitespace
   cleanedText = cleanedText.trim();
