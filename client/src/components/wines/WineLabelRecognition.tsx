@@ -49,14 +49,19 @@ interface RecognitionResult {
   servingSuggestions?: string | null;
   productionDetails?: ProductionDetails;
   rating?: WineRating;
+  // Multiple bottle detection flags
+  multipleBottlesDetected?: boolean;
+  bottleCount?: number;
 }
 
 interface WineLabelRecognitionProps {
   onResult: (result: RecognitionResult) => void;
   onCancel: () => void;
+  detectMultipleBottles?: boolean;
+  existingWines?: any[];
 }
 
-export function WineLabelRecognition({ onResult, onCancel }: WineLabelRecognitionProps) {
+export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles = false, existingWines = [] }: WineLabelRecognitionProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [loadingText, setLoadingText] = useState('');
