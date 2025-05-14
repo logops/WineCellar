@@ -1,11 +1,11 @@
-import { useState, useRef, ChangeEvent } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Camera, X, Loader2, Upload, Wine } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useState, useRef, ChangeEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Camera, Loader2, RefreshCw, Trash2, Wine } from "lucide-react";
 
 interface RecommendedDrinkingWindow {
   startYear: number;
@@ -73,10 +73,15 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
   // Mutation for analyzing wine label
   const analyzeMutation = useMutation({
     mutationFn: async (imageData: string) => {
+      // Set loading state
+      setLoadingText('Analyzing wine label...');
+      
       // Determine which endpoint to use based on the detectMultipleBottles flag
       const endpoint = detectMultipleBottles 
         ? '/api/analyze-wine-label?detectMultiple=true' 
         : '/api/analyze-wine-label';
+      
+      console.log('Sending label analysis request to:', endpoint);
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -94,6 +99,7 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
       }
       
       const result = await response.json();
+      console.log('Analysis response received', result.success);
       
       // Check if the result contains multiple bottles
       if (result.data && result.data.bottles && Array.isArray(result.data.bottles)) {
@@ -120,13 +126,21 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
       return result.data as RecognitionResult;
     },
     onSuccess: (data) => {
+      // Clear loading state
+      setLoadingText('');
+      
+      // Pass result to parent component
       onResult(data);
+      
       toast({
         title: 'Recognition Complete',
         description: 'Wine label analyzed successfully!',
       });
     },
     onError: (error) => {
+      // Clear loading state
+      setLoadingText('');
+      
       toast({
         variant: 'destructive',
         title: 'Recognition Failed',
@@ -160,24 +174,25 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
   // Start camera capture
   const startCapture = async () => {
     try {
-      setIsCapturing(true);
-      
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        setIsCapturing(true);
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast({
         variant: 'destructive',
-        title: 'Camera Access Error',
-        description: 'Could not access your camera. Please check permissions.',
+        title: 'Camera Access Failed',
+        description: 'Could not access your camera. Please check permissions or try uploading an image instead.',
       });
-      setIsCapturing(false);
     }
   };
 
@@ -219,9 +234,13 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
 
   // Analyze the image
   const analyzeImage = () => {
+    if (!imagePreview || analyzeMutation.isPending) return;
+    analyzeImageImmediately();
+  };
+  
+  // Immediate analysis without double-checking state
+  const analyzeImageImmediately = () => {
     if (!imagePreview) return;
-    
-    setLoadingText('Analyzing wine label...');
     analyzeMutation.mutate(imagePreview);
   };
 
@@ -238,13 +257,15 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {/* Loading state */}
         {analyzeMutation.isPending ? (
           <div className="flex flex-col items-center justify-center p-8 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-burgundy-600" />
-            <p className="text-sm text-gray-500">{loadingText}</p>
+            <p className="text-sm text-gray-500">{loadingText || 'Processing...'}</p>
           </div>
         ) : (
           <>
+            {/* Camera capture mode */}
             {isCapturing ? (
               <div className="relative">
                 <video 
@@ -264,53 +285,56 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
                     onClick={stopCapture}
                     variant="destructive" 
                     size="icon"
-                    className="rounded-full w-12 h-12 p-0"
+                    className="rounded-full w-10 h-10"
                   >
-                    <X className="h-6 w-6" />
+                    <Trash2 className="h-5 w-5" />
                   </Button>
                 </div>
               </div>
             ) : imagePreview ? (
+              /* Image preview mode */
               <div className="relative">
                 <img 
                   src={imagePreview} 
-                  alt="Wine Label" 
-                  className="w-full max-h-64 object-contain rounded-md" 
+                  alt="Wine Label Preview" 
+                  className="w-full rounded-md border" 
                 />
-                <Button
-                  onClick={clearImage}
-                  variant="outline"
-                  size="icon"
-                  className="absolute top-2 right-2 rounded-full h-8 w-8 bg-white"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <Button 
+                    onClick={clearImage}
+                    variant="destructive" 
+                    size="icon"
+                    className="w-8 h-8 rounded-full bg-white/80 hover:bg-white border border-gray-200"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-200 rounded-md p-6 flex flex-col items-center text-center gap-4">
-                <div className="bg-gray-50 rounded-full p-3">
-                  <Upload className="h-6 w-6 text-gray-400" />
+              /* Upload mode */
+              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <div className="mb-4">
+                  <Camera className="h-12 w-12 text-gray-300" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Upload a wine label image</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Drag and drop or click to browse
-                  </p>
+                <p className="text-sm text-gray-500 mb-4 text-center">
+                  Upload an image or use your camera to capture a wine label
+                </p>
+                <div className="flex gap-4">
+                  <Label 
+                    htmlFor="label-image" 
+                    className="bg-burgundy-600 hover:bg-burgundy-700 text-white py-2 px-4 rounded-md cursor-pointer text-sm"
+                  >
+                    Browse Images
+                  </Label>
+                  <input
+                    ref={fileInputRef}
+                    id="label-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </div>
-                <Label 
-                  htmlFor="label-image" 
-                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white py-2 px-4 rounded-md cursor-pointer text-sm"
-                >
-                  Browse Images
-                </Label>
-                <input
-                  ref={fileInputRef}
-                  id="label-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
               </div>
             )}
             
@@ -349,7 +373,7 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
         </Button>
         {imagePreview && (
           <Button 
-            onClick={analyzeImage}
+            onClick={analyzeImageImmediately}
             disabled={analyzeMutation.isPending || !imagePreview}
             className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
           >
