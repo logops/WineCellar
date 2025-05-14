@@ -542,6 +542,144 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     }
   }
   
+  // Function to enhance wine data with AI
+  async function handleEnhanceWithAI() {
+    const currentValues = form.getValues();
+    const wineName = currentValues.name;
+    const producer = currentValues.producer;
+    const vintage = currentValues.vintage;
+    const type = currentValues.type;
+    const region = currentValues.region;
+    
+    // Check if we have enough information to perform enhancement
+    if (!producer) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter at least the producer to enhance the wine data.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsEnhancingWithAI(true);
+    
+    try {
+      // Construct wine data for the API request
+      const wineData = {
+        producer,
+        name: wineName || '',
+        vintage: vintage || 0,
+        type: type || 'red',
+        region: region || '',
+        subregion: currentValues.subregion || '',
+        grapeVarieties: currentValues.grapeVarieties || ''
+      };
+      
+      // Call the API to get comprehensive wine analysis
+      const response = await apiRequest(
+        "POST", 
+        "/api/wine-drinking-window-recommendation", 
+        wineData
+      );
+      
+      const result: WineAnalysisResponse = await response.json();
+      
+      if (result.success && result.data) {
+        // Store the enhancement result
+        setAiEnhancementResult(result.data);
+        
+        // Show the enhancement dialog
+        setShowEnhanceDialog(true);
+      } else {
+        toast({
+          title: "Enhancement Failed",
+          description: result.message || "Could not enhance wine data.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error enhancing wine data:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem enhancing the wine data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEnhancingWithAI(false);
+    }
+  }
+  
+  // Function to apply AI enhancements to the form
+  function applyAIEnhancements() {
+    if (!aiEnhancementResult) return;
+    
+    const currentValues = form.getValues();
+    
+    // Apply all the AI recommendations
+    
+    // Apply drinking window
+    if (aiEnhancementResult.start && aiEnhancementResult.end) {
+      const startYear = typeof aiEnhancementResult.start === 'string' 
+        ? parseInt(aiEnhancementResult.start) 
+        : aiEnhancementResult.start;
+        
+      const endYear = typeof aiEnhancementResult.end === 'string' 
+        ? parseInt(aiEnhancementResult.end) 
+        : aiEnhancementResult.end;
+      
+      form.setValue('drinkingWindowStartYear', startYear, { shouldDirty: true });
+      form.setValue('drinkingWindowEndYear', endYear, { shouldDirty: true });
+    }
+    
+    // Apply grape varieties
+    if (aiEnhancementResult.grapeVarieties) {
+      form.setValue('grapeVarieties', aiEnhancementResult.grapeVarieties, { shouldDirty: true });
+    }
+    
+    // Apply region
+    if (aiEnhancementResult.region) {
+      form.setValue('region', aiEnhancementResult.region, { shouldDirty: true });
+    }
+    
+    // Apply subregion
+    if (aiEnhancementResult.subregion) {
+      form.setValue('subregion', aiEnhancementResult.subregion, { shouldDirty: true });
+    }
+    
+    // Apply type if it was provided
+    if (aiEnhancementResult.type) {
+      form.setValue('type', aiEnhancementResult.type.toLowerCase(), { shouldDirty: true });
+    }
+    
+    // Combine notes information if it exists
+    if (aiEnhancementResult.notes || aiEnhancementResult.cellaring || aiEnhancementResult.pairings) {
+      let combinedNotes = '';
+      
+      if (aiEnhancementResult.notes) {
+        combinedNotes += aiEnhancementResult.notes + '\n\n';
+      }
+      
+      if (aiEnhancementResult.cellaring) {
+        combinedNotes += 'Cellaring: ' + aiEnhancementResult.cellaring + '\n\n';
+      }
+      
+      if (aiEnhancementResult.pairings) {
+        combinedNotes += 'Pairings: ' + aiEnhancementResult.pairings;
+      }
+      
+      if (combinedNotes) {
+        form.setValue('notes', combinedNotes.trim(), { shouldDirty: true });
+      }
+    }
+    
+    toast({
+      title: "AI Enhancements Applied",
+      description: "Wine information has been enhanced with AI analysis results",
+    });
+    
+    setShowEnhanceDialog(false);
+  }
+  
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     try {
