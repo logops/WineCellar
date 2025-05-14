@@ -221,7 +221,13 @@ export function MultiBottleWizard({
       </CardHeader>
       
       <CardContent>
-        <Progress value={calculateProgress()} className="w-full mb-4" />
+        <Progress value={calculateProgress()} className="w-full mb-2" />
+        
+        {/* Batch processing status */}
+        <div className="mb-4 flex justify-between text-xs text-muted-foreground">
+          <span>Queued for addition: {bottlesToAdd.length}</span>
+          <span>Skipped: {skippedBottles.length}</span>
+        </div>
         
         {displayBottle && (
           <div className="space-y-4 p-4 border rounded-md">
@@ -380,7 +386,7 @@ export function MultiBottleWizard({
               onClick={handleProcessBottle}
               className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
             >
-              Add to Collection
+              Queue for Addition
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </>
