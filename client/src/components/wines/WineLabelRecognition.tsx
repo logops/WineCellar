@@ -72,10 +72,18 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
   // Mutation for analyzing wine label
   const analyzeMutation = useMutation({
     mutationFn: async (imageData: string) => {
-      const response = await fetch('/api/analyze-wine-label', {
+      // Determine which endpoint to use based on the detectMultipleBottles flag
+      const endpoint = detectMultipleBottles 
+        ? '/api/analyze-wine-label?detectMultiple=true' 
+        : '/api/analyze-wine-label';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageData }),
+        body: JSON.stringify({ 
+          imageData,
+          checkForDuplicates: existingWines.length > 0
+        }),
         credentials: 'include'
       });
       
@@ -85,6 +93,28 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
       }
       
       const result = await response.json();
+      
+      // Check if the result contains multiple bottles
+      if (result.data && result.data.bottles && Array.isArray(result.data.bottles)) {
+        // This is a multi-bottle response
+        const bottles = result.data.bottles;
+        
+        if (bottles.length === 0) {
+          throw new Error('No readable wine bottles detected in the image');
+        }
+        
+        // Get the first bottle data for immediate display
+        const firstBottle = bottles[0];
+        
+        // Create standard RecognitionResult with multi-bottle flags
+        return {
+          ...firstBottle,
+          multipleBottlesDetected: bottles.length > 1,
+          bottleCount: bottles.length
+        } as RecognitionResult;
+      }
+      
+      // Single bottle response
       return result.data as RecognitionResult;
     },
     onSuccess: (data) => {
