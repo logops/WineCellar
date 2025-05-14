@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
-import Anthropic from '@anthropic-ai/sdk';
 import { anthropic } from './anthropic';
-import { cleanGrapeVarieties, cleanLocation } from '@shared/wineUtils';
 
-// The newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
-const CLAUDE_MODEL = 'claude-3-7-sonnet-20250219';
+// Interface for storing the position of a wine bottle in the image
+interface WinePosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
-/**
- * Interface for wine analysis results
- */
-export interface WineAnalysisResult {
+// Interface for a detected wine bottle
+interface WineBottleAnalysis {
   producer: string | null;
   name: string | null;
   vintage: number | null;
@@ -20,95 +21,95 @@ export interface WineAnalysisResult {
   type: string | null;
   alcoholContent: number | null;
   confidence: number;
+  isReadable: boolean;
+  bottlePosition?: WinePosition;
+  notes?: string;
   recommendedDrinkingWindow?: {
     startYear: number;
     endYear: number;
-    notes: string;
     isPastPrime: boolean;
+    notes: string;
   };
-  isReadable: boolean;
-  bottlePosition?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+}
+
+// Interface for the multi-bottle analysis result
+interface MultiBottleResult {
+  bottles: WineBottleAnalysis[];
 }
 
 /**
- * Detect and analyze multiple wine bottles in an image
+ * Analyze multiple wine bottles in a single image
+ * @param base64Image The base64-encoded image to analyze
+ * @returns Promise with analysis results
  */
-export async function detectWineBottles(imageBase64: string): Promise<{
-  success: boolean;
-  data?: { bottles: WineAnalysisResult[] };
-  error?: string;
-}> {
+export async function analyzeMultipleWineBottles(base64Image: string): Promise<MultiBottleResult> {
   try {
-    console.log('Detecting and analyzing multiple wine bottles in image...');
-    
+    // Extract the base64 data from the data URL
+    let imageBase64 = base64Image;
+    if (base64Image.includes(',')) {
+      imageBase64 = base64Image.split(',')[1];
+    }
+
+    // Prepare the prompt for Claude Vision to detect and analyze multiple wine bottles
     const response = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
+      model: "claude-3-7-sonnet-20250219",
       max_tokens: 4000,
+      temperature: 0.2,
+      system: `You are a wine label analysis expert. Your task is to detect multiple wine bottles in an image and analyze each bottle separately. 
+      For each bottle, extract the following information:
+      1. Location in the image (normalized x, y, width, height coordinates between 0 and 1)
+      2. Producer/winery name
+      3. Wine name
+      4. Vintage (year)
+      5. Region
+      6. Subregion (if visible)
+      7. Country (if visible)
+      8. Grape varieties (if visible)
+      9. Type (red, white, rosé, sparkling)
+      10. Alcohol content % (if visible)
+      
+      Important guidelines:
+      - Remove qualifying words like "possibly", "likely", "appears to be" from your final answers.
+      - Never guess or approximate grape varieties, only include varieties clearly stated on the label.
+      - For grape varieties, separate with commas instead of using "and" for consistent formatting.
+      - Do not include any uncertainty qualifiers in the data - either report what you can clearly see or report null.
+      - Mark bottles as unreadable if you cannot identify the producer and name with reasonable confidence.
+      - For each bottle, provide a confidence score between 0 and 1 that reflects how confident you are in your analysis.
+      
+      Return a valid JSON object with this structure:
+      {
+        "bottles": [
+          {
+            "bottlePosition": {"x": float, "y": float, "width": float, "height": float},
+            "producer": string | null,
+            "name": string | null,
+            "vintage": number | null,
+            "region": string | null,
+            "subregion": string | null,
+            "country": string | null,
+            "grapeVarieties": string | null,
+            "type": string | null,
+            "alcoholContent": number | null,
+            "confidence": float,
+            "isReadable": boolean,
+            "notes": string
+          },
+          ...
+        ]
+      }`,
       messages: [
         {
-          role: 'user',
+          role: "user",
           content: [
             {
-              type: 'text',
-              text: `You are a wine expert with exceptional visual recognition abilities. Analyze this image and identify any wine bottles present.
-
-First, determine how many wine bottles with visible labels are in the image. For each visible bottle:
-1. Focus on that specific bottle only
-2. Extract as much information as possible from its label
-3. If a bottle's label is not clearly visible or readable, mark it as unreadable and continue to the next one
-
-For each bottle with a readable label, extract the following information:
-- Producer name
-- Wine name
-- Vintage
-- Region
-- Subregion
-- Country
-- Grape varieties
-- Wine type (Red, White, Rosé, Sparkling, Dessert, Fortified, Other)
-- Alcohol content
-- Estimated position in the image (approximate coordinates)
-
-Return your findings in the following JSON format:
-{
-  "bottleCount": number,
-  "bottles": [
-    {
-      "producer": string or null,
-      "name": string or null,
-      "vintage": number or null,
-      "region": string or null,
-      "subregion": string or null,
-      "country": string or null,
-      "grapeVarieties": string or null,
-      "type": string or null,
-      "alcoholContent": number or null,
-      "confidence": number (0-1 indicating your confidence in the analysis),
-      "isReadable": boolean,
-      "bottlePosition": {
-        "x": number,
-        "y": number,
-        "width": number,
-        "height": number
-      },
-      "notes": string (any additional observations about this specific bottle)
-    },
-    // Additional bottles...
-  ]
-}
-
-If no wine bottles are detected in the image, return: { "bottleCount": 0, "bottles": [] }`
+              type: "text", 
+              text: "Detect all wine bottles in this image. For each bottle, extract the information as described in your instructions and return it as a valid JSON object. If a bottle's label is unreadable, mark it as such but still include its position."
             },
             {
-              type: 'image',
+              type: "image",
               source: {
-                type: 'base64',
-                media_type: 'image/jpeg',
+                type: "base64",
+                media_type: "image/jpeg",
                 data: imageBase64
               }
             }
@@ -117,113 +118,82 @@ If no wine bottles are detected in the image, return: { "bottleCount": 0, "bottl
       ]
     });
 
-    // Extract text content from the response
-    if (response.content[0].type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
+    // Parse the response to get the bottles information
+    const responseText = response.content[0].text;
     
-    const text = response.content[0].text;
-    
-    // Find the JSON object in the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    
+    // Extract JSON object from the response
+    let jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Could not extract JSON data from the API response');
+      throw new Error("Failed to parse JSON from AI response");
     }
     
-    // Parse the extracted JSON
-    const analysisData = JSON.parse(jsonMatch[0]);
+    const jsonStr = jsonMatch[0];
+    const result: MultiBottleResult = JSON.parse(jsonStr);
     
-    // Clean and process each bottle's data
-    if (analysisData.bottles && Array.isArray(analysisData.bottles)) {
-      analysisData.bottles = analysisData.bottles.map((bottle: any) => {
-        // Clean grape varieties and location data
-        if (bottle.grapeVarieties) {
-          bottle.grapeVarieties = cleanGrapeVarieties(bottle.grapeVarieties);
-        }
-        
-        if (bottle.region) {
-          bottle.region = cleanLocation(bottle.region);
-        }
-        
-        if (bottle.subregion) {
-          bottle.subregion = cleanLocation(bottle.subregion);
-        }
-        
-        // Ensure the confidence score is between 0 and 1
-        if (typeof bottle.confidence === 'number') {
-          bottle.confidence = Math.max(0, Math.min(1, bottle.confidence));
-        } else {
-          bottle.confidence = 0.5; // Default
-        }
-        
-        return bottle;
-      });
+    // Ensure the result has the expected structure
+    if (!result.bottles || !Array.isArray(result.bottles)) {
+      throw new Error("Invalid response format from AI");
     }
     
-    return {
-      success: true,
-      data: {
-        bottles: analysisData.bottles || []
+    // Clean up any issues with the data
+    result.bottles = result.bottles.map(bottle => {
+      // Ensure confidence is a number between 0 and 1
+      if (typeof bottle.confidence !== 'number') {
+        bottle.confidence = 0.5;
       }
-    };
+      bottle.confidence = Math.max(0, Math.min(1, bottle.confidence));
+      
+      // Ensure isReadable is a boolean
+      if (typeof bottle.isReadable !== 'boolean') {
+        bottle.isReadable = !!bottle.producer && !!bottle.name;
+      }
+      
+      // Convert vintage to number or null
+      if (bottle.vintage) {
+        bottle.vintage = parseInt(String(bottle.vintage), 10) || null;
+      }
+      
+      // Ensure the bottle position is normalized between 0 and 1
+      if (bottle.bottlePosition) {
+        const pos = bottle.bottlePosition;
+        pos.x = Math.max(0, Math.min(1, pos.x));
+        pos.y = Math.max(0, Math.min(1, pos.y));
+        pos.width = Math.max(0, Math.min(1, pos.width));
+        pos.height = Math.max(0, Math.min(1, pos.height));
+      }
+      
+      return bottle;
+    });
+    
+    return result;
   } catch (error) {
-    console.error('Error detecting wine bottles:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
+    console.error("Error analyzing wine bottles:", error);
+    throw error;
   }
 }
 
 /**
- * Handle multi-bottle image upload and analysis
+ * Handle multi-bottle analysis requests
  */
 export async function handleMultiBottleAnalysis(req: Request, res: Response) {
   try {
-    // Check if request contains file data
-    if (!req.body || !req.body.imageData) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'No image data provided' 
-      });
-    }
-
-    // Extract the base64 data from the request
-    let base64Data = req.body.imageData;
+    const { imageData } = req.body;
     
-    // Remove the data URL prefix if present (e.g., "data:image/jpeg;base64,")
-    if (base64Data.includes(',')) {
-      base64Data = base64Data.split(',')[1];
+    if (!imageData) {
+      return res.status(400).json({ error: "No image data provided" });
     }
-
-    console.log('Starting multi-bottle wine label analysis...');
     
-    // Analyze the image for multiple wine bottles
-    const analysisResult = await detectWineBottles(base64Data);
+    const result = await analyzeMultipleWineBottles(imageData);
     
-    console.log('Multi-bottle analysis result:', 
-      analysisResult.success ? 'Success' : 'Failed', 
-      analysisResult.success ? `Found ${analysisResult.data?.bottles.length} bottles` : analysisResult.error
-    );
-
-    if (!analysisResult.success) {
-      return res.status(500).json({
-        success: false,
-        error: analysisResult.error || 'Failed to analyze wine bottles'
-      });
-    }
-
-    // Return the analyzed bottles data
-    return res.status(200).json({
-      success: true,
-      data: analysisResult.data
+    return res.status(200).json({ 
+      success: true, 
+      data: result 
     });
   } catch (error) {
-    console.error('Error in multi-bottle analysis handler:', error);
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred'
+    console.error("Error handling multi-bottle analysis:", error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error analyzing wine bottles" 
     });
   }
 }

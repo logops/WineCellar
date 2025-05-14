@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import WineImportCard from '@/components/spreadsheet/WineImportCard';
+import BottleReviewCard from './BottleReviewCard';
 import { checkDuplicateWine } from '@/lib/wineUtils';
 
 interface WinePosition {
@@ -347,7 +347,7 @@ export function MultiBottleRecognition({ onResult, onCancel, wines = [] }: Multi
             </Alert>
           )}
           
-          <WineImportCard
+          <BottleReviewCard
             wine={{
               producer: currentBottle.producer || '',
               name: currentBottle.name || '',
@@ -361,6 +361,7 @@ export function MultiBottleRecognition({ onResult, onCancel, wines = [] }: Multi
             confidence={currentBottle.confidence}
             onConfirm={confirmCurrentBottle}
             onSkip={skipCurrentBottle}
+            isPossibleDuplicate={isPossibleDuplicate}
           />
         </CardContent>
         
