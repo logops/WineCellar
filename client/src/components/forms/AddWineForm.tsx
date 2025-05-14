@@ -12,6 +12,7 @@ import { extractGrapeVarieties, extractVineyard, lookupWineInformation } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { WineLabelRecognition } from "@/components/wines/WineLabelRecognition";
+import { MultiBottleRecognition } from "@/components/wines/MultiBottleRecognition";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1280,116 +1281,183 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         </TabsContent>
         
         <TabsContent value="label">
-          <WineLabelRecognition 
-            onResult={(recognitionResult) => {
-              // Store the original prediction for analytics
-              setOriginalPrediction(recognitionResult);
+          <div className="space-y-6">
+            <Tabs defaultValue="single" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="single">Single Bottle</TabsTrigger>
+                <TabsTrigger value="multi">Multiple Bottles</TabsTrigger>
+              </TabsList>
               
-              // Handle the recognition result by updating the form fields
-              form.setValue("producer", recognitionResult.producer || "");
-              form.setValue("name", recognitionResult.name || "");
+              <TabsContent value="single" className="pt-4">
+                <WineLabelRecognition 
+                  onResult={(recognitionResult) => {
+                    // Store the original prediction for analytics
+                    setOriginalPrediction(recognitionResult);
+                    
+                    // Handle the recognition result by updating the form fields
+                    form.setValue("producer", recognitionResult.producer || "");
+                    form.setValue("name", recognitionResult.name || "");
+                    
+                    // Set a default current year vintage if not detected
+                    const currentYear = new Date().getFullYear();
+                    form.setValue("vintage", recognitionResult.vintage || currentYear);
+                    
+                    form.setValue("region", recognitionResult.region || "");
+                    form.setValue("subregion", recognitionResult.subregion || "");
+                    form.setValue("grapeVarieties", recognitionResult.grapeVarieties || "");
+                    form.setValue("type", recognitionResult.type?.toLowerCase() || "red");
+                    
+                    // Store comprehensive wine data if available
+                    if (recognitionResult.tasting || recognitionResult.foodPairings || 
+                        recognitionResult.servingSuggestions || recognitionResult.productionDetails || 
+                        recognitionResult.rating) {
+                      
+                      setComprehensiveWineData({
+                        tasting: recognitionResult.tasting,
+                        foodPairings: recognitionResult.foodPairings,
+                        servingSuggestions: recognitionResult.servingSuggestions,
+                        productionDetails: recognitionResult.productionDetails,
+                        rating: recognitionResult.rating
+                      });
+                      
+                      // Generate notes from comprehensive data
+                      let aiNotes = "";
+                      
+                      if (recognitionResult.tasting?.characteristics) {
+                        aiNotes += `Tasting Notes: ${recognitionResult.tasting.characteristics}\n\n`;
+                      }
+                      
+                      if (recognitionResult.tasting?.ageability) {
+                        aiNotes += `Ageability: ${recognitionResult.tasting.ageability}\n`;
+                      }
+                      
+                      if (recognitionResult.tasting?.maturity) {
+                        aiNotes += `Current Maturity: ${recognitionResult.tasting.maturity}\n\n`;
+                      }
+                      
+                      if (recognitionResult.foodPairings) {
+                        aiNotes += `Food Pairings: ${recognitionResult.foodPairings}\n\n`;
+                      }
+                      
+                      if (recognitionResult.servingSuggestions) {
+                        aiNotes += `Serving Suggestions: ${recognitionResult.servingSuggestions}\n\n`;
+                      }
+                      
+                      if (recognitionResult.productionDetails?.winemaking) {
+                        aiNotes += `Winemaking: ${recognitionResult.productionDetails.winemaking}\n`;
+                      }
+                      
+                      if (recognitionResult.productionDetails?.terroir) {
+                        aiNotes += `Terroir: ${recognitionResult.productionDetails.terroir}\n`;
+                      }
+                      
+                      if (recognitionResult.productionDetails?.classification) {
+                        aiNotes += `Classification: ${recognitionResult.productionDetails.classification}\n\n`;
+                      }
+                      
+                      if (recognitionResult.rating?.score) {
+                        aiNotes += `Estimated Rating: ${recognitionResult.rating.score}/100 (${recognitionResult.rating.confidenceLevel} confidence)\n`;
+                      }
+                      
+                      // Set notes if there's content and the field is empty
+                      if (aiNotes.trim() !== "") {
+                        form.setValue("notes", aiNotes, { shouldDirty: true });
+                      }
+                    }
+                    
+                    // Handle recommended drinking window if available
+                    if (recognitionResult.recommendedDrinkingWindow) {
+                      const { startYear, endYear, isPastPrime, notes } = recognitionResult.recommendedDrinkingWindow;
+                      
+                      // Store the recommendation for later use
+                      setRecommendedDrinkingWindow({
+                        startYear,
+                        endYear, 
+                        isPastPrime,
+                        notes
+                      });
+                      
+                      // If it's a past prime wine, set to drink now
+                      if (isPastPrime) {
+                        setDrinkingWindowType("drink_now");
+                      } else {
+                        // Set to custom by default so we can show the years
+                        setDrinkingWindowType("custom");
+                        // Fill in the recommended years
+                        form.setValue("drinkingWindowStartYear", startYear);
+                        form.setValue("drinkingWindowEndYear", endYear);
+                      }
+                    }
+                    
+                    // Switch to manual entry form to allow user to edit or complete missing fields
+                    setEntryMethod("manual");
+                    
+                    toast({
+                      title: "Wine Label Recognized",
+                      description: "The wine details have been filled in. Please review and make any necessary changes.",
+                    });
+                  }}
+                  onCancel={() => setEntryMethod("manual")}
+                />
+              </TabsContent>
               
-              // Set a default current year vintage if not detected
-              const currentYear = new Date().getFullYear();
-              form.setValue("vintage", recognitionResult.vintage || currentYear);
-              
-              form.setValue("region", recognitionResult.region || "");
-              form.setValue("subregion", recognitionResult.subregion || "");
-              form.setValue("grapeVarieties", recognitionResult.grapeVarieties || "");
-              form.setValue("type", recognitionResult.type?.toLowerCase() || "red");
-              
-              // Store comprehensive wine data if available
-              if (recognitionResult.tasting || recognitionResult.foodPairings || 
-                  recognitionResult.servingSuggestions || recognitionResult.productionDetails || 
-                  recognitionResult.rating) {
-                
-                setComprehensiveWineData({
-                  tasting: recognitionResult.tasting,
-                  foodPairings: recognitionResult.foodPairings,
-                  servingSuggestions: recognitionResult.servingSuggestions,
-                  productionDetails: recognitionResult.productionDetails,
-                  rating: recognitionResult.rating
-                });
-                
-                // Generate notes from comprehensive data
-                let aiNotes = "";
-                
-                if (recognitionResult.tasting?.characteristics) {
-                  aiNotes += `Tasting Notes: ${recognitionResult.tasting.characteristics}\n\n`;
-                }
-                
-                if (recognitionResult.tasting?.ageability) {
-                  aiNotes += `Ageability: ${recognitionResult.tasting.ageability}\n`;
-                }
-                
-                if (recognitionResult.tasting?.maturity) {
-                  aiNotes += `Current Maturity: ${recognitionResult.tasting.maturity}\n\n`;
-                }
-                
-                if (recognitionResult.foodPairings) {
-                  aiNotes += `Food Pairings: ${recognitionResult.foodPairings}\n\n`;
-                }
-                
-                if (recognitionResult.servingSuggestions) {
-                  aiNotes += `Serving Suggestions: ${recognitionResult.servingSuggestions}\n\n`;
-                }
-                
-                if (recognitionResult.productionDetails?.winemaking) {
-                  aiNotes += `Winemaking: ${recognitionResult.productionDetails.winemaking}\n`;
-                }
-                
-                if (recognitionResult.productionDetails?.terroir) {
-                  aiNotes += `Terroir: ${recognitionResult.productionDetails.terroir}\n`;
-                }
-                
-                if (recognitionResult.productionDetails?.classification) {
-                  aiNotes += `Classification: ${recognitionResult.productionDetails.classification}\n\n`;
-                }
-                
-                if (recognitionResult.rating?.score) {
-                  aiNotes += `Estimated Rating: ${recognitionResult.rating.score}/100 (${recognitionResult.rating.confidenceLevel} confidence)\n`;
-                }
-                
-                // Set notes if there's content and the field is empty
-                if (aiNotes.trim() !== "") {
-                  form.setValue("notes", aiNotes, { shouldDirty: true });
-                }
-              }
-              
-              // Handle recommended drinking window if available
-              if (recognitionResult.recommendedDrinkingWindow) {
-                const { startYear, endYear, isPastPrime, notes } = recognitionResult.recommendedDrinkingWindow;
-                
-                // Store the recommendation for later use
-                setRecommendedDrinkingWindow({
-                  startYear,
-                  endYear, 
-                  isPastPrime,
-                  notes
-                });
-                
-                // If it's a past prime wine, set to drink now
-                if (isPastPrime) {
-                  setDrinkingWindowType("drink_now");
-                } else {
-                  // Set to custom by default so we can show the years
-                  setDrinkingWindowType("custom");
-                  // Fill in the recommended years
-                  form.setValue("drinkingWindowStartYear", startYear);
-                  form.setValue("drinkingWindowEndYear", endYear);
-                }
-              }
-              
-              // Switch to manual entry form to allow user to edit or complete missing fields
-              setEntryMethod("manual");
-              
-              toast({
-                title: "Wine Label Recognized",
-                description: "The wine details have been filled in. Please review and make any necessary changes.",
-              });
-            }}
-            onCancel={() => setEntryMethod("manual")}
-          />
+              <TabsContent value="multi" className="pt-4">
+                <MultiBottleRecognition
+                  onResult={(bottleResult) => {
+                    // Store the original prediction for analytics
+                    setOriginalPrediction(bottleResult);
+                    
+                    // Handle the recognition result by updating the form fields
+                    form.setValue("producer", bottleResult.producer || "");
+                    form.setValue("name", bottleResult.name || "");
+                    
+                    // Set a default current year vintage if not detected
+                    const currentYear = new Date().getFullYear();
+                    form.setValue("vintage", bottleResult.vintage || currentYear);
+                    
+                    form.setValue("region", bottleResult.region || "");
+                    form.setValue("subregion", bottleResult.subregion || "");
+                    form.setValue("grapeVarieties", bottleResult.grapeVarieties || "");
+                    form.setValue("type", bottleResult.type?.toLowerCase() || "red");
+                    
+                    // Handle recommended drinking window if available
+                    if (bottleResult.recommendedDrinkingWindow) {
+                      const { startYear, endYear, isPastPrime, notes } = bottleResult.recommendedDrinkingWindow;
+                      
+                      // Store the recommendation for later use
+                      setRecommendedDrinkingWindow({
+                        startYear,
+                        endYear, 
+                        isPastPrime: isPastPrime || false,
+                        notes: notes || ""
+                      });
+                      
+                      // If it's a past prime wine, set to drink now
+                      if (isPastPrime) {
+                        setDrinkingWindowType("drink_now");
+                      } else {
+                        // Set to custom by default so we can show the years
+                        setDrinkingWindowType("custom");
+                        // Fill in the recommended years
+                        form.setValue("drinkingWindowStartYear", startYear);
+                        form.setValue("drinkingWindowEndYear", endYear);
+                      }
+                    }
+                    
+                    // Switch to manual entry form to allow user to edit or complete missing fields
+                    setEntryMethod("manual");
+                    
+                    toast({
+                      title: "Wine Bottle Added",
+                      description: "The wine details have been filled in. Please review and make any necessary changes.",
+                    });
+                  }}
+                  onCancel={() => setEntryMethod("manual")}
+                  wines={[]}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

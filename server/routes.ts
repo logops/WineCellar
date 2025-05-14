@@ -648,6 +648,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wine label recognition routes
   app.post('/api/analyze-wine-label', isAuthenticated, handleWineLabelAnalysis);
   
+  // Multi-bottle wine label recognition route
+  app.post('/api/analyze-multi-bottle', isAuthenticated, async (req: Request, res: Response) => {
+    const { handleMultiBottleAnalysis } = await import('./multiBottleAnalysis');
+    return handleMultiBottleAnalysis(req, res);
+  });
+  
   // Endpoint to record user feedback on label recognition
   app.post('/api/label-analytics', isAuthenticated, async (req: Request, res: Response) => {
     try {
