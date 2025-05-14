@@ -434,11 +434,151 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       notes?: string | null;
       cellaring?: string | null;
       pairings?: string | null;
+      wineType?: string | null;  // Add this for the wine type
     };
     message?: string;
   }
 
   // Function to request comprehensive AI wine analysis
+  // Function to enhance the wine data with AI
+  async function handleEnhanceWithAI() {
+    const currentValues = form.getValues();
+    const wineName = currentValues.name;
+    const producer = currentValues.producer;
+    const vintage = currentValues.vintage;
+    const type = currentValues.type;
+    const region = currentValues.region;
+    
+    // Check if we have enough information to perform an enhancement
+    if (!producer || !vintage) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter at least the producer and vintage to get AI enhancements.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsEnhancingWithAI(true);
+    
+    try {
+      // Construct wine data for the API request
+      const wineData = {
+        producer,
+        name: wineName || '',
+        vintage: vintage || 0,
+        type: type || 'red',
+        region: region || '',
+        subregion: currentValues.subregion || '',
+        grapeVarieties: currentValues.grapeVarieties || '',
+      };
+      
+      // Make API request to get AI enhancements
+      const response = await fetch('/api/wine-drinking-window-recommendation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(wineData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get AI enhancements');
+      }
+      
+      const result: WineAnalysisResponse = await response.json();
+      
+      if (result.success && result.data) {
+        // Set the AI enhancement result
+        setAiEnhancementResult(result.data);
+        
+        // Show the enhancement dialog
+        setShowEnhanceDialog(true);
+      } else {
+        toast({
+          title: "Analysis Failed",
+          description: result.message || "Unable to analyze this wine. Please try again or enter information manually.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error enhancing wine with AI:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem enhancing the wine with AI.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEnhancingWithAI(false);
+    }
+  }
+  
+  // Function to apply AI enhancements to the form
+  function applyAIEnhancements() {
+    if (!aiEnhancementResult) return;
+    
+    // Apply all relevant AI-enhanced data to the form
+    if (aiEnhancementResult.grapeVarieties) {
+      form.setValue("grapeVarieties", aiEnhancementResult.grapeVarieties);
+    }
+    
+    if (aiEnhancementResult.region) {
+      form.setValue("region", aiEnhancementResult.region);
+    }
+    
+    if (aiEnhancementResult.subregion) {
+      form.setValue("subregion", aiEnhancementResult.subregion);
+    }
+    
+    if (aiEnhancementResult.wineType) {
+      form.setValue("type", aiEnhancementResult.wineType.toLowerCase());
+    }
+    
+    // Set the drinking window
+    if (aiEnhancementResult.start && aiEnhancementResult.end) {
+      form.setValue("drinkingWindowStartYear", Number(aiEnhancementResult.start));
+      form.setValue("drinkingWindowEndYear", Number(aiEnhancementResult.end));
+    }
+    
+    // Add notes if available
+    if (aiEnhancementResult.notes) {
+      const currentNotes = form.getValues("notes") || "";
+      const newNotes = currentNotes ? 
+        `${currentNotes}\n\nAI Notes: ${aiEnhancementResult.notes}` : 
+        `AI Notes: ${aiEnhancementResult.notes}`;
+      form.setValue("notes", newNotes);
+    }
+    
+    // Add food pairings if available
+    if (aiEnhancementResult.pairings) {
+      const currentNotes = form.getValues("notes") || "";
+      const pairingsNote = `Food Pairings: ${aiEnhancementResult.pairings}`;
+      const newNotes = currentNotes ? 
+        `${currentNotes}\n\n${pairingsNote}` : 
+        pairingsNote;
+      form.setValue("notes", newNotes);
+    }
+    
+    // Add cellaring information if available
+    if (aiEnhancementResult.cellaring) {
+      const currentNotes = form.getValues("notes") || "";
+      const cellaringNote = `Cellaring: ${aiEnhancementResult.cellaring}`;
+      const newNotes = currentNotes ? 
+        `${currentNotes}\n\n${cellaringNote}` : 
+        cellaringNote;
+      form.setValue("notes", newNotes);
+    }
+    
+    // Close the dialog
+    setShowEnhanceDialog(false);
+    
+    // Show success message
+    toast({
+      title: "AI Enhancements Applied",
+      description: "Your wine data has been enhanced with AI recommendations.",
+    });
+  }
+
   async function handleDrinkingWindowRecommendation() {
     const currentValues = form.getValues();
     const wineName = currentValues.name;
@@ -849,6 +989,28 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         <TabsContent value="manual">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* AI enhancement button at the top */}
+              <div className="flex justify-end mb-4">
+                <Button
+                  type="button"
+                  onClick={handleEnhanceWithAI}
+                  disabled={isEnhancingWithAI}
+                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+                >
+                  {isEnhancingWithAI ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enhancing with AI...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Enhance with AI
+                    </>
+                  )}
+                </Button>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -1484,10 +1646,10 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                                 </div>
                               )}
                               
-                              {aiEnhancementResult.type && (
+                              {aiEnhancementResult.wineType && (
                                 <div>
                                   <span className="font-medium">Wine Type:</span>
-                                  <p className="text-sm">{aiEnhancementResult.type}</p>
+                                  <p className="text-sm">{aiEnhancementResult.wineType}</p>
                                 </div>
                               )}
                             </div>
@@ -1600,6 +1762,27 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         
         <TabsContent value="label">
           <div className="space-y-6">
+            {/* AI enhancement button at the top */}
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleEnhanceWithAI}
+                disabled={isEnhancingWithAI}
+                className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+              >
+                {isEnhancingWithAI ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enhancing with AI...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Enhance with AI
+                  </>
+                )}
+              </Button>
+            </div>
             <WineLabelRecognition 
               onResult={(recognitionResult) => {
                 // Store the original prediction for analytics
