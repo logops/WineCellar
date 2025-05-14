@@ -122,9 +122,12 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [recommendedDrinkingWindow, setRecommendedDrinkingWindow] = useState<RecommendedDrinkingWindow | null>(null);
   const [originalPrediction, setOriginalPrediction] = useState<any>(null);
   const [isLookingUpWineInfo, setIsLookingUpWineInfo] = useState(false);
+  const [isEnhancingWithAI, setIsEnhancingWithAI] = useState(false);
   const [wineInfoResult, setWineInfoResult] = useState<{ grapeVarieties?: string; vineyard?: string; confidence?: string; } | null>(null);
   const [comprehensiveWineData, setComprehensiveWineData] = useState<ComprehensiveWineData | null>(null);
   const [showMultiBottleWizard, setShowMultiBottleWizard] = useState(false);
+  const [showEnhanceDialog, setShowEnhanceDialog] = useState(false);
+  const [aiEnhancementResult, setAiEnhancementResult] = useState<WineAnalysisResponse["data"] | null>(null);
   const [multiBottleData, setMultiBottleData] = useState<any>(null);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
