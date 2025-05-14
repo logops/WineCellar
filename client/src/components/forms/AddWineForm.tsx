@@ -217,8 +217,9 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         }
       }
       
-      // Compare with default values to determine if form is dirty
-      let isDirty = false;
+      // Use both approaches to determine if form is dirty
+      // 1. Manual check comparing current values with defaults
+      let manuallyDetectedDirty = false;
       
       // Check each field for changes
       Object.keys(defaultValues).forEach(key => {
@@ -234,11 +235,21 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               (defaultVal === "" && (currentVal === undefined || currentVal === null))
             )
            ) {
-          isDirty = true;
+          manuallyDetectedDirty = true;
         }
       });
       
-      console.log("Form dirty state (manual check):", isDirty);
+      // 2. Also check React Hook Form's own dirty tracking
+      const formStateDirty = form.formState.isDirty;
+      
+      // Use either detection method - if either says it's dirty, treat as dirty
+      const isDirty = manuallyDetectedDirty || formStateDirty;
+      
+      console.log("Form dirty state check:", {
+        manuallyDetectedDirty,
+        formStateDirty,
+        combinedResult: isDirty
+      });
       
       // Update local state and notify parent
       setFormDirty(isDirty);
