@@ -1433,6 +1433,108 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                   </AlertDialogContent>
                 </AlertDialog>
                 
+                {/* AI Enhancement Dialog */}
+                <AlertDialog open={showEnhanceDialog} onOpenChange={setShowEnhanceDialog}>
+                  <AlertDialogContent className="max-w-3xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>AI Wine Analysis</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        AI has analyzed your wine and found the following information. Would you like to apply these enhancements?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4 space-y-5">
+                      {aiEnhancementResult && (
+                        <>
+                          {/* Drinking Window Section */}
+                          <div className="p-3 border rounded-md bg-cream-50">
+                            <h4 className="font-medium mb-2 text-burgundy-700">Recommended Drinking Window</h4>
+                            <p className="font-medium">
+                              {aiEnhancementResult.start} - {aiEnhancementResult.end}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {aiEnhancementResult.reasoning}
+                            </p>
+                            <div className="mt-2 text-xs inline-flex items-center px-2 py-1 rounded-full bg-burgundy-100 text-burgundy-800">
+                              {aiEnhancementResult.confidence} confidence
+                            </div>
+                          </div>
+                          
+                          {/* Wine Information Section */}
+                          <div className="p-3 border rounded-md">
+                            <h4 className="font-medium mb-2 text-burgundy-700">Wine Information</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {aiEnhancementResult.grapeVarieties && (
+                                <div>
+                                  <span className="font-medium">Grape Varieties:</span>
+                                  <p className="text-sm">{aiEnhancementResult.grapeVarieties}</p>
+                                </div>
+                              )}
+                              
+                              {aiEnhancementResult.region && (
+                                <div>
+                                  <span className="font-medium">Region:</span>
+                                  <p className="text-sm">{aiEnhancementResult.region}</p>
+                                </div>
+                              )}
+                              
+                              {aiEnhancementResult.subregion && (
+                                <div>
+                                  <span className="font-medium">Sub-region:</span>
+                                  <p className="text-sm">{aiEnhancementResult.subregion}</p>
+                                </div>
+                              )}
+                              
+                              {aiEnhancementResult.type && (
+                                <div>
+                                  <span className="font-medium">Wine Type:</span>
+                                  <p className="text-sm">{aiEnhancementResult.type}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Additional Information Section */}
+                          {(aiEnhancementResult.notes || aiEnhancementResult.cellaring || aiEnhancementResult.pairings) && (
+                            <div className="p-3 border rounded-md">
+                              <h4 className="font-medium mb-2 text-burgundy-700">Additional Information</h4>
+                              
+                              {aiEnhancementResult.notes && (
+                                <div className="mb-3">
+                                  <span className="font-medium">Tasting Notes:</span>
+                                  <p className="text-sm">{aiEnhancementResult.notes}</p>
+                                </div>
+                              )}
+                              
+                              {aiEnhancementResult.cellaring && (
+                                <div className="mb-3">
+                                  <span className="font-medium">Cellaring:</span>
+                                  <p className="text-sm">{aiEnhancementResult.cellaring}</p>
+                                </div>
+                              )}
+                              
+                              {aiEnhancementResult.pairings && (
+                                <div>
+                                  <span className="font-medium">Food Pairings:</span>
+                                  <p className="text-sm">{aiEnhancementResult.pairings}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Keep Original</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={applyAIEnhancements}
+                        className="bg-burgundy-600 hover:bg-burgundy-700"
+                      >
+                        Apply AI Enhancements
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
                 {/* Drink/Remove Dialog */}
                 <AlertDialog open={showDrinkDialog} onOpenChange={setShowDrinkDialog}>
                   <AlertDialogContent>
