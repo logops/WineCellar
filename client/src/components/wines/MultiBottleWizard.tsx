@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Wine, ChevronRight, SkipForward, Pencil } from "lucide-react";
+import { Wine, ChevronRight, SkipForward, Pencil, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +44,8 @@ interface MultiBottleWizardProps {
   onComplete: () => void;
   onCancel: () => void;
   onProcessBottle: (bottle: WineBottleData, index: number, total: number) => void;
+  onEnhanceWithAI?: (bottle: WineBottleData) => void;
+  isEnhancingWithAI?: boolean;
   existingWines?: any[];
 }
 
@@ -52,6 +54,8 @@ export function MultiBottleWizard({
   onComplete, 
   onCancel, 
   onProcessBottle,
+  onEnhanceWithAI,
+  isEnhancingWithAI = false,
   existingWines = []
 }: MultiBottleWizardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -327,6 +331,27 @@ export function MultiBottleWizard({
                 <Pencil className="mr-1 h-4 w-4" />
                 Edit
               </Button>
+              {onEnhanceWithAI && (
+                <Button
+                  onClick={() => onEnhanceWithAI(currentBottle)}
+                  disabled={isEnhancingWithAI}
+                  variant="outline"
+                  size="sm"
+                  className="border-burgundy-600 text-burgundy-700 hover:bg-burgundy-50"
+                >
+                  {isEnhancingWithAI ? (
+                    <>
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      Enhancing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-1 h-4 w-4" />
+                      Enhance with AI
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
             <Button 
               onClick={handleProcessBottle}

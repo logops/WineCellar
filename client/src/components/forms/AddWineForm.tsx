@@ -649,8 +649,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     }
     
     // Apply type if it was provided
-    if (aiEnhancementResult.type) {
-      form.setValue('type', aiEnhancementResult.type.toLowerCase(), { shouldDirty: true });
+    if (aiEnhancementResult.wineType) {
+      form.setValue('type', aiEnhancementResult.wineType.toLowerCase(), { shouldDirty: true });
     }
     
     // Combine notes information if it exists
@@ -796,6 +796,31 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
           setMultiBottleData(null);
           setEntryMethod("manual");
         }}
+        onEnhanceWithAI={(bottle) => {
+          // Prepare the data for AI enhancement
+          const wineData = {
+            producer: bottle.producer || '',
+            name: bottle.name || '',
+            vintage: bottle.vintage || 0,
+            type: bottle.type || 'red',
+            region: bottle.region || '',
+            subregion: bottle.subregion || '',
+            grapeVarieties: bottle.grapeVarieties || '',
+          };
+          
+          // Set the current bottle data in the form so it can be enhanced
+          form.setValue("producer", wineData.producer);
+          form.setValue("name", wineData.name);
+          form.setValue("vintage", wineData.vintage);
+          form.setValue("type", wineData.type);
+          form.setValue("region", wineData.region);
+          form.setValue("subregion", wineData.subregion);
+          form.setValue("grapeVarieties", wineData.grapeVarieties);
+          
+          // Call the enhance with AI function
+          handleEnhanceWithAI();
+        }}
+        isEnhancingWithAI={isEnhancingWithAI}
         onProcessBottle={(bottle, index, total) => {
           // Update the form with the current bottle data
           form.setValue("producer", bottle.producer || "");
