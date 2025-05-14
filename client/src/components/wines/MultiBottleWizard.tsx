@@ -266,14 +266,23 @@ export function MultiBottleWizard({
       const originalValue = currentBottle?.[field];
       const valueHasChanged = originalValue !== value;
       
-      // Update the edited bottle data
-      setEditedBottle({
+      // Build the updated bottle object
+      const updatedBottle = {
         ...editedBottle,
         [field]: value
-      });
+      };
       
-      // If any field is different from the original, mark as having edits
+      // Update the edited bottle data
+      setEditedBottle(updatedBottle);
+      
+      // Also immediately update the edited bottles map to ensure persistence
       if (valueHasChanged) {
+        setEditedBottlesMap(prev => ({
+          ...prev,
+          [currentIndex]: updatedBottle
+        }));
+        
+        // Mark as having edits for the dialog
         setHasEdits(true);
       } else {
         // Check if any other fields still have edits
@@ -282,7 +291,23 @@ export function MultiBottleWizard({
           const k = key as keyof WineBottleData;
           return currentBottle?.[k] !== editedBottle[k];
         });
+        
         setHasEdits(otherFieldsEdited);
+        
+        // Update edit map if we still have edits
+        if (otherFieldsEdited) {
+          setEditedBottlesMap(prev => ({
+            ...prev,
+            [currentIndex]: updatedBottle
+          }));
+        } else {
+          // Remove from edit map if no more edits
+          setEditedBottlesMap(prev => {
+            const newMap = {...prev};
+            delete newMap[currentIndex];
+            return newMap;
+          });
+        }
       }
     }
   };
@@ -317,6 +342,10 @@ export function MultiBottleWizard({
 
   // Render summary screen if we're at the end
   if (showSummary) {
+    // Debug - print all edited bottles
+    console.log("Edited bottles map:", editedBottlesMap);
+    console.log("Bottles to add:", bottlesToAdd);
+    
     return (
       <div>
         <Card className="w-full max-w-md mx-auto">
@@ -609,6 +638,14 @@ export function MultiBottleWizard({
               </Button>
               <Button 
                 onClick={() => {
+                  // Make sure we save the edits to our editedBottlesMap
+                  if (editedBottle) {
+                    setEditedBottlesMap(prev => ({
+                      ...prev,
+                      [currentIndex]: {...editedBottle}
+                    }));
+                  }
+                  
                   setIsEditMode(false);
                   handleProcessBottle();
                 }}
