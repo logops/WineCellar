@@ -111,7 +111,8 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
         return {
           ...firstBottle,
           multipleBottlesDetected: bottles.length > 1,
-          bottleCount: bottles.length
+          bottleCount: bottles.length,
+          imageData: imageData // Store the original image data for multi-bottle processing
         } as RecognitionResult;
       }
       
