@@ -221,18 +221,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
       
-      // Only send specific fields in the update
+      // Create update object with all editable fields
       const updateFields: Partial<Wine> = {};
       
-      // Handle quantity updates
-      if (req.body.quantity !== undefined) {
-        updateFields.quantity = req.body.quantity;
-      }
+      // Allow updating all wine attributes
+      const editableFields = [
+        'name', 'producer', 'vintage', 'type', 'country', 'region', 'subregion',
+        'vineyard', 'grapeVarieties', 'alcoholContent', 'purchaseDate', 'purchaseLocation',
+        'purchasePrice', 'quantity', 'consumedStatus', 'rating', 'notes', 'bottleSize',
+        'bottleLocation', 'drinkingStatus', 'drinkingWindowStart', 'drinkingWindowEnd'
+      ];
       
-      // Handle consumedStatus updates
-      if (req.body.consumedStatus !== undefined) {
-        updateFields.consumedStatus = req.body.consumedStatus;
-      }
+      // Add fields that exist in the request body
+      editableFields.forEach(field => {
+        if (field in req.body) {
+          updateFields[field] = req.body[field];
+        }
+      });
       
       console.log("Updating wine with fields:", updateFields);
       
