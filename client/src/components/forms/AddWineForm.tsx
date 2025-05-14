@@ -660,6 +660,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
           form.setValue("subregion", bottle.subregion || "");
           form.setValue("grapeVarieties", bottle.grapeVarieties || "");
           form.setValue("type", bottle.type?.toLowerCase() || "red");
+          form.setValue("quantity", 1);
           
           // Handle recommended drinking window if available
           if (bottle.recommendedDrinkingWindow) {
@@ -687,15 +688,23 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               title: "Duplicate Wine Detected",
               description: "This wine appears to already exist in your collection. We'll increase its quantity.",
             });
-            
-            // Submit the form automatically for duplicates
-            onSubmit(form.getValues());
           }
           
-          toast({
-            title: `Processing Bottle ${index} of ${total}`,
-            description: "Review the details and click 'Add to Collection' when ready.",
-          });
+          // Submit the form automatically for each bottle
+          const values = form.getValues();
+          
+          // Prevent empty submissions and ensure essential data
+          if (!values.producer || !values.name) {
+            toast({
+              title: "Missing Information",
+              description: "Unable to add this wine due to missing information. Skipping to next bottle.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          // Submit the form with current bottle data
+          onSubmit(values);
         }}
         existingWines={existingWines}
       />

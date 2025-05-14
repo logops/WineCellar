@@ -61,10 +61,19 @@ export function MultiBottleFlow({
   useEffect(() => {
     const loadBottleData = async () => {
       try {
+        toast({
+          title: "Analyzing Wine Bottles",
+          description: "Please wait while we analyze the bottles in your image."
+        });
+        
+        // Send the image to the multi-bottle detection endpoint
         const response = await fetch('/api/analyze-wine-label?detectMultiple=true', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData }),
+          body: JSON.stringify({ 
+            imageData,
+            checkForDuplicates: true 
+          }),
           credentials: 'include'
         });
         
@@ -140,6 +149,10 @@ export function MultiBottleFlow({
     
     if (newIndex >= bottleData.bottles.length) {
       // We've processed all bottles
+      toast({
+        title: "All Bottles Processed",
+        description: "All wine bottles have been added to your collection.",
+      });
       onComplete();
       return;
     }
@@ -155,11 +168,20 @@ export function MultiBottleFlow({
     // Mark as skipped
     setSkippedBottles(prev => [...prev, currentIndex]);
     
+    toast({
+      title: "Bottle Skipped",
+      description: "Skipping to the next bottle."
+    });
+    
     // Go to next bottle
     const newIndex = currentIndex + 1;
     
     if (newIndex >= bottleData.bottles.length) {
       // We've processed all bottles
+      toast({
+        title: "All Bottles Processed",
+        description: `Processed ${bottleData.bottles.length - skippedBottles.length} of ${bottleData.bottles.length} bottles.`
+      });
       onComplete();
       return;
     }
@@ -236,10 +258,24 @@ export function MultiBottleFlow({
           Skip This Bottle
         </Button>
         <Button 
-          onClick={handleNext}
+          onClick={(e) => {
+            e.preventDefault(); // Prevent form submission
+            
+            // First send the current bottle data to parent for processing
+            if (bottleData && bottleData.bottles[currentIndex]) {
+              onBottleSelected(bottleData.bottles[currentIndex], currentIndex + 1, bottleData.bottles.length);
+              
+              // Wait a moment to allow the parent component to process the data
+              setTimeout(() => {
+                handleNext();
+              }, 500);
+            } else {
+              handleNext();
+            }
+          }}
           className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
         >
-          Next Bottle
+          Add & Continue
         </Button>
       </CardFooter>
     </Card>
