@@ -821,7 +821,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
           handleEnhanceWithAI();
         }}
         isEnhancingWithAI={isEnhancingWithAI}
-        onProcessBottle={(bottle, index, total) => {
+        onProcessBottle={(bottle, index, total, addToCollection = false) => {
           // Update the form with the current bottle data
           form.setValue("producer", bottle.producer || "");
           form.setValue("name", bottle.name || "");
@@ -854,8 +854,12 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
           // Set quantity based on whether it's a duplicate
           form.setValue("quantity", isDuplicate ? 2 : 1);
           
-          // Submit the form with the current bottle data
-          onSubmit(form.getValues());
+          // Only submit the form if explicitly told to add to collection
+          // This allows us to batch process at the end
+          if (addToCollection) {
+            // Submit the form with the current bottle data
+            onSubmit(form.getValues());
+          }
         }}
         existingWines={existingWines}
       />

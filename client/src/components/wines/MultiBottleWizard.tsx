@@ -137,20 +137,39 @@ export function MultiBottleWizard({
     const newIndex = currentIndex + 1;
     
     if (newIndex >= bottleData.bottles.length) {
-      // We've processed all bottles
-      const processedCount = processedBottles.length;
+      // We've processed all bottles, now do the batch processing
+      const bottlesToAddCount = bottlesToAdd.length;
+      const skippedCount = skippedBottles.length;
       const totalCount = bottleData.bottles.length;
       
-      toast({
-        title: "All Bottles Processed",
-        description: `Added ${processedCount} of ${totalCount} wine bottles to your collection.`,
-      });
+      // Batch add all the bottles that are queued for addition
+      if (bottlesToAddCount > 0) {
+        // For each bottle marked to add, process it with addToCollection=true
+        bottlesToAdd.forEach(index => {
+          const bottleToProcess = bottleData.bottles[index];
+          onProcessBottle(bottleToProcess, index + 1, totalCount, true);
+        });
+        
+        toast({
+          title: "Batch Processing Complete",
+          description: `Added ${bottlesToAddCount} wine bottle${bottlesToAddCount !== 1 ? 's' : ''} to your collection. ${skippedCount > 0 ? `Skipped ${skippedCount} bottle${skippedCount !== 1 ? 's' : ''}.` : ''}`,
+        });
+      } else {
+        toast({
+          title: "Processing Complete",
+          description: `No wines were added to the collection. ${skippedCount > 0 ? `Skipped ${skippedCount} bottle${skippedCount !== 1 ? 's' : ''}.` : ''}`,
+        });
+      }
       
       onComplete();
       return;
     }
     
     setCurrentIndex(newIndex);
+    
+    // Reset edit mode for the new bottle
+    setIsEditMode(false);
+    setEditedBottle(null);
   };
 
   // Handle cancelling the wizard
