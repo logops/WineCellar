@@ -106,9 +106,18 @@ export default function WineRecommendations() {
     }
   };
 
+  // Enhanced function to get accurate wine details from our collection
   const getWineDetails = (wineId: number) => {
     if (!wines) return null;
-    return wines.find(wine => wine.id === wineId);
+    
+    // Find the exact wine from our collection by ID
+    const wineDetails = wines.find(wine => wine.id === wineId);
+    
+    if (!wineDetails) {
+      console.warn(`Wine with ID ${wineId} not found in collection - possible data mismatch`);
+    }
+    
+    return wineDetails;
   };
 
   return (
@@ -169,12 +178,25 @@ export default function WineRecommendations() {
                   <CardHeader className="pb-2">
                     <div className="flex justify-between">
                       <div>
-                        <CardTitle className="text-burgundy-700">{rec.wine}</CardTitle>
-                        <CardDescription>
-                          {wine?.region && `${wine.region}`}
-                          {wine?.vintage && wine.region && ` • `}
-                          {wine?.vintage === 0 ? "NV" : wine?.vintage}
-                        </CardDescription>
+                        {wine ? (
+                          <>
+                            <CardTitle className="text-burgundy-700">
+                              {wine.vintage || 'NV'} {wine.producer} {wine.name || ''}
+                            </CardTitle>
+                            <CardDescription>
+                              {wine.region && `${wine.region}`}
+                              {wine.grapeVarieties && ` • ${wine.grapeVarieties}`}
+                              {wine.type && ` • ${wine.type}`}
+                            </CardDescription>
+                          </>
+                        ) : (
+                          <>
+                            <CardTitle className="text-burgundy-700">{rec.wine}</CardTitle>
+                            <CardDescription className="text-amber-700">
+                              Using AI-generated information
+                            </CardDescription>
+                          </>
+                        )}
                       </div>
                       <div>
                         {getConfidenceBadge(rec.confidenceScore)}
