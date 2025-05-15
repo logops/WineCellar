@@ -252,7 +252,8 @@ const SpreadsheetImport: React.FC = () => {
       }
     },
     onSuccess: (data) => {
-      const importCount = data.importedCount || 0;
+      // Get imported count from either data.importedCount or data.data.imported for backward compatibility
+      const importCount = data.importedCount || (data.data && data.data.imported) || 0;
       
       toast({
         title: "Import successful",
@@ -1196,7 +1197,7 @@ const SpreadsheetImport: React.FC = () => {
                 </p>
                 <div className="flex justify-center gap-3 text-sm">
                   <div className="bg-green-50 text-green-800 px-3 py-1.5 rounded-full">
-                    <span className="font-bold">{importWinesMutation.data?.importedCount || 0}</span> wines imported
+                    <span className="font-bold">{importWinesMutation.data?.importedCount || (importWinesMutation.data?.data && importWinesMutation.data.data.imported) || 0}</span> wines imported
                   </div>
                   <div className="bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full">
                     <span className="font-bold">{allProcessedWines.length}</span> wines still pending
@@ -1205,7 +1206,7 @@ const SpreadsheetImport: React.FC = () => {
               </div>
             ) : (
               <p className="text-muted-foreground max-w-md mx-auto">
-                <span className="font-medium text-primary">{importWinesMutation.data?.importedCount || 0}</span> wines have been successfully added to your collection.
+                <span className="font-medium text-primary">{importWinesMutation.data?.importedCount || (importWinesMutation.data?.data && importWinesMutation.data.data.imported) || 0}</span> wines have been successfully added to your collection.
               </p>
             )}
             
