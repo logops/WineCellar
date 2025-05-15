@@ -5,6 +5,7 @@ import WineListItem from "./WineListItem";
 import WineListHeader from "./WineListHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ConsumedWinesList() {
   const [sortBy, setSortBy] = useState('date-desc');

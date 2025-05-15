@@ -636,8 +636,9 @@ export function MultiBottleWizard({
               <Button 
                 onClick={handleProcessBottle}
                 className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+                size="sm"
               >
-                Queue for Addition
+                Add to Queue
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </>
@@ -647,6 +648,7 @@ export function MultiBottleWizard({
               <Button 
                 onClick={handleCancelEdit}
                 variant="outline"
+                size="sm"
               >
                 Cancel Edit
               </Button>
@@ -664,8 +666,9 @@ export function MultiBottleWizard({
                   handleProcessBottle();
                 }}
                 className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+                size="sm"
               >
-                Save & Queue for Addition
+                Save & Add to Queue
               </Button>
             </>
           )}
