@@ -34,20 +34,19 @@ export function WineLookupInfo() {
   const [producer, setProducer] = useState('');
   const [vintage, setVintage] = useState('');
   
-  const lookupMutation = useMutation<WineInfoResponse, Error, { wineName: string; producer?: string; vintage?: string }>(
-    async (data) => {
+  const lookupMutation = useMutation<WineInfoResponse, Error, { wineName: string; producer?: string; vintage?: string }>({
+    mutationFn: async (data: { wineName: string; producer?: string; vintage?: string }) => {
       const response = await apiRequest('POST', '/api/wine-info-lookup', data);
       return await response.json();
     },
-    {
-      onError: (error) => {
-        toast({
-          title: 'Error looking up wine information',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
+    onError: (error: Error) => {
+      toast({
+        title: 'Error looking up wine information',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
+  }
   );
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -120,7 +119,7 @@ export function WineLookupInfo() {
             </div>
             <Button 
               type="submit" 
-              className="w-full"
+              className="w-full font-serif"
               disabled={lookupMutation.isPending}
             >
               {lookupMutation.isPending ? (
@@ -137,9 +136,9 @@ export function WineLookupInfo() {
       {lookupMutation.data?.success && lookupMutation.data?.data && (
         <Card>
           <CardHeader>
-            <CardTitle>Wine Information</CardTitle>
+            <CardTitle className="font-serif text-burgundy-700">Wine Information</CardTitle>
             <CardDescription>
-              <span className={determineConfidenceColor(lookupMutation.data.data.confidenceLevel)}>
+              <span className={`${determineConfidenceColor(lookupMutation.data.data.confidenceLevel)} font-elegant`}>
                 {lookupMutation.data.data.confidenceLevel.charAt(0).toUpperCase() + lookupMutation.data.data.confidenceLevel.slice(1)} confidence
               </span>
             </CardDescription>
@@ -148,18 +147,18 @@ export function WineLookupInfo() {
             <div>
               <div className="flex items-center gap-2">
                 <Grape className="h-5 w-5 text-burgundy" />
-                <h3 className="font-semibold">Grape Varieties</h3>
+                <h3 className="font-semibold font-serif text-burgundy-700">Grape Varieties</h3>
               </div>
-              <p className="mt-1 text-sm">{lookupMutation.data.data.grapeVarieties}</p>
+              <p className="mt-1 text-sm font-elegant">{lookupMutation.data.data.grapeVarieties}</p>
             </div>
             
             {(lookupMutation.data.data.region || lookupMutation.data.data.subregion || lookupMutation.data.data.vineyard) && (
               <div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-burgundy" />
-                  <h3 className="font-semibold">Origin</h3>
+                  <h3 className="font-semibold font-serif text-burgundy-700">Origin</h3>
                 </div>
-                <div className="mt-1 text-sm space-y-1">
+                <div className="mt-1 text-sm font-elegant space-y-1">
                   {lookupMutation.data.data.vineyard && (
                     <p><span className="font-medium">Vineyard:</span> {lookupMutation.data.data.vineyard}</p>
                   )}
@@ -177,30 +176,30 @@ export function WineLookupInfo() {
               <div>
                 <div className="flex items-center gap-2">
                   <CalendarClock className="h-5 w-5 text-burgundy" />
-                  <h3 className="font-semibold">Drinking Window</h3>
+                  <h3 className="font-semibold font-serif text-burgundy-700">Drinking Window</h3>
                 </div>
-                <p className="mt-1 text-sm">{lookupMutation.data.data.drinkingWindow}</p>
+                <p className="mt-1 text-sm font-elegant">{lookupMutation.data.data.drinkingWindow}</p>
               </div>
             )}
             
             {lookupMutation.data.data.tastingNotes && (
               <div>
-                <h3 className="font-semibold mb-1">Tasting Notes</h3>
-                <p className="text-sm">{lookupMutation.data.data.tastingNotes}</p>
+                <h3 className="font-semibold font-serif text-burgundy-700 mb-1">Tasting Notes</h3>
+                <p className="text-sm font-elegant">{lookupMutation.data.data.tastingNotes}</p>
               </div>
             )}
             
             {lookupMutation.data.data.foodPairings && (
               <div>
-                <h3 className="font-semibold mb-1">Food Pairings</h3>
-                <p className="text-sm">{lookupMutation.data.data.foodPairings}</p>
+                <h3 className="font-semibold font-serif text-burgundy-700 mb-1">Food Pairings</h3>
+                <p className="text-sm font-elegant">{lookupMutation.data.data.foodPairings}</p>
               </div>
             )}
             
             {lookupMutation.data.data.productionNotes && (
               <div>
-                <h3 className="font-semibold mb-1">Production Notes</h3>
-                <p className="text-sm">{lookupMutation.data.data.productionNotes}</p>
+                <h3 className="font-semibold font-serif text-burgundy-700 mb-1">Production Notes</h3>
+                <p className="text-sm font-elegant">{lookupMutation.data.data.productionNotes}</p>
               </div>
             )}
             
