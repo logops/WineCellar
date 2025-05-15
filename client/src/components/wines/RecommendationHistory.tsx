@@ -121,20 +121,20 @@ export default function RecommendationHistory() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <h4 className="font-medium text-burgundy-700">Why This Wine</h4>
-                    <p className="text-gray-700">{rec.reasoning}</p>
+                    <h4 className="font-medium text-burgundy-700 font-serif">Why This Wine</h4>
+                    <p className="text-gray-700 font-elegant">{rec.reasoning}</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-burgundy-700">Characteristics</h4>
-                    <p className="text-gray-700">{rec.characteristics}</p>
+                    <h4 className="font-medium text-burgundy-700 font-serif">Characteristics</h4>
+                    <p className="text-gray-700 font-elegant">{rec.characteristics}</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-burgundy-700">Serving Suggestions</h4>
-                    <p className="text-gray-700">{rec.servingSuggestions}</p>
+                    <h4 className="font-medium text-burgundy-700 font-serif">Serving Suggestions</h4>
+                    <p className="text-gray-700 font-elegant">{rec.servingSuggestions}</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-burgundy-700">Age Considerations</h4>
-                    <p className="text-gray-700">{rec.ageConsiderations}</p>
+                    <h4 className="font-medium text-burgundy-700 font-serif">Age Considerations</h4>
+                    <p className="text-gray-700 font-elegant">{rec.ageConsiderations}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -142,8 +142,8 @@ export default function RecommendationHistory() {
             
             {selectedRecommendation.additionalSuggestions && (
               <div className="mt-4 p-4 bg-cream-50 rounded-lg">
-                <h4 className="font-medium text-burgundy-700 mb-2">Additional Suggestions</h4>
-                <p className="text-gray-700">{selectedRecommendation.additionalSuggestions}</p>
+                <h4 className="font-medium text-burgundy-700 mb-2 font-serif">Additional Suggestions</h4>
+                <p className="text-gray-700 font-elegant">{selectedRecommendation.additionalSuggestions}</p>
               </div>
             )}
           </CardContent>
@@ -161,26 +161,26 @@ export default function RecommendationHistory() {
                 onClick={() => handleViewDetails(item)}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
-                <CardTitle className="text-burgundy-700">"{item.query}"</CardTitle>
-                <div className="flex items-center text-xs text-gray-500">
+                <CardTitle className="text-burgundy-700 font-serif">"{item.query}"</CardTitle>
+                <div className="flex items-center text-xs text-gray-500 font-elegant">
                   <Clock className="h-3 w-3 mr-1" />
                   {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-sm mb-2">
+              <p className="text-gray-600 text-sm mb-2 font-elegant">
                 {item.recommendations.length} wines recommended
               </p>
               <div className="flex flex-wrap gap-2">
                 {item.recommendations.slice(0, 3).map((rec, index) => (
-                  <div key={index} className="text-xs bg-cream-100 text-burgundy-700 px-2 py-1 rounded-full">
+                  <div key={index} className="text-xs bg-cream-100 text-burgundy-700 px-2 py-1 rounded-full font-elegant">
                     {rec.wine}
                   </div>
                 ))}
               </div>
             </CardContent>
-            <CardFooter className="pt-0 text-burgundy-600 text-sm">
+            <CardFooter className="pt-0 text-burgundy-600 text-sm font-serif">
               View details <ChevronRight className="h-4 w-4 ml-1" />
             </CardFooter>
           </Card>
