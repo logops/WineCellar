@@ -12,12 +12,26 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Debug log the request details
+  console.log(`Making ${method} request to ${url}`, data);
+  
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // For PATCH requests, let's log more details about the response
+  if (method === "PATCH") {
+    const responseClone = res.clone();
+    try {
+      const responseBody = await responseClone.json();
+      console.log(`PATCH response from ${url}:`, responseBody);
+    } catch (e) {
+      console.log(`Could not parse PATCH response from ${url}:`, e);
+    }
+  }
 
   await throwIfResNotOk(res);
   return res;

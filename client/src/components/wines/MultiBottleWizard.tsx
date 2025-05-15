@@ -132,10 +132,15 @@ export function MultiBottleWizard({
     
     // Store the edited bottle in our map for later use in batch processing
     if (isEditMode && editedBottle) {
-      setEditedBottlesMap(prev => ({
-        ...prev,
-        [currentIndex]: {...editedBottle}
-      }));
+      console.log(`Saving edited bottle at index ${currentIndex}:`, editedBottle);
+      setEditedBottlesMap(prev => {
+        const newMap = {
+          ...prev,
+          [currentIndex]: {...editedBottle}
+        };
+        console.log("Updated editedBottlesMap:", newMap);
+        return newMap;
+      });
     }
     
     // Instead of adding to collection immediately, just save the data for batch processing
