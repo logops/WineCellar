@@ -385,6 +385,11 @@ USER QUERY: "${query}"
 WINE COLLECTION:
 ${JSON.stringify(wineCollection, null, 2)}
 
+CRITICAL INSTRUCTIONS:
+1. Use ONLY the exact wine data provided above - DO NOT make assumptions that contradict the data
+2. If the user specifies a certain number of wine types (e.g., "2 whites and 2 reds"), you MUST follow these exact specifications
+3. Never misrepresent a wine's grape varieties - use ONLY what is stated in the wine data
+
 IMPORTANT FORMATTING RULES:
 1. DO NOT repeat or reference the user's query in your recommendations
 2. Keep each analysis section BRIEF and FOCUSED - no more than 2-3 sentences per section
@@ -392,7 +397,7 @@ IMPORTANT FORMATTING RULES:
 4. Structure each recommendation in clear sections
 5. NEVER REPEAT information between sections - each section should provide NEW information
 6. Use concise, specific language throughout
-7. CRITICAL: Give EQUAL WEIGHT to ALL wine types (red, white, rosé, sparkling, etc.) - do not show preference for red wines when recommending
+7. CRITICAL: Follow the user's exact specifications for wine types and quantities when requested
 8. Include a diversity of wine types in your recommendations when appropriate to the query
 
 For each recommendation, provide these sections, keeping each brief (1-3 sentences max):
@@ -468,13 +473,32 @@ Your response MUST be a valid JSON object with this exact format:
         console.error('Error parsing JSON from Claude, attempting to fix:', jsonError);
         
         // Create a fallback response based on query analysis
-        // We'll analyze the query to provide relevant recommendations rather than
-        // making assumptions about wine types
+        // We'll analyze the query to provide relevant recommendations and respect user's specific criteria
         
         const fallbackRecs: Recommendation[] = [];
         const queryLower = query.toLowerCase();
         
-        // Basic query keyword analysis
+        // Parse quantity requests for specific wine types
+        let requestedRedCount = 0;
+        let requestedWhiteCount = 0;
+        let requestedRoseCount = 0;
+        let requestedSparklingCount = 0;
+        
+        // Check for specific wine type counts in query
+        const redMatch = queryLower.match(/(\d+)\s*(red|reds)/);
+        const whiteMatch = queryLower.match(/(\d+)\s*(white|whites)/);
+        const roseMatch = queryLower.match(/(\d+)\s*(rosé|rose|roses|rosés)/);
+        const sparklingMatch = queryLower.match(/(\d+)\s*(sparkling|champagne|bubbles)/);
+        
+        if (redMatch && redMatch[1]) requestedRedCount = parseInt(redMatch[1]);
+        if (whiteMatch && whiteMatch[1]) requestedWhiteCount = parseInt(whiteMatch[1]);
+        if (roseMatch && roseMatch[1]) requestedRoseCount = parseInt(roseMatch[1]);
+        if (sparklingMatch && sparklingMatch[1]) requestedSparklingCount = parseInt(sparklingMatch[1]);
+        
+        const hasSpecificWineTypeRequest = requestedRedCount > 0 || requestedWhiteCount > 0 || 
+                                          requestedRoseCount > 0 || requestedSparklingCount > 0;
+        
+        // Basic query keyword analysis for food/occasion context
         const isSteak = queryLower.includes('steak') || queryLower.includes('beef') || queryLower.includes('tomahawk');
         const isSeafood = queryLower.includes('fish') || queryLower.includes('seafood') || queryLower.includes('salmon');
         const isSpicy = queryLower.includes('spicy') || queryLower.includes('hot') || queryLower.includes('chili');
@@ -535,14 +559,60 @@ Your response MUST be a valid JSON object with this exact format:
           return Math.min(score, 0.85);
         }
         
-        // Score and sort all wines based on the query
-        const scoredWines = wineCollection.map(wine => ({
-          wine,
-          score: scoreWineForQuery(wine)
-        })).sort((a, b) => b.score - a.score);
+        // Group wines by type
+        const redWines = wineCollection.filter(wine => 
+          wine.type?.toLowerCase() === 'red').map(wine => ({
+            wine, 
+            score: scoreWineForQuery(wine)
+          })).sort((a, b) => b.score - a.score);
+          
+        const whiteWines = wineCollection.filter(wine => 
+          wine.type?.toLowerCase() === 'white').map(wine => ({
+            wine, 
+            score: scoreWineForQuery(wine)
+          })).sort((a, b) => b.score - a.score);
+          
+        const roseWines = wineCollection.filter(wine => 
+          wine.type?.toLowerCase() === 'rosé' || wine.type?.toLowerCase() === 'rose').map(wine => ({
+            wine, 
+            score: scoreWineForQuery(wine)
+          })).sort((a, b) => b.score - a.score);
+          
+        const sparklingWines = wineCollection.filter(wine => 
+          wine.type?.toLowerCase() === 'sparkling').map(wine => ({
+            wine, 
+            score: scoreWineForQuery(wine)
+          })).sort((a, b) => b.score - a.score);
         
-        // Take the top 2-3 wines as recommendations
-        const topWines = scoredWines.slice(0, Math.min(3, scoredWines.length));
+        let topWines: { wine: any, score: number }[] = [];
+        
+        // If user specified wine type counts, respect those exactly
+        if (hasSpecificWineTypeRequest) {
+          console.log(`Specific wine type request detected: ${requestedRedCount} reds, ${requestedWhiteCount} whites, ${requestedRoseCount} rosés, ${requestedSparklingCount} sparkling`);
+          
+          // Add requested red wines
+          topWines = topWines.concat(redWines.slice(0, Math.min(requestedRedCount, redWines.length)));
+          
+          // Add requested white wines
+          topWines = topWines.concat(whiteWines.slice(0, Math.min(requestedWhiteCount, whiteWines.length)));
+          
+          // Add requested rosé wines
+          topWines = topWines.concat(roseWines.slice(0, Math.min(requestedRoseCount, roseWines.length)));
+          
+          // Add requested sparkling wines
+          topWines = topWines.concat(sparklingWines.slice(0, Math.min(requestedSparklingCount, sparklingWines.length)));
+          
+          console.log(`Selected ${topWines.length} wines based on specific type requests`);
+        } else {
+          // Standard approach: score and sort all wines
+          const scoredWines = wineCollection.map(wine => ({
+            wine,
+            score: scoreWineForQuery(wine)
+          })).sort((a, b) => b.score - a.score);
+          
+          // Take the top 2-3 wines as recommendations
+          topWines = scoredWines.slice(0, Math.min(3, scoredWines.length));
+        }
         
         // Create recommendations from top-scored wines
         topWines.forEach(({ wine: wineObj, score }) => {
