@@ -20,7 +20,7 @@ export default function Recommendations() {
       <TabNavigation tabs={mainTabs} activeTab="Recommendations" />
       
       <div className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-montserrat font-semibold text-burgundy-700 mb-6">
+        <h1 className="text-2xl font-serif font-semibold text-burgundy-700 mb-6">
           Wine Recommendations
         </h1>
         

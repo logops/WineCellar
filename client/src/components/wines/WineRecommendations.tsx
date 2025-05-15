@@ -113,14 +113,14 @@ export default function WineRecommendations() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-      <h2 className="text-xl font-montserrat font-semibold text-burgundy-700 mb-4">What Should I Drink?</h2>
-      <p className="text-gray-600 mb-6">
+      <h2 className="text-xl font-serif font-semibold text-burgundy-700 mb-4">What Should I Drink?</h2>
+      <p className="text-gray-600 mb-6 font-elegant">
         Tell us what you're eating or the occasion, and our AI sommelier will recommend wines from your cellar.
       </p>
       
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="mb-4">
-          <label htmlFor="wine-query" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="wine-query" className="block text-sm font-elegant font-medium text-gray-700 mb-1">
             What are you planning to eat or what's the occasion?
           </label>
           <Textarea
@@ -147,11 +147,11 @@ export default function WineRecommendations() {
         </Button>
         
         {isLoadingWines && (
-          <p className="text-sm text-gray-500 mt-2">Loading your wine collection...</p>
+          <p className="text-sm text-gray-500 mt-2 font-elegant">Loading your wine collection...</p>
         )}
         
         {wines?.length === 0 && (
-          <p className="text-sm text-red-500 mt-2">
+          <p className="text-sm text-red-500 mt-2 font-elegant">
             You need wines in your cellar to get recommendations. Add some wines first!
           </p>
         )}
@@ -159,7 +159,7 @@ export default function WineRecommendations() {
       
       {showResults && recommendationResults && (
         <div className="mt-8">
-          <h3 className="text-lg font-medium text-gray-800 mb-4">Your Personalized Recommendations</h3>
+          <h3 className="text-lg font-serif font-medium text-burgundy-700 mb-4">Your Personalized Recommendations</h3>
           
           <div className="space-y-4">
             {recommendationResults.recommendations.map((rec, index) => {
@@ -205,8 +205,8 @@ export default function WineRecommendations() {
           {recommendationResults.additionalSuggestions && (
             <div className="mt-6">
               <Separator className="my-4" />
-              <h3 className="text-lg font-medium text-gray-800 mb-2">Additional Suggestions</h3>
-              <p className="text-gray-600">{recommendationResults.additionalSuggestions}</p>
+              <h3 className="text-lg font-serif font-medium text-burgundy-700 mb-2">Additional Suggestions</h3>
+              <p className="text-gray-600 font-elegant">{recommendationResults.additionalSuggestions}</p>
             </div>
           )}
           
