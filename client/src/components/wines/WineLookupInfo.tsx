@@ -81,38 +81,41 @@ export function WineLookupInfo() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Wine Information Lookup</CardTitle>
-          <CardDescription>
+          <CardTitle className="font-serif text-burgundy-700">Wine Information Lookup</CardTitle>
+          <CardDescription className="font-elegant">
             Enter a wine name to find detailed information about it
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="wineName">Wine Name</Label>
+              <Label htmlFor="wineName" className="font-elegant">Wine Name</Label>
               <Input
                 id="wineName"
                 value={wineName}
                 onChange={(e) => setWineName(e.target.value)}
                 placeholder="e.g. Château Margaux"
+                className="font-elegant"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="producer">Producer (optional)</Label>
+              <Label htmlFor="producer" className="font-elegant">Producer (optional)</Label>
               <Input
                 id="producer"
                 value={producer}
                 onChange={(e) => setProducer(e.target.value)}
                 placeholder="e.g. Château Margaux"
+                className="font-elegant"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="vintage">Vintage (optional)</Label>
+              <Label htmlFor="vintage" className="font-elegant">Vintage (optional)</Label>
               <Input
                 id="vintage"
                 value={vintage}
                 onChange={(e) => setVintage(e.target.value)}
                 placeholder="e.g. 2015"
+                className="font-elegant"
               />
             </div>
             <Button 

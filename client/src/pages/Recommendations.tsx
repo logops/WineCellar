@@ -52,10 +52,10 @@ export default function Recommendations() {
         
         {activeTab === "new" && (
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-montserrat font-semibold text-burgundy-700 mb-4">
+            <h2 className="text-xl font-serif font-semibold text-burgundy-700 mb-4">
               About AI Wine Recommendations
             </h2>
-            <div className="prose max-w-none">
+            <div className="prose max-w-none font-elegant">
               <p>
                 Our AI sommelier analyzes the wines in your cellar to provide personalized recommendations based on your specific needs:
               </p>
