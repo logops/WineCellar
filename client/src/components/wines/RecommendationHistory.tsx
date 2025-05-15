@@ -56,7 +56,7 @@ export default function RecommendationHistory() {
     return (
       <div className="flex justify-center items-center p-12">
         <Loader2 className="h-8 w-8 animate-spin text-burgundy-600" />
-        <span className="ml-2 text-burgundy-600">Loading recommendation history...</span>
+        <span className="ml-2 text-burgundy-600 font-elegant">Loading recommendation history...</span>
       </div>
     );
   }
@@ -64,8 +64,8 @@ export default function RecommendationHistory() {
   if (isError) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-500 mb-4">Error loading recommendation history</p>
-        <p className="text-gray-600">{error instanceof Error ? error.message : 'Unknown error'}</p>
+        <p className="text-red-500 mb-4 font-elegant">Error loading recommendation history</p>
+        <p className="text-gray-600 font-elegant">{error instanceof Error ? error.message : 'Unknown error'}</p>
       </div>
     );
   }
@@ -76,11 +76,11 @@ export default function RecommendationHistory() {
         <div className="mb-4 flex justify-center">
           <Search className="h-12 w-12 text-burgundy-400" />
         </div>
-        <h3 className="text-lg font-medium text-burgundy-700 mb-2">No Recommendations Yet</h3>
-        <p className="text-gray-600 mb-4">
+        <h3 className="text-lg font-serif font-medium text-burgundy-700 mb-2">No Recommendations Yet</h3>
+        <p className="text-gray-600 mb-4 font-elegant">
           You haven't used the wine recommendation feature yet. Try asking for a recommendation based on a food pairing or occasion.
         </p>
-        <Button variant="default" onClick={() => window.location.href = '/recommendations'}>
+        <Button variant="default" className="font-serif" onClick={() => window.location.href = '/recommendations'}>
           Get Wine Recommendations
         </Button>
       </div>
@@ -92,11 +92,11 @@ export default function RecommendationHistory() {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
-          <Button variant="ghost" onClick={handleBack} className="mr-2">
+          <Button variant="ghost" onClick={handleBack} className="mr-2 font-serif">
             <ChevronRight className="h-4 w-4 mr-1 rotate-180" />
             Back
           </Button>
-          <h2 className="text-xl font-semibold text-burgundy-700">
+          <h2 className="text-xl font-serif font-semibold text-burgundy-700">
             Recommendation Details
           </h2>
         </div>
@@ -105,8 +105,8 @@ export default function RecommendationHistory() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-burgundy-700">"{selectedRecommendation.query}"</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-burgundy-700 font-serif">"{selectedRecommendation.query}"</CardTitle>
+                <CardDescription className="font-elegant">
                   {new Date(selectedRecommendation.createdAt).toLocaleDateString()} • 
                   {formatDistanceToNow(new Date(selectedRecommendation.createdAt), { addSuffix: true })}
                 </CardDescription>
@@ -117,7 +117,7 @@ export default function RecommendationHistory() {
             {selectedRecommendation.recommendations.map((rec, index) => (
               <Card key={index} className="border-cream-200 bg-cream-50">
                 <CardHeader>
-                  <CardTitle className="text-lg">{rec.wine}</CardTitle>
+                  <CardTitle className="text-lg font-serif text-burgundy-700">{rec.wine}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
