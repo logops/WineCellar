@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import TabNavigation from "@/components/ui/TabNavigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReadyToDrinkList from "@/components/reports/ReadyToDrinkList";
-import WineStatistics from "@/components/reports/WineStatistics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Wine } from "@shared/schema";
@@ -17,7 +16,7 @@ export default function Reports() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['ready-to-drink', 'wine-list', 'statistics'].includes(tabParam)) {
+    if (tabParam && ['ready-to-drink', 'wine-list'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location]);
@@ -26,18 +25,13 @@ export default function Reports() {
     { label: "My Cellar", href: "/" },
     { label: "Search", href: "/search" },
     { label: "My Notes", href: "/notes" },
-    { label: "Statistics", href: "/reports?tab=statistics" },
   ];
 
   const { data: wines, isLoading } = useQuery<Wine[]>({ 
     queryKey: ['/api/wines'],
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/statistics'],
-  });
-
-  if (isLoading || statsLoading) {
+  if (isLoading) {
     return (
       <>
         <TabNavigation tabs={tabs} activeTab="Reports" />
@@ -61,7 +55,6 @@ export default function Reports() {
           <TabsList className="mb-6">
             <TabsTrigger value="ready-to-drink">Ready to Drink</TabsTrigger>
             <TabsTrigger value="wine-list">Wine List</TabsTrigger>
-            <TabsTrigger value="statistics">Statistics</TabsTrigger>
           </TabsList>
           
           <TabsContent value="ready-to-drink">
@@ -152,16 +145,7 @@ export default function Reports() {
             </Card>
           </TabsContent>
           
-          <TabsContent value="statistics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Collection Statistics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <WineStatistics wines={wines || []} stats={stats} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+
         </Tabs>
       </div>
     </>
