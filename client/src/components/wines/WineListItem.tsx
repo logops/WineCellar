@@ -13,7 +13,8 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import AddWineForm from "../forms/AddWineForm";
-import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
+import { parseDrinkingWindow } from "@/lib/date-utils";
 import { Edit, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -93,7 +94,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                     ? "Drink Now" 
                     : wine.drinkingStatus === "drink_later" 
                       ? "Drink Later" 
-                      : parseDrinkingWindow(wine.drinkingWindowStart, wine.drinkingWindowEnd)}
+                      : parseDrinkingWindow(wine)}
                 </span>
                 <div className="w-16 h-1 bg-burgundy-500 rounded-full"></div>
               </div>
