@@ -8,9 +8,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { Checkbox } from "@/components/ui/checkbox";
 import { WineGlassIcon } from "@/components/icons/wine-glass-icon";
 import { formatPrice } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
-// Temporary inline function until import issues are fixed
-const parseDrinkingWindow = (wine: any): string => {
+// Simple helper to format drinking window for display
+const formatDrinkingWindow = (wine: any): string => {
   const start = wine.drinkingWindowStart ? new Date(wine.drinkingWindowStart) : null;
   const end = wine.drinkingWindowEnd ? new Date(wine.drinkingWindowEnd) : null;
   
@@ -30,7 +31,6 @@ const parseDrinkingWindow = (wine: any): string => {
   
   return "Not specified";
 };
-import { Textarea } from "@/components/ui/textarea";
 
 // Internal component for displaying matched wines
 interface WineMatchCardProps {
@@ -80,7 +80,7 @@ function WineMatchCard({ wine, isSelected, onToggleSelect }: WineMatchCardProps)
               
               {wine.drinkingWindowStart && wine.drinkingWindowEnd && (
                 <div>
-                  Drinking Window: {parseDrinkingWindow(wine)}
+                  Drinking Window: {formatDrinkingWindow(wine)}
                 </div>
               )}
               
