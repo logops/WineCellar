@@ -129,6 +129,9 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [showEnhanceDialog, setShowEnhanceDialog] = useState(false);
   const [aiEnhancementResult, setAiEnhancementResult] = useState<WineAnalysisResponse["data"] | null>(null);
   const [multiBottleData, setMultiBottleData] = useState<any>(null);
+  // Track which fields were enhanced and show visual feedback
+  const [enhancedFields, setEnhancedFields] = useState<string[]>([]);
+  const [showEnhancedFields, setShowEnhancedFields] = useState(false);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -966,6 +969,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           suggestions={suggestions.producers}
                           value={field.value}
                           onValueChange={field.onChange}
+                          className={enhancedFields.includes('producer') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -985,6 +989,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           placeholder="e.g. 2015 or NV for non-vintage" 
                           {...field}
                           value={field.value || ""}
+                          className={enhancedFields.includes('wine type') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}
                           onChange={(e) => {
                             const value = e.target.value.trim();
                             // Handle "NV" input (convert to 0)
@@ -1065,6 +1070,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           suggestions={suggestions.regions}
                           value={field.value || ""}
                           onValueChange={field.onChange}
+                          className={enhancedFields.includes('region') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1084,6 +1090,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           suggestions={suggestions.subregions}
                           value={field.value || ""}
                           onValueChange={field.onChange}
+                          className={enhancedFields.includes('subregion') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}
                         />
                       </FormControl>
                       <FormMessage />
