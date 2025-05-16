@@ -660,31 +660,86 @@ export function MultiBottleWizard({
           ) : (
             // Edit mode buttons
             <>
-              <Button 
-                onClick={handleCancelEdit}
-                variant="outline"
-                size="sm"
-              >
-                Cancel Edit
-              </Button>
-              <Button 
-                onClick={() => {
-                  // Make sure we save the edits to our editedBottlesMap
-                  if (editedBottle) {
-                    setEditedBottlesMap(prev => ({
-                      ...prev,
-                      [currentIndex]: {...editedBottle}
-                    }));
-                  }
-                  
-                  setIsEditMode(false);
-                  handleProcessBottle();
-                }}
-                className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-                size="sm"
-              >
-                Save & Add to Queue
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleCancelEdit}
+                  variant="outline"
+                  size="sm"
+                >
+                  Cancel Edit
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                {/* Only show Enhance with AI if the producer and vintage are available */}
+                {onEnhanceWithAI && editedBottle && editedBottle.producer && editedBottle.vintage && (
+                  <Button
+                    onClick={() => {
+                      // First save the edits to keep them
+                      if (editedBottle) {
+                        setEditedBottlesMap(prev => ({
+                          ...prev,
+                          [currentIndex]: {...editedBottle}
+                        }));
+                        
+                        // Save the edits to the current bottle first
+                        const updatedBottle = {...editedBottle};
+                        const bottlesClone = [...bottleData.bottles];
+                        bottlesClone[currentIndex] = updatedBottle;
+                        
+                        // Exit edit mode while enhancing
+                        setIsEditMode(false);
+                        
+                        // Call enhance with AI using the edited bottle data
+                        onEnhanceWithAI(updatedBottle);
+                      }
+                    }}
+                    disabled={isEnhancingWithAI}
+                    variant="outline"
+                    size="sm"
+                    className="border-burgundy-600 text-burgundy-700 hover:bg-burgundy-50"
+                  >
+                    {isEnhancingWithAI ? (
+                      <>
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-1 h-4 w-4" />
+                        Enhance with AI
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => {
+                    // Make sure we save the edits to our editedBottlesMap
+                    if (editedBottle) {
+                      setEditedBottlesMap(prev => ({
+                        ...prev,
+                        [currentIndex]: {...editedBottle}
+                      }));
+                    }
+                    
+                    setIsEditMode(false);
+                    
+                    // Check if the edited bottle now has the required fields for AI enhancement
+                    if (editedBottle && onEnhanceWithAI && editedBottle.producer && editedBottle.vintage) {
+                      toast({
+                        title: "Info Saved",
+                        description: "You can now enhance this wine with AI or add it to your queue.",
+                      });
+                    } else {
+                      // If AI enhancement is not available or the required fields are still missing, proceed with processing
+                      handleProcessBottle();
+                    }
+                  }}
+                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+                  size="sm"
+                >
+                  Save Changes
+                </Button>
+              </div>
             </>
           )}
         </CardFooter>
