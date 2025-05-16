@@ -15,6 +15,7 @@ import Notes from "@/pages/Notes";
 import Recommendations from "@/pages/Recommendations";
 import Import from "@/pages/Import";
 import RemoveByLabelPage from "@/pages/RemoveByLabelPage";
+import SimpleRemoveByLabel from "@/pages/SimpleRemoveByLabel";
 import AuthPage from "@/pages/auth-page";
 import { useState } from "react";
 import MobileMenu from "@/components/layout/MobileMenu";
@@ -48,7 +49,7 @@ function App() {
                   <ProtectedRoute path="/notes" component={Notes} />
                   <ProtectedRoute path="/recommendations" component={Recommendations} />
                   <ProtectedRoute path="/import" component={Import} />
-                  <ProtectedRoute path="/remove-by-label" component={RemoveByLabelPage} />
+                  <ProtectedRoute path="/remove-by-label" component={SimpleRemoveByLabel} />
                   <Route path="/auth" component={AuthPage} />
                   <Route component={NotFound} />
                 </Switch>

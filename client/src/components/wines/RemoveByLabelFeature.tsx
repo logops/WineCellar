@@ -10,28 +10,6 @@ import { WineGlassIcon } from "@/components/icons/wine-glass-icon";
 import { formatPrice } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
-// Simple helper to format drinking window for display
-const formatDrinkingWindow = (wine: any): string => {
-  const start = wine.drinkingWindowStart ? new Date(wine.drinkingWindowStart) : null;
-  const end = wine.drinkingWindowEnd ? new Date(wine.drinkingWindowEnd) : null;
-  
-  if (!start && !end) return "Not specified";
-  
-  const formatYear = (date: Date) => date.getFullYear().toString();
-  const startYear = start ? formatYear(start) : '';
-  const endYear = end ? formatYear(end) : '';
-  
-  if (start && end) {
-    return `${startYear} - ${endYear}`;
-  } else if (start) {
-    return `From ${startYear}`;
-  } else if (end) {
-    return `Until ${endYear}`;
-  }
-  
-  return "Not specified";
-};
-
 // Internal component for displaying matched wines
 interface WineMatchCardProps {
   wine: Wine;
