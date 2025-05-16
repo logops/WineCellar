@@ -49,7 +49,7 @@ function App() {
                   <ProtectedRoute path="/notes" component={Notes} />
                   <ProtectedRoute path="/recommendations" component={Recommendations} />
                   <ProtectedRoute path="/import" component={Import} />
-                  <ProtectedRoute path="/remove-by-label" component={SimpleRemoveByLabel} />
+                  <ProtectedRoute path="/remove-by-label" component={RemoveByLabelPage} />
                   <Route path="/auth" component={AuthPage} />
                   <Route component={NotFound} />
                 </Switch>
