@@ -488,7 +488,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       const response = await apiRequest(
         "POST", 
         "/api/wine-drinking-window-recommendation", 
-        wineData
+        { wineData }
       );
       
       const result: WineAnalysisResponse = await response.json();
@@ -592,7 +592,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       const response = await apiRequest(
         "POST", 
         "/api/wine-drinking-window-recommendation", 
-        wineData
+        { wineData }
       );
       
       const result: WineAnalysisResponse = await response.json();
