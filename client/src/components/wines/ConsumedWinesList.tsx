@@ -115,9 +115,9 @@ export default function ConsumedWinesList() {
   const totalBottles = sortedWines.reduce((total, item) => total + (item.quantity || 1), 0);
 
   // Sort wines by creation date to get recently imported wines
-  // Only show wines that are still in the cellar (not consumed)
+  // Only show wines that are in the cellar (not consumed)
   const recentlyImportedWines = [...safeAllWines]
-    .filter(wine => !wine.consumed) // Only show wines that are still in the cellar
+    .filter(wine => wine.consumedStatus === 'in_cellar') // Only show wines that are still in the cellar
     .sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -127,10 +127,10 @@ export default function ConsumedWinesList() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-5 mb-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-serif font-semibold text-burgundy-700">Recent Activity</h2>
-        <div className="ml-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[300px]">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-serif font-semibold text-burgundy-700">Recent Activity</h2>
+          <div className="ml-auto">
             <TabsList className="bg-cream-100">
               <TabsTrigger value="consumed" className="font-elegant">
                 Consumed
@@ -139,15 +139,14 @@ export default function ConsumedWinesList() {
                 Recently Added
               </TabsTrigger>
             </TabsList>
-          </Tabs>
+          </div>
         </div>
-      </div>
-      
-      <TabsContent value="consumed" className="mt-0">
-        {/* Total count of wines and bottles */}
-        <div className="text-sm text-gray-600 mb-4 italic">
-          {uniqueWineIds.size} wine{uniqueWineIds.size !== 1 ? 's' : ''}, {totalBottles} bottle{totalBottles !== 1 ? 's' : ''}
-        </div>
+        
+        <TabsContent value="consumed" className="mt-0">
+          {/* Total count of wines and bottles */}
+          <div className="text-sm text-gray-600 mb-4 italic">
+            {uniqueWineIds.size} wine{uniqueWineIds.size !== 1 ? 's' : ''}, {totalBottles} bottle{totalBottles !== 1 ? 's' : ''}
+          </div>
 
         {sortedWines.length > 0 ? (
           <div className="space-y-3 mt-4">
@@ -219,6 +218,7 @@ export default function ConsumedWinesList() {
           </div>
         )}
       </TabsContent>
+    </Tabs>
     </div>
   );
 }

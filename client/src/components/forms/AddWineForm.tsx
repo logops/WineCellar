@@ -906,9 +906,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       {/* Close button removed in favor of click-outside functionality */}
       
       <Tabs defaultValue="manual" value={entryMethod} onValueChange={setEntryMethod} className="mb-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-          <TabsTrigger value="barcode">Scan Barcode</TabsTrigger>
           <TabsTrigger value="label">Capture Label</TabsTrigger>
         </TabsList>
         <TabsContent value="manual">
