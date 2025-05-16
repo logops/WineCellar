@@ -6,9 +6,8 @@ import WineList from "@/components/wines/WineList";
 
 export default function Dashboard() {
   const tabs = [
-    { label: "My Cellar", href: "/" },
-    { label: "Search", href: "/search" },
-    { label: "My Notes", href: "/notes" },
+    { label: "Current Collection", href: "/" },
+    { label: "Consumed Wines", href: "/collection#consumed" },
   ];
 
   return (

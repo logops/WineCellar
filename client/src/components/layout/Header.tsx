@@ -43,12 +43,10 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
         
         {user ? (
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/" className="text-white hover:text-cream-100">Dashboard</Link>
-            <Link href="/collection" className="text-white hover:text-cream-100">My Collection</Link>
-            <Link href="/recommendations" className="text-white hover:text-cream-100">Recommendations</Link>
-            <Link href="/notes" className="text-white hover:text-cream-100">My Notes</Link>
-            <Link href="/reports" className="text-white hover:text-cream-100">Reports</Link>
-            <Link href="/import" className="text-white hover:text-cream-100">Import</Link>
+            <Link href="/" className="text-white hover:text-cream-100">My Cellar</Link>
+            <Link href="/search" className="text-white hover:text-cream-100">Discover</Link>
+            <Link href="/reports" className="text-white hover:text-cream-100">Analyze</Link>
+            <Link href="/import" className="text-white hover:text-cream-100">Manage</Link>
             <div className="relative">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

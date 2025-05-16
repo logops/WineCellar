@@ -28,51 +28,50 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         </div>
         <nav className="p-4">
           <ul className="space-y-3">
+            {/* MY CELLAR section */}
+            <li className="font-medium text-burgundy-600 px-4 pt-2">My Cellar</li>
             <li>
               <Link 
                 href="/" 
                 className="block py-2 px-4 hover:bg-cream-100 rounded-md"
                 onClick={onClose}
               >
-                Dashboard
+                Current Collection
               </Link>
             </li>
             <li>
               <Link 
-                href="/collection" 
+                href="/collection#consumed" 
                 className="block py-2 px-4 hover:bg-cream-100 rounded-md"
                 onClick={onClose}
               >
-                My Collection
+                Consumed Wines
+              </Link>
+            </li>
+            
+            {/* DISCOVER section */}
+            <li className="font-medium text-burgundy-600 px-4 pt-4">Discover</li>
+            <li>
+              <Link 
+                href="/search" 
+                className="block py-2 px-4 hover:bg-cream-100 rounded-md"
+                onClick={onClose}
+              >
+                Search Wines
               </Link>
             </li>
             <li>
               <Link 
-                href="/collection" 
+                href="/recommendations" 
                 className="block py-2 px-4 hover:bg-cream-100 rounded-md"
                 onClick={onClose}
               >
-                Add Wine
+                Get Recommendations
               </Link>
             </li>
-            <li>
-              <Link 
-                href="/collection" 
-                className="block py-2 px-4 hover:bg-cream-100 rounded-md"
-                onClick={onClose}
-              >
-                Drink or Remove
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/wishlist" 
-                className="block py-2 px-4 hover:bg-cream-100 rounded-md"
-                onClick={onClose}
-              >
-                My Wish List
-              </Link>
-            </li>
+            
+            {/* ANALYZE section */}
+            <li className="font-medium text-burgundy-600 px-4 pt-4">Analyze</li>
             <li>
               <Link 
                 href="/reports" 
@@ -84,11 +83,23 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </li>
             <li>
               <Link 
-                href="/recommendations" 
+                href="/reports?tab=wine-list" 
                 className="block py-2 px-4 hover:bg-cream-100 rounded-md"
                 onClick={onClose}
               >
-                Wine Recommendations
+                Wine List
+              </Link>
+            </li>
+            
+            {/* MANAGE section */}
+            <li className="font-medium text-burgundy-600 px-4 pt-4">Manage</li>
+            <li>
+              <Link 
+                href="/import" 
+                className="block py-2 px-4 hover:bg-cream-100 rounded-md"
+                onClick={onClose}
+              >
+                Import Wines
               </Link>
             </li>
             <li>
@@ -98,25 +109,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 onClick={onClose}
               >
                 My Notes
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/reports" 
-                className="block py-2 px-4 hover:bg-cream-100 rounded-md"
-                onClick={onClose}
-              >
-                Reports
-              </Link>
-            </li>
-
-            <li>
-              <Link 
-                href="/" 
-                className="block py-2 px-4 hover:bg-cream-100 rounded-md"
-                onClick={onClose}
-              >
-                Settings
               </Link>
             </li>
           </ul>
