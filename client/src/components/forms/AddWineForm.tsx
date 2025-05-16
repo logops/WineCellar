@@ -558,7 +558,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     }
   }
   
-  // Function to enhance wine data with AI
+  // Function to enhance wine data with AI - implementing consistent behavior with spreadsheet import
   async function handleEnhanceWithAI() {
     const currentValues = form.getValues();
     const wineName = currentValues.name;
@@ -568,10 +568,10 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     const region = currentValues.region;
     
     // Check if we have enough information to perform enhancement
-    if (!producer) {
+    if (!producer || !vintage) {
       toast({
         title: "Missing Information",
-        description: "Please enter at least the producer to enhance the wine data.",
+        description: "Please enter at least the producer and vintage to enhance the wine data.",
         variant: "destructive"
       });
       return;
@@ -580,13 +580,13 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     setIsEnhancingWithAI(true);
     
     try {
-      // Show initial toast notification
+      // Show initial toast notification with better description
       toast({
-        title: "AI Analysis in Progress",
-        description: "Analyzing wine details and enhancing your information...",
+        title: "AI Wine Analysis in Progress",
+        description: "Analyzing wine details, determining optimal drinking window, and identifying characteristics...",
       });
 
-      // Construct wine data for the API request
+      // Construct wine data for the API request, matching the spreadsheet import flow format
       const wineData = {
         producer,
         name: wineName || '',
@@ -597,14 +597,20 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         grapeVarieties: currentValues.grapeVarieties || ''
       };
       
+      // Create a temporary ID if this is a new wine (for consistency with spreadsheet import)
+      const tempWineId = wine?.id || -1;
+      
       // Log the request for debugging
       console.log("Making wine enhancement request with data:", wineData);
       
-      // Call the API to get comprehensive wine analysis
+      // Call the API to get comprehensive wine analysis using the format from spreadsheet import
       const response = await apiRequest(
         "POST", 
         "/api/wine-drinking-window-recommendation", 
-        { wineData }
+        {
+          wineId: tempWineId,
+          wineData: wineData
+        }
       );
       
       const result: WineAnalysisResponse = await response.json();
