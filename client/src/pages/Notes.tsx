@@ -15,10 +15,8 @@ export default function Notes() {
   const winesWithNotes = wines?.filter(wine => wine.notes) || [];
 
   const tabs = [
-    { label: "My Cellar", href: "/" },
-    { label: "Search", href: "/search" },
+    { label: "Import Wines", href: "/import" },
     { label: "My Notes", href: "/notes" },
-    { label: "Statistics", href: "/statistics" },
   ];
 
   return (

@@ -100,11 +100,8 @@ export default function Search() {
   });
 
   const tabs = [
-    { label: "My Cellar", href: "/" },
-    { label: "Search", href: "/search" },
-    { label: "Recommendations", href: "/recommendations" },
-    { label: "My Notes", href: "/notes" },
-    { label: "Statistics", href: "/statistics" },
+    { label: "Search Wines", href: "/search" },
+    { label: "Get Recommendations", href: "/recommendations" },
   ];
 
   const handleSearch = () => {

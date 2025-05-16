@@ -22,9 +22,8 @@ export default function Reports() {
   }, [location]);
   
   const tabs = [
-    { label: "My Cellar", href: "/" },
-    { label: "Search", href: "/search" },
-    { label: "My Notes", href: "/notes" },
+    { label: "Ready to Drink", href: "/reports" },
+    { label: "Wine List", href: "/reports?tab=wine-list" },
   ];
 
   const { data: wines, isLoading } = useQuery<Wine[]>({ 

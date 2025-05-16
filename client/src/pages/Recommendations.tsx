@@ -7,10 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Recommendations() {
   const mainTabs = [
-    { label: "My Cellar", href: "/" },
-    { label: "Search", href: "/search" },
-    { label: "Recommendations", href: "/recommendations" },
-    { label: "Statistics", href: "/statistics" },
+    { label: "Search Wines", href: "/search" },
+    { label: "Get Recommendations", href: "/recommendations" },
   ];
 
   const [activeTab, setActiveTab] = useState("new");
