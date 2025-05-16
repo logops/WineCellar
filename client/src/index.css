@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom utility classes */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 :root {
   /* New color palette based on client requirements */
   --rich-burgundy: 350 54% 32%; /* #722F37 */

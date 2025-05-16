@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import AddWineForm from "../forms/AddWineForm";
 import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
-import { Edit, X } from "lucide-react";
+import { Edit, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface WineListItemProps {
@@ -26,6 +26,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formIsDirty, setFormIsDirty] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(false);
 
   // Simple function to handle card click
   const handleCardClick = () => {
@@ -112,8 +113,23 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
             </div>
             {wine.notes && (
               <div className="pt-3 mt-3 border-t border-gray-100">
-                <div className="text-gray-500 mb-1">Notes</div>
-                <div className="text-gray-600 text-sm italic">{wine.notes}</div>
+                <div 
+                  className="flex items-center justify-between cursor-pointer" 
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent opening edit dialog
+                    setNotesExpanded(!notesExpanded);
+                  }}
+                >
+                  <div className="text-gray-500 mb-1">Notes</div>
+                  <div className="text-gray-400">
+                    {notesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </div>
+                </div>
+                {notesExpanded ? (
+                  <div className="text-gray-600 text-sm italic">{wine.notes}</div>
+                ) : (
+                  <div className="text-gray-600 text-sm italic line-clamp-1">{wine.notes}</div>
+                )}
               </div>
             )}
           </div>
