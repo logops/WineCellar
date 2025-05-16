@@ -611,9 +611,20 @@ export function MultiBottleWizard({
                   <Pencil className="mr-1 h-4 w-4" />
                   Edit
                 </Button>
-                {onEnhanceWithAI && currentBottle && currentBottle.producer && (
+                {onEnhanceWithAI && currentBottle && (
                   <Button
-                    onClick={() => onEnhanceWithAI(currentBottle)}
+                    onClick={() => {
+                      // Check if the necessary information is available for AI enhancement
+                      if (!currentBottle.producer || !currentBottle.vintage) {
+                        toast({
+                          title: "Missing Information",
+                          description: "Please click 'Edit' to add producer and vintage before enhancing with AI.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      onEnhanceWithAI(currentBottle);
+                    }}
                     disabled={isEnhancingWithAI}
                     variant="outline"
                     size="sm"
