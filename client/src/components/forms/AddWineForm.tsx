@@ -577,6 +577,12 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     setIsEnhancingWithAI(true);
     
     try {
+      // Show initial toast notification
+      toast({
+        title: "AI Analysis in Progress",
+        description: "Analyzing wine details and enhancing your information...",
+      });
+
       // Construct wine data for the API request
       const wineData = {
         producer,
@@ -588,6 +594,9 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         grapeVarieties: currentValues.grapeVarieties || ''
       };
       
+      // Log the request for debugging
+      console.log("Making wine enhancement request with data:", wineData);
+      
       // Call the API to get comprehensive wine analysis
       const response = await apiRequest(
         "POST", 
@@ -596,6 +605,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       );
       
       const result: WineAnalysisResponse = await response.json();
+      console.log("Received AI enhancement result:", result);
       
       if (result.success && result.data) {
         // Store the enhancement result
@@ -614,7 +624,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       console.error("Error enhancing wine data:", error);
       toast({
         title: "Error",
-        description: "There was a problem enhancing the wine data.",
+        description: "There was a problem enhancing the wine data. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -626,9 +636,10 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   function applyAIEnhancements() {
     if (!aiEnhancementResult) return;
     
-    const currentValues = form.getValues();
+    console.log("Applying AI enhancement results:", aiEnhancementResult);
     
-    // Apply all the AI recommendations
+    // Track which fields were enhanced for user feedback
+    const fieldsEnhanced: string[] = [];
     
     // Apply drinking window
     if (aiEnhancementResult.start && aiEnhancementResult.end) {
@@ -642,26 +653,35 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       
       form.setValue('drinkingWindowStartYear', startYear, { shouldDirty: true });
       form.setValue('drinkingWindowEndYear', endYear, { shouldDirty: true });
+      
+      // Switch to custom drinking window type
+      setDrinkingWindowType('custom');
+      
+      fieldsEnhanced.push('drinking window');
     }
     
     // Apply grape varieties
     if (aiEnhancementResult.grapeVarieties) {
       form.setValue('grapeVarieties', aiEnhancementResult.grapeVarieties, { shouldDirty: true });
+      fieldsEnhanced.push('grape varieties');
     }
     
     // Apply region
     if (aiEnhancementResult.region) {
       form.setValue('region', aiEnhancementResult.region, { shouldDirty: true });
+      fieldsEnhanced.push('region');
     }
     
     // Apply subregion
     if (aiEnhancementResult.subregion) {
       form.setValue('subregion', aiEnhancementResult.subregion, { shouldDirty: true });
+      fieldsEnhanced.push('subregion');
     }
     
     // Apply type if it was provided
     if (aiEnhancementResult.wineType) {
       form.setValue('type', aiEnhancementResult.wineType.toLowerCase(), { shouldDirty: true });
+      fieldsEnhanced.push('wine type');
     }
     
     // Combine notes information if it exists
@@ -682,15 +702,33 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       
       if (combinedNotes) {
         form.setValue('notes', combinedNotes.trim(), { shouldDirty: true });
+        fieldsEnhanced.push('notes');
       }
     }
     
+    // Force form validation update
+    form.trigger();
+    
+    // Store enhanced fields for visual feedback
+    setEnhancedFields(fieldsEnhanced);
+    setShowEnhancedFields(true);
+    
+    // Create a summary of what was enhanced
+    const enhancementSummary = fieldsEnhanced.join(', ');
+    
     toast({
       title: "AI Enhancements Applied",
-      description: "Wine information has been enhanced with AI analysis results",
+      description: `Updated fields: ${enhancementSummary || 'none'}`,
+      duration: 5000,
     });
     
+    // Close the enhancement dialog
     setShowEnhanceDialog(false);
+    
+    // Auto-hide the enhanced field highlights after 5 seconds
+    setTimeout(() => {
+      setShowEnhancedFields(false);
+    }, 5000);
   }
   
   async function onSubmit(values: FormValues) {
