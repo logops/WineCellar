@@ -48,10 +48,8 @@ export default function Collection() {
   }, []);
   
   const tabs = [
-    { label: "My Cellar", href: "/" },
-    { label: "Search", href: "/search" },
-    { label: "My Notes", href: "/notes" },
-    { label: "Statistics", href: "/statistics" },
+    { label: "Current Collection", href: "/" },
+    { label: "Consumed Wines", href: "/collection#consumed" },
   ];
 
   return (
