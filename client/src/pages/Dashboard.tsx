@@ -9,7 +9,6 @@ export default function Dashboard() {
     { label: "My Cellar", href: "/" },
     { label: "Search", href: "/search" },
     { label: "My Notes", href: "/notes" },
-    { label: "Statistics", href: "/statistics" },
   ];
 
   return (
