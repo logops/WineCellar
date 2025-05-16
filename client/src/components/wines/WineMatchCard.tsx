@@ -1,7 +1,29 @@
 import { Wine } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import WineGlassIcon from "./WineGlassIcon";
-import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
+
+// Inline function for drinking window display
+const parseDrinkingWindow = (wine: any): string => {
+  const start = wine.drinkingWindowStart ? new Date(wine.drinkingWindowStart) : null;
+  const end = wine.drinkingWindowEnd ? new Date(wine.drinkingWindowEnd) : null;
+  
+  if (!start && !end) return "Not specified";
+  
+  const formatYear = (date: Date) => date.getFullYear().toString();
+  const startYear = start ? formatYear(start) : '';
+  const endYear = end ? formatYear(end) : '';
+  
+  if (start && end) {
+    return `${startYear} - ${endYear}`;
+  } else if (start) {
+    return `From ${startYear}`;
+  } else if (end) {
+    return `Until ${endYear}`;
+  }
+  
+  return "Not specified";
+};
 
 interface WineMatchCardProps {
   wine: Wine;
@@ -50,7 +72,7 @@ export default function WineMatchCard({ wine, isSelected, onToggleSelect }: Wine
               
               {wine.drinkingWindowStart && wine.drinkingWindowEnd && (
                 <div>
-                  Drinking Window: {parseDrinkingWindow(wine.drinkingWindowStart, wine.drinkingWindowEnd)}
+                  Drinking Window: {parseDrinkingWindow(wine)}
                 </div>
               )}
               

@@ -15,7 +15,27 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/lib/utils";
 import { WineGlassIcon } from "@/components/icons/wine-glass-icon";
-import { parseDrinkingWindow } from "@/lib/date-utils";
+// Temporary inline function until import issues are fixed
+const parseDrinkingWindow = (wine: any): string => {
+  const start = wine.drinkingWindowStart ? new Date(wine.drinkingWindowStart) : null;
+  const end = wine.drinkingWindowEnd ? new Date(wine.drinkingWindowEnd) : null;
+  
+  if (!start && !end) return "Not specified";
+  
+  const formatYear = (date: Date) => date.getFullYear().toString();
+  const startYear = start ? formatYear(start) : '';
+  const endYear = end ? formatYear(end) : '';
+  
+  if (start && end) {
+    return `${startYear} - ${endYear}`;
+  } else if (start) {
+    return `From ${startYear}`;
+  } else if (end) {
+    return `Until ${endYear}`;
+  }
+  
+  return "Not specified";
+};
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Add types for the LabelRemover component

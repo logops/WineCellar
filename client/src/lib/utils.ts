@@ -106,3 +106,11 @@ export function getWineTypeColorClass(type: string | null | undefined): string {
   
   return 'text-red-800'; // Default to red
 }
+
+/**
+ * Calculate percentage with safe defaults
+ */
+export function calculatePercentage(value: number, total: number): number {
+  if (!total || total === 0) return 0;
+  return Math.round((value / total) * 100);
+}

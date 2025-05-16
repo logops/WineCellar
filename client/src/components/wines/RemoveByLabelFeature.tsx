@@ -6,8 +6,30 @@ import { Loader2, Camera, Upload, Trash, X } from "lucide-react";
 import { Wine } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Checkbox } from "@/components/ui/checkbox";
-import WineGlassIcon from "./WineGlassIcon";
-import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
+import { WineGlassIcon } from "@/components/icons/wine-glass-icon";
+import { formatPrice } from "@/lib/utils";
+
+// Temporary inline function until import issues are fixed
+const parseDrinkingWindow = (wine: any): string => {
+  const start = wine.drinkingWindowStart ? new Date(wine.drinkingWindowStart) : null;
+  const end = wine.drinkingWindowEnd ? new Date(wine.drinkingWindowEnd) : null;
+  
+  if (!start && !end) return "Not specified";
+  
+  const formatYear = (date: Date) => date.getFullYear().toString();
+  const startYear = start ? formatYear(start) : '';
+  const endYear = end ? formatYear(end) : '';
+  
+  if (start && end) {
+    return `${startYear} - ${endYear}`;
+  } else if (start) {
+    return `From ${startYear}`;
+  } else if (end) {
+    return `Until ${endYear}`;
+  }
+  
+  return "Not specified";
+};
 import { Textarea } from "@/components/ui/textarea";
 
 // Internal component for displaying matched wines
@@ -58,7 +80,7 @@ function WineMatchCard({ wine, isSelected, onToggleSelect }: WineMatchCardProps)
               
               {wine.drinkingWindowStart && wine.drinkingWindowEnd && (
                 <div>
-                  Drinking Window: {parseDrinkingWindow(wine.drinkingWindowStart, wine.drinkingWindowEnd)}
+                  Drinking Window: {parseDrinkingWindow(wine)}
                 </div>
               )}
               

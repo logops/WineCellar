@@ -10,27 +10,33 @@ export function formatDateYMD(date: Date | null): string {
 }
 
 /**
+ * Format a drinking window string
+ */
+export function formatDrinkingWindow(startDate: Date | null, endDate: Date | null): string {
+  if (!startDate && !endDate) return "Not specified";
+  
+  // Format dates as just the year for drinking windows
+  const startYear = startDate ? format(startDate, 'yyyy') : '';
+  const endYear = endDate ? format(endDate, 'yyyy') : '';
+  
+  if (startDate && endDate) {
+    return `${startYear} - ${endYear}`;
+  } else if (startDate) {
+    return `From ${startYear}`;
+  } else if (endDate) {
+    return `Until ${endYear}`;
+  }
+  
+  return "Not specified";
+}
+
+/**
  * Parse a drinking window from a wine object
  */
 export function parseDrinkingWindow(wine: Wine): string {
   const start = wine.drinkingWindowStart ? new Date(wine.drinkingWindowStart) : null;
   const end = wine.drinkingWindowEnd ? new Date(wine.drinkingWindowEnd) : null;
-  
-  if (!start && !end) return "Not specified";
-  
-  // Format dates as just the year for drinking windows
-  const startYear = start ? format(start, 'yyyy') : '';
-  const endYear = end ? format(end, 'yyyy') : '';
-  
-  if (start && end) {
-    return `${startYear} - ${endYear}`;
-  } else if (start) {
-    return `From ${startYear}`;
-  } else if (end) {
-    return `Until ${endYear}`;
-  }
-  
-  return "Not specified";
+  return formatDrinkingWindow(start, end);
 }
 
 /**
