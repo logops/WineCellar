@@ -4,7 +4,6 @@ import { Wine } from "@shared/schema";
 import WineListItem from "./WineListItem";
 import WineListHeader from "./WineListHeader";
 import SpreadsheetView from "./SpreadsheetView";
-import { WineFilters } from "./WineFilters";
 import CollectionDashboard from "@/components/dashboard/CollectionDashboard";
 import ConsumedWinesList from "./ConsumedWinesList";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,7 +18,21 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Table2, LayoutGrid, Search, Filter } from "lucide-react";
+import { Table2, LayoutGrid, Search } from "lucide-react";
+
+// Helper function to standardize wine types
+const standardizeWineType = (type: string | null): string => {
+  if (!type) return 'Other';
+  
+  const lowerType = type.toLowerCase();
+  if (lowerType.includes('red')) return 'Red';
+  if (lowerType.includes('white')) return 'White';
+  if (lowerType.includes('rosé') || lowerType.includes('rose')) return 'Rosé';
+  if (lowerType.includes('sparkling')) return 'Sparkling';
+  if (lowerType.includes('dessert')) return 'Dessert';
+  
+  return 'Other';
+};
 
 const sortWines = (wines: Wine[], sortBy: string): Wine[] => {
   const sortedWines = [...wines];
@@ -54,22 +67,8 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'spreadsheet'>(defaultView);
-  const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'in-cellar' | 'consumed'>('in-cellar');
   const [showDashboard, setShowDashboard] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<{
-    regions: string[];
-    types: string[];
-    vintages: string[];
-    priceRange: [number, number];
-    ratingRange: [number, number];
-  }>({
-    regions: [],
-    types: [],
-    vintages: [],
-    priceRange: [0, 500],
-    ratingRange: [80, 100]
-  });
   const itemsPerPage = 10;
 
   const { data: wines, isLoading, refetch } = useQuery<Wine[]>({ 
@@ -124,58 +123,17 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
     );
   }
 
-  // Apply all filters (search and sidebar filters)
+  // Filter wines by search query
   const filteredWines = wines.filter(wine => {
-    // Search query filter
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = (
-        (wine.name && wine.name.toLowerCase().includes(searchLower)) ||
-        (wine.producer && wine.producer.toLowerCase().includes(searchLower)) ||
-        (wine.region && wine.region.toLowerCase().includes(searchLower)) ||
-        (wine.grapeVarieties && wine.grapeVarieties.toLowerCase().includes(searchLower))
-      );
-      if (!matchesSearch) return false;
-    }
+    if (!searchQuery) return true;
     
-    // Region filter
-    if (activeFilters.regions.length > 0) {
-      if (!wine.region || !activeFilters.regions.includes(wine.region)) {
-        return false;
-      }
-    }
-    
-    // Type filter
-    if (activeFilters.types.length > 0) {
-      if (!wine.type || !activeFilters.types.includes(wine.type)) {
-        return false;
-      }
-    }
-    
-    // Vintage filter
-    if (activeFilters.vintages.length > 0) {
-      if (!wine.vintage || !activeFilters.vintages.includes(wine.vintage.toString())) {
-        return false;
-      }
-    }
-    
-    // Price range filter
-    if (wine.currentValue) {
-      if (wine.currentValue < activeFilters.priceRange[0] || 
-          wine.currentValue > activeFilters.priceRange[1]) {
-        return false;
-      }
-    }
-    
-    // Rating range filter
-    if (wine.rating) {
-      if (wine.rating < activeFilters.ratingRange[0] || 
-          wine.rating > activeFilters.ratingRange[1]) {
-        return false;
-      }
-    }
-    
-    return true;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      (wine.name && wine.name.toLowerCase().includes(searchLower)) ||
+      (wine.producer && wine.producer.toLowerCase().includes(searchLower)) ||
+      (wine.region && wine.region.toLowerCase().includes(searchLower)) ||
+      (wine.grapeVarieties && wine.grapeVarieties.toLowerCase().includes(searchLower))
+    );
   });
 
   // Sort filtered wines
@@ -184,22 +142,10 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   // Calculate total bottles
   const totalBottles = sortedWines.reduce((sum, wine) => sum + (wine.quantity || 0), 0);
   
-  // Calculate data for filters
-  const typeCounts = sortedWines.reduce((counts: Record<string, number>, wine) => {
-    const type = wine.type || 'Other';
-    counts[type] = (counts[type] || 0) + 1;
-    return counts;
-  }, {});
-  
-  const regionCounts = sortedWines.reduce((counts: Record<string, number>, wine) => {
-    const region = wine.region || 'Unknown';
-    counts[region] = (counts[region] || 0) + 1;
-    return counts;
-  }, {});
-  
-  const vintageCounts = sortedWines.reduce((counts: Record<string, number>, wine) => {
-    const vintage = wine.vintage?.toString() || 'Unknown';
-    counts[vintage] = (counts[vintage] || 0) + 1;
+  // Calculate data for dashboard - with standardized wine types
+  const typeCounts: Record<string, number> = sortedWines.reduce((counts: Record<string, number>, wine) => {
+    const standardType = standardizeWineType(wine.type);
+    counts[standardType] = (counts[standardType] || 0) + 1;
     return counts;
   }, {});
   
@@ -212,31 +158,10 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
 
   return (
     <div className="relative">
-      {/* Sidebar Filter */}
-      <WineFilters
-        isOpen={showFilters}
-        onToggle={() => setShowFilters(!showFilters)}
-        onFilterChange={() => {}}
-        totalCount={sortedWines.length}
-        regionCounts={regionCounts}
-        typeCounts={typeCounts}
-        vintageCounts={vintageCounts}
-      />
-      
       {/* Main Content */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden transition-all duration-300">
-        {/* Top action bar with filter toggles */}
+        {/* Top action bar */}
         <div className="p-4 flex items-center space-x-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-gray-200 font-elegant"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="mr-2 h-4 w-4" />
-            {showFilters ? 'Hide Filters' : 'Show Filters'}
-          </Button>
-          
           {/* Collection/Recent Activity toggle */}
           <div className="inline-flex p-1 bg-cream-50 rounded-md">
             <Button 
@@ -294,10 +219,10 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
             <div className="flex gap-2 items-center">
               <Select onValueChange={setSortBy} defaultValue="default">
                 <SelectTrigger className="w-[180px] border-gray-200">
-                  <SelectValue placeholder="Sort by Default" />
+                  <SelectValue placeholder="Recently Added" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Sort by Default</SelectItem>
+                  <SelectItem value="default">Recently Added</SelectItem>
                   <SelectItem value="name-asc">Name: A-Z</SelectItem>
                   <SelectItem value="name-desc">Name: Z-A</SelectItem>
                   <SelectItem value="vintage-desc">Vintage: Newest First</SelectItem>
@@ -351,7 +276,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
                 redCount: typeCounts['Red'] || 0,
                 whiteCount: typeCounts['White'] || 0,
                 sparklingCount: typeCounts['Sparkling'] || 0,
-                otherCount: typeCounts['Other'] || 0,
+                otherCount: (typeCounts['Other'] || 0) + (typeCounts['Dessert'] || 0),
                 totalValue: sortedWines.reduce((sum, wine) => sum + (wine.currentValue || 0) * (wine.quantity || 0), 0),
                 averageRating: sortedWines.reduce((sum, wine) => sum + (wine.rating || 0), 0) / sortedWines.length || 0,
                 readyToDrink: 0 // Calculate ready to drink wines in the CollectionDashboard component
@@ -462,48 +387,28 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
             <DialogHeader className="pb-4">
               <DialogTitle className="text-xl font-serif text-gray-800">Search Wines</DialogTitle>
             </DialogHeader>
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="search-query" className="text-sm text-gray-500 block mb-2">
-                  Search your collection
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <Input
-                    id="search-query"
-                    placeholder="Wine name, producer, region, or grape variety"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 border-gray-200"
-                    autoFocus
-                  />
-                </div>
-                <p className="mt-2 text-xs text-gray-500">
-                  Search results will update as you type.
-                </p>
-              </div>
-              
-              <div className="flex justify-end gap-3 pt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="border-gray-200 text-gray-600 font-elegant"
+            <div className="space-y-4">
+              <Input
+                type="text"
+                placeholder="Search by name, producer, region..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setSearchQuery('');
                     setSearchVisible(false);
                   }}
+                  className="font-elegant"
                 >
-                  Reset
+                  Clear
                 </Button>
-                <Button 
-                  size="sm"
-                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white font-elegant"
-                  onClick={() => {
-                    setCurrentPage(1);
-                    setSearchVisible(false);
-                  }}
+                <Button
+                  onClick={() => setSearchVisible(false)}
+                  className="bg-burgundy-700 hover:bg-burgundy-800 font-elegant"
                 >
                   Search
                 </Button>
