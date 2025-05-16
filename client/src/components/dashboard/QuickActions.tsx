@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddWineForm from "@/components/forms/AddWineForm";
-import ConsumeWineForm from "@/components/forms/ConsumeWineForm";
+import EnhancedDrinkOrRemoveForm from "@/components/forms/EnhancedDrinkOrRemoveForm";
 import { Link } from "wouter";
 
 export default function QuickActions() {
@@ -54,13 +54,13 @@ export default function QuickActions() {
         </DialogContent>
       </Dialog>
 
-      {/* Consume Wine Dialog */}
+      {/* Drink or Remove Wine Dialog */}
       <Dialog open={showConsumeModal} onOpenChange={setShowConsumeModal}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="font-serif">Drink or Remove Wine</DialogTitle>
           </DialogHeader>
-          <ConsumeWineForm onSuccess={() => setShowConsumeModal(false)} />
+          <EnhancedDrinkOrRemoveForm onSuccess={() => setShowConsumeModal(false)} />
         </DialogContent>
       </Dialog>
     </div>

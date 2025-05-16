@@ -89,6 +89,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
   
+  // Wine label removal endpoints
+  app.post('/api/analyze-for-removal', isAuthenticated, multer({ storage: multer.memoryStorage() }).single('image'), 
+    async (req: Request, res: Response) => {
+      return handleWineLabelForRemoval(req, res);
+    }
+  );
+  
+  app.post('/api/wines/remove-multiple', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { wineIds, notes } = req.body;
+      
+      if (!wineIds || !Array.isArray(wineIds) || wineIds.length === 0) {
+        return res.status(400).json({ error: 'Wine IDs array is required' });
+      }
+      
+      if (!req.user) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+      
+      const results = [];
+      const now = new Date();
+      
+      // Process each wine
+      for (const id of wineIds) {
+        // Get the wine to ensure it exists
+        const wine = await dbStorage.getWine(Number(id));
+        
+        if (!wine) {
+          results.push({ id, success: false, message: 'Wine not found' });
+          continue;
+        }
+        
+        // Verify the wine belongs to the user
+        if (wine.userId !== req.user.id) {
+          results.push({ id, success: false, message: 'Access denied' });
+          continue;
+        }
+        
+        // Only process wines that have quantity > 0
+        if (wine.quantity <= 0) {
+          results.push({ id, success: false, message: 'Wine already consumed or removed' });
+          continue;
+        }
+        
+        // Create consumption record with the provided notes
+        try {
+          await dbStorage.createConsumption({
+            wineId: id,
+            userId: req.user.id,
+            quantity: wine.quantity,
+            date: now,
+            notes: notes || undefined
+          });
+        } catch (error) {
+          console.error(`Error creating consumption record for wine ${id}:`, error);
+          results.push({ id, success: false, message: 'Failed to record consumption' });
+          continue;
+        }
+        
+        // Update wine to mark as consumed
+        try {
+          await dbStorage.updateWine(id, {
+            quantity: 0,
+            consumedStatus: 'consumed'
+          });
+          
+          results.push({ id, success: true });
+        } catch (error) {
+          console.error(`Error updating wine ${id}:`, error);
+          results.push({ id, success: false, message: 'Failed to update wine' });
+        }
+      }
+      
+      res.json({
+        success: results.some(r => r.success),
+        results
+      });
+    } catch (error) {
+      console.error('Error removing multiple wines:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Admin routes for user management
   app.get('/api/admin/users', isAuthenticated, async (req: Request, res: Response) => {
     try {
