@@ -44,7 +44,7 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
         {user ? (
           <div className="hidden md:flex items-center space-x-4">
             <Link href="/" className="text-white hover:text-cream-100">My Cellar</Link>
-            <Link href="/search" className="text-white hover:text-cream-100">Discover</Link>
+            <Link href="/search" className="text-white hover:text-cream-100">Search</Link>
             <Link href="/reports" className="text-white hover:text-cream-100">Analyze</Link>
             <Link href="/import" className="text-white hover:text-cream-100">Manage</Link>
             <div className="relative">

@@ -49,8 +49,8 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               </Link>
             </li>
             
-            {/* DISCOVER section */}
-            <li className="font-medium text-burgundy-600 px-4 pt-4">Discover</li>
+            {/* SEARCH section */}
+            <li className="font-medium text-burgundy-600 px-4 pt-4">Search</li>
             <li>
               <Link 
                 href="/search" 

@@ -123,16 +123,25 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
     );
   }
 
-  // Filter wines by search query
+  // Filter wines by search query - enhanced to handle numeric searches for vintage
   const filteredWines = wines.filter(wine => {
     if (!searchQuery) return true;
     
-    const searchLower = searchQuery.toLowerCase();
+    const searchLower = searchQuery.toLowerCase().trim();
+    
+    // Check if search is a number (likely a vintage search)
+    if (/^\d+$/.test(searchLower)) {
+      const searchNumber = parseInt(searchLower, 10);
+      return wine.vintage === searchNumber;
+    }
+    
+    // Regular text search
     return (
       (wine.name && wine.name.toLowerCase().includes(searchLower)) ||
       (wine.producer && wine.producer.toLowerCase().includes(searchLower)) ||
       (wine.region && wine.region.toLowerCase().includes(searchLower)) ||
-      (wine.grapeVarieties && wine.grapeVarieties.toLowerCase().includes(searchLower))
+      (wine.grapeVarieties && wine.grapeVarieties.toLowerCase().includes(searchLower)) ||
+      (wine.vintage && wine.vintage.toString().includes(searchLower))
     );
   });
 
