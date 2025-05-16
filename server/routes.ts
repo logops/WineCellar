@@ -14,7 +14,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation, handleWineInformationLookup } from './anthropic';
-import { handleWineLabelForRemoval } from './removeByLabel';
+import { analyzeWineLabelForRemoval } from './labelMatching';
 import { 
   processSpreadsheetFile, 
   processBatchFromFile, 
@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wine label removal endpoints
   app.post('/api/analyze-for-removal', isAuthenticated, multer({ storage: multer.memoryStorage() }).single('image'), 
     async (req: Request, res: Response) => {
-      return handleWineLabelForRemoval(req, res);
+      return analyzeWineLabelForRemoval(req, res);
     }
   );
   

@@ -2,11 +2,10 @@ import { Request, Response } from 'express';
 import { analyzeWineLabel } from './anthropic';
 import { storage } from './storage';
 import { Wine } from '@shared/schema';
-import { anthropic } from './anthropic';
+import { matchWineImageToCellar } from './wineImageMatcher';
 
 /**
- * Use Claude AI to match detected wine label against
- * wines in the user's cellar using advanced comparison
+ * Use our existing rule-based matching as a fallback to AI
  */
 export async function matchWineFromLabel(
   labelInfo: any,
@@ -15,118 +14,7 @@ export async function matchWineFromLabel(
   if (!labelInfo || !userWines || userWines.length === 0) {
     return [];
   }
-
-  try {
-    // If we have enough wines to make it worthwhile, use AI to help with matching
-    if (userWines.length > 5) {
-      // Format user wines for Claude's analysis
-      const wineList = userWines
-        .filter(wine => (wine.quantity ?? 0) > 0)
-        .map(wine => ({
-          id: wine.id,
-          producer: wine.producer || "Unknown",
-          name: wine.name || "",
-          vintage: wine.vintage || "Unknown",
-          grapeVarieties: wine.grapeVarieties || "",
-          region: wine.region || "",
-          quantity: wine.quantity || 0
-        }));
-      
-      // Extract information from the label analysis
-      const {
-        producer,
-        name,
-        vintage,
-        grapeVarieties,
-        region,
-        subregion,
-        country
-      } = labelInfo;
-      
-      // Use Claude to find the best matches
-      const response = await anthropic.messages.create({
-        model: "claude-3-7-sonnet-20250219",
-        max_tokens: 1000,
-        system: `You are a wine expert helping to match a wine label against a cellar inventory. 
-                Find the most likely matches and return your results as a JSON array of objects with properties:
-                - wineId: the ID of the matched wine
-                - score: a number from 0-100 representing match confidence
-                - reason: a brief explanation of why this is a match
-                
-                Focus on producer name as the most important factor, then vintage, then wine name.
-                Return only JSON with no other text.`,
-        messages: [
-          { 
-            role: "user", 
-            content: `I need to match this wine label information:
-            
-            Producer: ${producer || "Not visible"}
-            Name: ${name || "Not visible"}
-            Vintage: ${vintage || "Not visible"}
-            Grape Varieties: ${grapeVarieties || "Not visible"}
-            Region: ${region || "Not visible"}
-            Subregion: ${subregion || "Not visible"}
-            Country: ${country || "Not visible"}
-            
-            Against these wines in my cellar:
-            ${JSON.stringify(wineList, null, 2)}
-            
-            Return the best matches in JSON format. Return only wines with a confidence score above 50.
-            If no good matches exist, return an empty array.`
-          }
-        ]
-      });
-      
-      let aiMatches: { wineId: number; score: number; reason: string }[] = [];
-      try {
-        // Parse AI's response
-        const responseText = response.content[0].text;
-        
-        // Handle potential non-JSON responses gracefully
-        if (responseText.includes("[") && responseText.includes("]")) {
-          const jsonContent = responseText.substring(
-            responseText.indexOf("["),
-            responseText.lastIndexOf("]") + 1
-          );
-          aiMatches = JSON.parse(jsonContent);
-          
-          console.log("AI matches:", JSON.stringify(aiMatches, null, 2));
-          
-          // Return wines based on AI matches
-          if (aiMatches && aiMatches.length > 0) {
-            const matchedWines = aiMatches.map(match => {
-              const wine = userWines.find(w => w.id === match.wineId);
-              if (wine) {
-                // Add the AI's reasoning to the wine object for display
-                return {
-                  ...wine, 
-                  matchReason: match.reason,
-                  matchScore: match.score
-                };
-              }
-              return null;
-            }).filter(Boolean) as Wine[];
-            
-            return matchedWines;
-          }
-        }
-      } catch (parseError) {
-        console.error("Error parsing AI response:", parseError);
-        // Fall back to regular matching
-      }
-    }
-    
-    // Extract information from the label analysis if AI matching failed
-    const {
-      producer,
-      name,
-      vintage,
-      grapeVarieties,
-      region,
-      subregion,
-      country
-    } = labelInfo;
-
+  
   // Filter active wines only (ones with quantity > 0)
   const activeWines = userWines.filter(wine => (wine.quantity ?? 0) > 0);
   
