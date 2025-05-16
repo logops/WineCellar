@@ -64,6 +64,7 @@ interface WineListProps {
 export default function WineList({ defaultView = 'card' }: WineListProps) {
   const [sortBy, setSortBy] = useState('default');
   const [searchVisible, setSearchVisible] = useState(false);
+  const [selectedWineId, setSelectedWineId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'spreadsheet'>(defaultView);
@@ -335,6 +336,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
                   onWineUpdate={(id, data) => {
                     updateWineMutation.mutate({ id, data });
                   }}
+                  onWineClick={(id) => setSelectedWineId(id)}
                 />
               </div>
             )}

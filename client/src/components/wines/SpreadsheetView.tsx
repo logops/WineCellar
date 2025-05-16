@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 interface SpreadsheetViewProps {
   wines: Wine[];
   onWineUpdate: (id: number, data: Partial<Wine>) => void;
+  onWineClick?: (id: number) => void;
 }
 
 // Define filter types
@@ -60,7 +61,7 @@ interface DateRangeFilter {
 type FilterValue = TextFilter | ChoiceFilter | NumberRangeFilter | DateRangeFilter;
 type Filters = {[key in keyof Wine]?: FilterValue};
 
-export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetViewProps) {
+export default function SpreadsheetView({ wines, onWineUpdate, onWineClick }: SpreadsheetViewProps) {
   // State for column visibility
   const [columnVisibility, setColumnVisibility] = useState<{[key: string]: boolean}>({
     producer: true,
@@ -341,11 +342,11 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
     document.body.removeChild(link);
   };
 
-  // Handle cell click for editing
+  // Handle cell click for editing or viewing detail
   const handleCellClick = (id: number, field: keyof Wine) => {
-    // Only allow editing certain fields
+    // Only allow editing certain fields (excluding notes)
     const editableFields = [
-      'notes', 'currentValue', 'quantity', 'purchasePrice', 
+      'currentValue', 'quantity', 'purchasePrice', 
       'type', 'region', 'subregion', 'grapeVarieties'
     ];
     
@@ -354,6 +355,11 @@ export default function SpreadsheetView({ wines, onWineUpdate }: SpreadsheetView
       if (wine) {
         setEditingCell({ id, field });
         setEditValue(wine[field] !== null ? String(wine[field]) : '');
+      }
+    } else {
+      // If it's not an editable field, open the wine detail
+      if (onWineClick) {
+        onWineClick(id);
       }
     }
   };
