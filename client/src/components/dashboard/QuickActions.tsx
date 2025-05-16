@@ -56,7 +56,7 @@ export default function QuickActions() {
 
       {/* Drink or Remove Wine Dialog */}
       <Dialog open={showConsumeModal} onOpenChange={setShowConsumeModal}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif">Drink or Remove Wine</DialogTitle>
           </DialogHeader>
