@@ -48,7 +48,6 @@ export default function Header({ onMenuButtonClick }: HeaderProps) {
             <Link href="/recommendations" className="text-white hover:text-cream-100">Recommendations</Link>
             <Link href="/notes" className="text-white hover:text-cream-100">My Notes</Link>
             <Link href="/reports" className="text-white hover:text-cream-100">Reports</Link>
-            <Link href="/reports?tab=statistics" className="text-white hover:text-cream-100">Statistics</Link>
             <Link href="/import" className="text-white hover:text-cream-100">Import</Link>
             <div className="relative">
               <DropdownMenu>

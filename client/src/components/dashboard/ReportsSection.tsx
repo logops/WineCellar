@@ -8,8 +8,7 @@ interface ReportLink {
 export default function ReportsSection() {
   const reports: ReportLink[] = [
     { label: 'Ready to Drink', href: '/reports' },
-    { label: 'Restaurant Style Wine List', href: '/reports' },
-    { label: 'My Charts', href: '/reports' },
+    { label: 'Restaurant Style Wine List', href: '/reports?tab=wine-list' },
   ];
 
   return (
