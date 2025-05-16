@@ -37,7 +37,7 @@ export default function WineListHeader({
             <SelectValue placeholder="Sort by Default" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">Sort by Default</SelectItem>
+            <SelectItem value="default">Recently Added</SelectItem>
             <SelectItem value="name-asc">Name: A-Z</SelectItem>
             <SelectItem value="name-desc">Name: Z-A</SelectItem>
             <SelectItem value="vintage-asc">Vintage: Oldest First</SelectItem>

@@ -37,8 +37,10 @@ const sortWines = (wines: Wine[], sortBy: string): Wine[] => {
       return sortedWines.sort((a, b) => (a.currentValue || 0) - (b.currentValue || 0));
     case 'value-desc':
       return sortedWines.sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0));
+    case 'default':
     default:
-      return sortedWines;
+      // Default to sorting by recently added (using ID as proxy for recency)
+      return sortedWines.sort((a, b) => (b.id || 0) - (a.id || 0));
   }
 };
 
@@ -55,6 +57,19 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'in-cellar' | 'consumed'>('in-cellar');
   const [showDashboard, setShowDashboard] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<{
+    regions: string[];
+    types: string[];
+    vintages: string[];
+    priceRange: [number, number];
+    ratingRange: [number, number];
+  }>({
+    regions: [],
+    types: [],
+    vintages: [],
+    priceRange: [0, 500],
+    ratingRange: [80, 100]
+  });
   const itemsPerPage = 10;
 
   const { data: wines, isLoading, refetch } = useQuery<Wine[]>({ 
@@ -109,17 +124,58 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
     );
   }
 
-  // Filter wines by search query
+  // Apply all filters (search and sidebar filters)
   const filteredWines = wines.filter(wine => {
-    if (!searchQuery) return true;
+    // Search query filter
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = (
+        (wine.name && wine.name.toLowerCase().includes(searchLower)) ||
+        (wine.producer && wine.producer.toLowerCase().includes(searchLower)) ||
+        (wine.region && wine.region.toLowerCase().includes(searchLower)) ||
+        (wine.grapeVarieties && wine.grapeVarieties.toLowerCase().includes(searchLower))
+      );
+      if (!matchesSearch) return false;
+    }
     
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      (wine.name && wine.name.toLowerCase().includes(searchLower)) ||
-      (wine.producer && wine.producer.toLowerCase().includes(searchLower)) ||
-      (wine.region && wine.region.toLowerCase().includes(searchLower)) ||
-      (wine.grapeVarieties && wine.grapeVarieties.toLowerCase().includes(searchLower))
-    );
+    // Region filter
+    if (activeFilters.regions.length > 0) {
+      if (!wine.region || !activeFilters.regions.includes(wine.region)) {
+        return false;
+      }
+    }
+    
+    // Type filter
+    if (activeFilters.types.length > 0) {
+      if (!wine.type || !activeFilters.types.includes(wine.type)) {
+        return false;
+      }
+    }
+    
+    // Vintage filter
+    if (activeFilters.vintages.length > 0) {
+      if (!wine.vintage || !activeFilters.vintages.includes(wine.vintage.toString())) {
+        return false;
+      }
+    }
+    
+    // Price range filter
+    if (wine.currentValue) {
+      if (wine.currentValue < activeFilters.priceRange[0] || 
+          wine.currentValue > activeFilters.priceRange[1]) {
+        return false;
+      }
+    }
+    
+    // Rating range filter
+    if (wine.rating) {
+      if (wine.rating < activeFilters.ratingRange[0] || 
+          wine.rating > activeFilters.ratingRange[1]) {
+        return false;
+      }
+    }
+    
+    return true;
   });
 
   // Sort filtered wines
