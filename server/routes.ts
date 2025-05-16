@@ -128,7 +128,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Only process wines that have quantity > 0
-        if (wine.quantity <= 0) {
+        const quantity = wine.quantity || 0;
+        if (quantity <= 0) {
           results.push({ id, success: false, message: 'Wine already consumed or removed' });
           continue;
         }
@@ -138,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await dbStorage.createConsumption({
             wineId: id,
             userId: req.user.id,
-            quantity: wine.quantity,
+            quantity: quantity,
             date: now,
             notes: notes || undefined
           });

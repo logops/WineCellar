@@ -141,7 +141,7 @@ export async function handleWineLabelForRemoval(req: Request, res: Response) {
     if (!req.user) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    const userWines = await storage.getWines(req.user.id);
+    const userWines = await storage.getWinesByUserId(req.user.id);
     
     // Match the analyzed wine against the user's cellar
     const matchedWines = await matchWineFromLabel(labelAnalysis, userWines);
