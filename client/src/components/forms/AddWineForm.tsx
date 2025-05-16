@@ -1450,6 +1450,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                             placeholder={new Date().getFullYear().toString()} 
                             {...field} 
                             value={field.value || ""}
+                            className={enhancedFields.includes('drinking window') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || "")}
                           />
                         </FormControl>
@@ -1472,6 +1473,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                             placeholder={(new Date().getFullYear() + 5).toString()} 
                             {...field} 
                             value={field.value || ""}
+                            className={enhancedFields.includes('drinking window') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || "")}
                           />
                         </FormControl>
