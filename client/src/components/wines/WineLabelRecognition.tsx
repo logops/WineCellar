@@ -362,11 +362,14 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
               </div>
             )}
             
-            {imagePreview && (
-              <Alert className="border-yellow-200 bg-yellow-50">
-                <AlertTitle className="text-yellow-800">Recognition Tip</AlertTitle>
-                <AlertDescription className="text-yellow-700 text-sm">
-                  For best results, ensure the label is well-lit and clearly visible in the image.
+            {imagePreview && !analyzeMutation.isPending && (
+              <Alert className="border-burgundy-200 bg-burgundy-50">
+                <AlertTitle className="text-burgundy-800 flex items-center">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analyzing Wine Label
+                </AlertTitle>
+                <AlertDescription className="text-burgundy-700 text-sm">
+                  Please wait while we analyze your wine label. This may take a few moments as our AI identifies all wine bottles in the image.
                 </AlertDescription>
               </Alert>
             )}
