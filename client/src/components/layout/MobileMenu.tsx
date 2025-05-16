@@ -45,7 +45,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 className="block py-2 px-4 hover:bg-cream-100 rounded-md"
                 onClick={onClose}
               >
-                Consumed Wines
+                Recent Activity
               </Link>
             </li>
             
