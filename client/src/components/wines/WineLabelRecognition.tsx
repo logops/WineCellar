@@ -149,7 +149,7 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
     }
   });
 
-  // Handle file selection
+  // Handle file selection - will now automatically analyze after upload
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
@@ -166,7 +166,13 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
     
     const reader = new FileReader();
     reader.onload = () => {
-      setImagePreview(reader.result as string);
+      const imageData = reader.result as string;
+      setImagePreview(imageData);
+      
+      // Automatically analyze the image after loading it
+      setTimeout(() => {
+        analyzeMutation.mutate(imageData);
+      }, 100);
     };
     reader.readAsDataURL(file);
   };
@@ -196,7 +202,7 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
     }
   };
 
-  // Capture from camera
+  // Capture from camera - will now automatically analyze after capture
   const captureImage = () => {
     if (!videoRef.current) return;
     
@@ -214,6 +220,11 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
       const stream = videoRef.current.srcObject as MediaStream;
       stream?.getTracks().forEach(track => track.stop());
       setIsCapturing(false);
+      
+      // Automatically analyze the image after capturing
+      setTimeout(() => {
+        analyzeMutation.mutate(imageData);
+      }, 100);
     }
   };
 
@@ -371,22 +382,7 @@ export function WineLabelRecognition({ onResult, onCancel, detectMultipleBottles
         >
           Cancel
         </Button>
-        {imagePreview && (
-          <Button 
-            onClick={analyzeImageImmediately}
-            disabled={analyzeMutation.isPending || !imagePreview}
-            className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-          >
-            {analyzeMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              'Analyze Label'
-            )}
-          </Button>
-        )}
+        {/* Removed the separate analyze button - now it's automatic */}
       </CardFooter>
     </Card>
   );
