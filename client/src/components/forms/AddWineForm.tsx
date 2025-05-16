@@ -1122,6 +1122,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           suggestions={suggestions.grapeVarieties}
                           value={field.value || ""}
                           onValueChange={field.onChange}
+                          className={enhancedFields.includes('grape varieties') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}
                         />
                       </FormControl>
                       {wineInfoResult?.grapeVarieties && (
@@ -1487,7 +1488,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                     <FormControl>
                       <Textarea 
                         placeholder="Add your tasting notes or other information about this wine..." 
-                        className="h-24"
+                        className={`h-24 ${enhancedFields.includes('notes') && showEnhancedFields ? 'border-green-500 bg-green-50' : ''}`}
                         {...field} 
                         value={field.value || ""}
                       />
