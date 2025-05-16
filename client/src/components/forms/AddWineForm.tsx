@@ -864,7 +864,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
           setMultiBottleData(null);
           setEntryMethod("manual");
         }}
-        onEnhanceWithAI={(bottle) => {
+        onEnhanceWithAI={async (bottle) => {
           // Prepare the data for AI enhancement
           const wineData = {
             producer: bottle.producer || '',
@@ -876,17 +876,116 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
             grapeVarieties: bottle.grapeVarieties || '',
           };
           
-          // Set the current bottle data in the form so it can be enhanced
-          form.setValue("producer", wineData.producer);
-          form.setValue("name", wineData.name);
-          form.setValue("vintage", wineData.vintage);
-          form.setValue("type", wineData.type);
-          form.setValue("region", wineData.region);
-          form.setValue("subregion", wineData.subregion);
-          form.setValue("grapeVarieties", wineData.grapeVarieties);
+          // Validate required fields - only attempt enhancement if we have enough info
+          if (!wineData.producer || !wineData.vintage) {
+            toast({
+              title: "Missing Information",
+              description: "Please add producer and vintage information before enhancing with AI.",
+              variant: "destructive"
+            });
+            return;
+          }
           
-          // Call the enhance with AI function
-          handleEnhanceWithAI();
+          setIsEnhancingWithAI(true);
+          
+          try {
+            // Show initial toast notification with better description
+            toast({
+              title: "AI Wine Analysis in Progress",
+              description: "Analyzing wine details and determining optimal drinking window...",
+            });
+            
+            // Create a temporary ID for the API request
+            const tempWineId = -1;
+            
+            // Call the API to get comprehensive wine analysis
+            const response = await apiRequest(
+              "POST", 
+              "/api/wine-drinking-window-recommendation", 
+              {
+                wineId: tempWineId,
+                wineData: wineData
+              }
+            );
+            
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+              // Store the enhancement result in the form values
+              const data = result.data;
+              
+              // Set form values from the AI results
+              form.setValue("producer", wineData.producer);
+              form.setValue("name", wineData.name);
+              form.setValue("vintage", wineData.vintage);
+              form.setValue("type", wineData.type);
+              
+              // Enhanced fields
+              if (data.grapeVarieties) {
+                form.setValue("grapeVarieties", data.grapeVarieties);
+              }
+              
+              if (data.region) {
+                form.setValue("region", data.region);
+              }
+              
+              if (data.subregion) {
+                form.setValue("subregion", data.subregion);
+              }
+              
+              if (data.start && data.end) {
+                const startYear = typeof data.start === 'string' ? parseInt(data.start) : data.start;
+                const endYear = typeof data.end === 'string' ? parseInt(data.end) : data.end;
+                
+                form.setValue("drinkingWindowStartYear", startYear);
+                form.setValue("drinkingWindowEndYear", endYear);
+                setDrinkingWindowType("custom");
+              }
+              
+              // Combine notes
+              if (data.notes || data.cellaring || data.pairings) {
+                let combinedNotes = '';
+                
+                if (data.notes) {
+                  combinedNotes += data.notes + '\n\n';
+                }
+                
+                if (data.cellaring) {
+                  combinedNotes += 'Cellaring: ' + data.cellaring + '\n\n';
+                }
+                
+                if (data.pairings) {
+                  combinedNotes += 'Pairings: ' + data.pairings;
+                }
+                
+                if (combinedNotes) {
+                  form.setValue("notes", combinedNotes.trim());
+                }
+              }
+              
+              // Show success message
+              toast({
+                title: "Wine Enhanced with AI",
+                description: `Successfully enhanced wine data with drinking window ${data.start}-${data.end}`,
+                variant: "default"
+              });
+            } else {
+              toast({
+                title: "Enhancement Failed",
+                description: result.message || "Could not enhance wine data.",
+                variant: "destructive"
+              });
+            }
+          } catch (error) {
+            console.error("Error enhancing wine data:", error);
+            toast({
+              title: "Error",
+              description: "There was a problem enhancing the wine data. Please try again.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsEnhancingWithAI(false);
+          }
         }}
         isEnhancingWithAI={isEnhancingWithAI}
         onProcessBottle={(bottle, index, total, addToCollection = false) => {

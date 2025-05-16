@@ -79,6 +79,8 @@ export function MultiBottleWizard({
   const [hasEdits, setHasEdits] = useState(false);
   const [editedBottlesMap, setEditedBottlesMap] = useState<{[index: number]: WineBottleData}>({});
   const [showSummary, setShowSummary] = useState(false);
+  const [showEnhancementResults, setShowEnhancementResults] = useState(false);
+  const [aiEnhancementResults, setAiEnhancementResults] = useState<any>(null);
   const { toast } = useToast();
 
   // Calculate progress percentage
