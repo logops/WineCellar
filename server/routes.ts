@@ -14,6 +14,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation, handleWineInformationLookup } from './anthropic';
+import { handleWineLabelForRemoval } from './removeByLabel';
 import { 
   processSpreadsheetFile, 
   processBatchFromFile, 
