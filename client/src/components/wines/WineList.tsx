@@ -427,6 +427,22 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
             </div>
           </DialogContent>
         </Dialog>
+        
+        {/* Wine Detail Dialog - shown when clicking a wine in spreadsheet view */}
+        <Dialog open={selectedWineId !== null} onOpenChange={() => setSelectedWineId(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-serif text-gray-800">Wine Details</DialogTitle>
+            </DialogHeader>
+            {selectedWineId && (
+              <div className="py-4">
+                {sortedWines.filter(wine => wine.id === selectedWineId).map(wine => (
+                  <WineListItem key={wine.id} wine={wine} onUpdate={() => refetch()} />
+                ))}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
