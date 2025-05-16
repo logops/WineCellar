@@ -1580,14 +1580,20 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                     <AlertDialogHeader>
                       <AlertDialogTitle>AI Wine Analysis</AlertDialogTitle>
                       <AlertDialogDescription>
-                        AI has analyzed your wine and found the following information. Would you like to apply these enhancements?
+                        AI has analyzed your wine and found the following information. Fields highlighted in green will be updated with the enhanced data. Would you like to apply these enhancements?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4 space-y-5">
                       {aiEnhancementResult && (
                         <>
                           {/* Drinking Window Section */}
-                          <div className="p-3 border rounded-md bg-cream-50">
+                          <div className="p-3 border rounded-md bg-cream-50 relative">
+                            {aiEnhancementResult.start && aiEnhancementResult.end && (
+                              <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center">
+                                <span className="mr-1">Will update</span>
+                                <Sparkles className="h-3 w-3" />
+                              </div>
+                            )}
                             <h4 className="font-medium mb-2 text-burgundy-700">Recommended Drinking Window</h4>
                             <p className="font-medium">
                               {aiEnhancementResult.start} - {aiEnhancementResult.end}
@@ -1601,32 +1607,42 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           </div>
                           
                           {/* Wine Information Section */}
-                          <div className="p-3 border rounded-md">
+                          <div className="p-3 border rounded-md relative">
                             <h4 className="font-medium mb-2 text-burgundy-700">Wine Information</h4>
+                            
+                            {/* Indicator that fields will be updated */}
+                            {(aiEnhancementResult.grapeVarieties || aiEnhancementResult.region || 
+                              aiEnhancementResult.subregion || aiEnhancementResult.wineType) && (
+                              <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center">
+                                <span className="mr-1">Will update</span>
+                                <Sparkles className="h-3 w-3" />
+                              </div>
+                            )}
+                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {aiEnhancementResult.grapeVarieties && (
-                                <div>
+                                <div className="border-l-2 border-green-500 pl-2">
                                   <span className="font-medium">Grape Varieties:</span>
                                   <p className="text-sm">{aiEnhancementResult.grapeVarieties}</p>
                                 </div>
                               )}
                               
                               {aiEnhancementResult.region && (
-                                <div>
+                                <div className="border-l-2 border-green-500 pl-2">
                                   <span className="font-medium">Region:</span>
                                   <p className="text-sm">{aiEnhancementResult.region}</p>
                                 </div>
                               )}
                               
                               {aiEnhancementResult.subregion && (
-                                <div>
+                                <div className="border-l-2 border-green-500 pl-2">
                                   <span className="font-medium">Sub-region:</span>
                                   <p className="text-sm">{aiEnhancementResult.subregion}</p>
                                 </div>
                               )}
                               
                               {aiEnhancementResult.wineType && (
-                                <div>
+                                <div className="border-l-2 border-green-500 pl-2">
                                   <span className="font-medium">Wine Type:</span>
                                   <p className="text-sm">{aiEnhancementResult.wineType}</p>
                                 </div>
@@ -1636,25 +1652,31 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                           
                           {/* Additional Information Section */}
                           {(aiEnhancementResult.notes || aiEnhancementResult.cellaring || aiEnhancementResult.pairings) && (
-                            <div className="p-3 border rounded-md">
+                            <div className="p-3 border rounded-md relative">
                               <h4 className="font-medium mb-2 text-burgundy-700">Additional Information</h4>
                               
+                              {/* Indicator that notes will be updated */}
+                              <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center">
+                                <span className="mr-1">Will update</span>
+                                <Sparkles className="h-3 w-3" />
+                              </div>
+                              
                               {aiEnhancementResult.notes && (
-                                <div className="mb-3">
+                                <div className="mb-3 border-l-2 border-green-500 pl-2">
                                   <span className="font-medium">Tasting Notes:</span>
                                   <p className="text-sm">{aiEnhancementResult.notes}</p>
                                 </div>
                               )}
                               
                               {aiEnhancementResult.cellaring && (
-                                <div className="mb-3">
+                                <div className="mb-3 border-l-2 border-green-500 pl-2">
                                   <span className="font-medium">Cellaring:</span>
                                   <p className="text-sm">{aiEnhancementResult.cellaring}</p>
                                 </div>
                               )}
                               
                               {aiEnhancementResult.pairings && (
-                                <div>
+                                <div className="border-l-2 border-green-500 pl-2">
                                   <span className="font-medium">Food Pairings:</span>
                                   <p className="text-sm">{aiEnhancementResult.pairings}</p>
                                 </div>
