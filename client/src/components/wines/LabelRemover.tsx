@@ -1,394 +1,342 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Loader2, Camera, Upload, Trash, X } from "lucide-react";
-import { Wine } from "@shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import {
+  Camera,
+  Upload,
+  X,
+  Trash,
+  Loader2
+} from "lucide-react";
+import { Wine } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
-import WineGlassIcon from "./WineGlassIcon";
-import { formatPrice, parseDrinkingWindow } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { formatPrice } from "@/lib/utils";
+import { WineGlassIcon } from "@/components/icons/wine-glass-icon";
+import { parseDrinkingWindow } from "@/lib/date-utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Internal component for displaying matched wines
-interface WineMatchCardProps {
-  wine: Wine;
-  isSelected: boolean;
-  onToggleSelect: () => void;
-}
-
-function WineMatchCard({ wine, isSelected, onToggleSelect }: WineMatchCardProps) {
-  return (
-    <div 
-      className={`border rounded-md p-4 transition-colors duration-200 
-        ${isSelected ? 'border-burgundy-400 bg-burgundy-50' : 'border-gray-200 hover:border-burgundy-200'}`}
-    >
-      <div className="flex items-start gap-3">
-        <div className="pt-1">
-          <Checkbox 
-            checked={isSelected} 
-            onCheckedChange={() => onToggleSelect()}
-            className="data-[state=checked]:bg-burgundy-600 data-[state=checked]:border-burgundy-600"
-          />
-        </div>
-        
-        <div className="flex flex-1 gap-4">
-          <div className="flex-shrink-0">
-            <WineGlassIcon type={wine.type} />
-          </div>
-          
-          <div className="flex-1">
-            <h3 className="font-serif text-base text-gray-800">
-              {wine.vintage && <span>{wine.vintage} </span>}
-              {wine.producer}{" "}
-              {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
-              {wine.name || (wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim())}
-            </h3>
-            
-            <div className="mt-1 text-sm text-gray-500">
-              {wine.grapeVarieties && <span>{wine.grapeVarieties} · </span>}
-              {wine.region && <span className="font-medium">{wine.region}</span>}
-              {wine.subregion && <span className="text-gray-400 ml-1">({wine.subregion})</span>}
-            </div>
-            
-            <div className="flex flex-wrap mt-2 gap-x-4 gap-y-1 text-xs text-gray-500">
-              <div>
-                {wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''} · {wine.bottleSize}
-              </div>
-              
-              {wine.drinkingWindowStart && wine.drinkingWindowEnd && (
-                <div>
-                  Drinking Window: {parseDrinkingWindow(wine.drinkingWindowStart, wine.drinkingWindowEnd)}
-                </div>
-              )}
-              
-              {wine.currentValue && (
-                <div>
-                  Value: {formatPrice(wine.currentValue)}
-                </div>
-              )}
-              
-              {wine.storageLocation && (
-                <div>
-                  Location: {wine.storageLocation}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Main component for removing wines by label
+// Add types for the LabelRemover component
 interface LabelRemoverProps {
   onComplete?: () => void;
 }
 
 export default function LabelRemover({ onComplete }: LabelRemoverProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
   const [matchedWines, setMatchedWines] = useState<Wine[]>([]);
-  const [selectedWineIds, setSelectedWineIds] = useState<number[]>([]);
-  const [notes, setNotes] = useState<string>("");
+  const [selectedWineIds, setSelectedWineIds] = useState<Set<number>>(new Set());
+  const [removalNotes, setRemovalNotes] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
+  
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      
+      // Create an image preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string);
+        setImagePreview(reader.result as string);
       };
-      reader.readAsDataURL(selectedFile);
+      reader.readAsDataURL(file);
     }
   };
-
+  
   // Handle camera capture
   const handleCameraCapture = async () => {
     try {
+      setIsCapturing(true);
+      
+      // Using the MediaDevices API to access the camera
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // This would typically open a camera UI component
-      // For now, we'll just simulate by opening the file dialog
-      document.getElementById('file-upload')?.click();
-      // Don't forget to stop the stream in a real implementation
-      stream.getTracks().forEach(track => track.stop());
-    } catch (error) {
-      toast({
-        title: "Camera Access Error",
-        description: "Could not access your camera. Please check permissions.",
-        variant: "destructive",
+      
+      // Create a video element to display the camera stream
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
+      
+      // Wait for the video to be ready
+      await new Promise(resolve => {
+        video.onplaying = resolve;
       });
+      
+      // Create a canvas to capture the frame
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw the current frame to the canvas
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert the canvas to a blob
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob(blob => {
+          if (blob) resolve(blob);
+          else throw new Error("Failed to create image blob");
+        }, 'image/jpeg', 0.95);
+      });
+      
+      // Create a file from the blob
+      const capturedFile = new File([blob], "captured-wine-label.jpg", { type: 'image/jpeg' });
+      setSelectedFile(capturedFile);
+      
+      // Create a preview
+      setImagePreview(canvas.toDataURL('image/jpeg'));
+      
+      // Stop all video tracks
+      stream.getTracks().forEach(track => track.stop());
+      
+    } catch (error) {
+      console.error('Error capturing image:', error);
+      toast({
+        title: "Camera Error",
+        description: "Could not access camera. Please check permissions or try uploading an image.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCapturing(false);
     }
   };
-
-  // Analyze the wine label image
-  const analyzeLabelMutation = useMutation({
+  
+  // Clear the selected file and preview
+  const clearSelection = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    setMatchedWines([]);
+    setSelectedWineIds(new Set());
+  };
+  
+  // Handle wine analysis from label
+  const analyzeWineMutation = useMutation({
     mutationFn: async () => {
-      if (!file) return null;
+      if (!selectedFile) return;
       
-      setIsAnalyzing(true);
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', selectedFile);
       
-      // Simulate API call response for now
-      // In production, this would be a real API call
-      return new Promise<any>((resolve) => {
-        setTimeout(() => {
-          // Mock response with sample data
-          resolve({
-            success: true,
-            matchedWines: [
-              { 
-                id: 1, 
-                producer: "Château Margaux", 
-                name: "Grand Vin", 
-                vintage: 2015,
-                region: "Bordeaux",
-                subregion: "Margaux",
-                grapeVarieties: "Cabernet Sauvignon, Merlot",
-                quantity: 2,
-                bottleSize: "750ml",
-                type: "red",
-                drinkingWindowStart: "2025-01-01",
-                drinkingWindowEnd: "2040-12-31"
-              },
-              {
-                id: 2,
-                producer: "Château Latour",
-                name: "Premier Grand Cru Classé",
-                vintage: 2016,
-                region: "Bordeaux",
-                subregion: "Pauillac",
-                grapeVarieties: "Cabernet Sauvignon",
-                quantity: 1,
-                bottleSize: "750ml",
-                type: "red",
-                drinkingWindowStart: "2026-01-01",
-                drinkingWindowEnd: "2046-12-31"
-              }
-            ]
-          });
-        }, 1500);
-      });
+      const response = await apiRequest('POST', '/api/analyze-for-removal', formData);
+      
+      return response.json();
     },
     onSuccess: (data) => {
-      if (data && data.matchedWines && data.matchedWines.length > 0) {
+      if (data.matchedWines && data.matchedWines.length > 0) {
         setMatchedWines(data.matchedWines);
+        // Pre-select all matched wines
+        setSelectedWineIds(new Set(data.matchedWines.map((wine: Wine) => wine.id)));
       } else {
         toast({
           title: "No Matches Found",
-          description: "We couldn't match any wines in your cellar with this label.",
-          variant: "destructive",
+          description: "No wines in your cellar match this label. Try another photo or add this wine first.",
+          variant: "destructive"
         });
       }
-      setIsAnalyzing(false);
     },
     onError: (error) => {
+      console.error('Error analyzing wine label:', error);
       toast({
         title: "Analysis Failed",
-        description: error.message || "There was a problem analyzing the wine label.",
-        variant: "destructive",
+        description: "Could not analyze the wine label. Please try again.",
+        variant: "destructive"
       });
-      setIsAnalyzing(false);
     }
   });
-
+  
   // Toggle wine selection
   const toggleWineSelection = (wineId: number) => {
-    setSelectedWineIds(prev => {
-      if (prev.includes(wineId)) {
-        return prev.filter(id => id !== wineId);
-      } else {
-        return [...prev, wineId];
-      }
-    });
+    const newSelection = new Set(selectedWineIds);
+    if (newSelection.has(wineId)) {
+      newSelection.delete(wineId);
+    } else {
+      newSelection.add(wineId);
+    }
+    setSelectedWineIds(newSelection);
   };
-
-  // Simulated action for now
+  
+  // Remove selected wines
   const removeWinesMutation = useMutation({
     mutationFn: async () => {
-      // Simulate successful removal
-      return new Promise<any>(resolve => {
-        setTimeout(() => {
-          resolve({ success: true });
-        }, 800);
+      const wineIds = Array.from(selectedWineIds);
+      
+      const response = await apiRequest('POST', '/api/wines/remove-multiple', {
+        wineIds,
+        notes: removalNotes || "Removed using label recognition"
       });
+      
+      return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Wines Removed",
-        description: `Successfully removed ${selectedWineIds.length} wine(s) from your cellar.`,
-      });
+      // Invalidate the wines query to refresh the collection
       queryClient.invalidateQueries({ queryKey: ['/api/wines'] });
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
-      setFile(null);
-      setPreview(null);
-      setMatchedWines([]);
-      setSelectedWineIds([]);
+      
+      toast({
+        title: "Success",
+        description: `Successfully removed ${selectedWineIds.size} wine${selectedWineIds.size !== 1 ? 's' : ''} from your collection.`,
+      });
+      
+      // Reset the component state
+      clearSelection();
+      setRemovalNotes("");
+      
+      // Call onComplete if provided
       if (onComplete) onComplete();
     },
     onError: (error) => {
+      console.error('Error removing wines:', error);
       toast({
         title: "Removal Failed",
-        description: error.message || "There was a problem removing the selected wines.",
-        variant: "destructive",
+        description: "Could not remove the selected wines. Please try again.",
+        variant: "destructive"
       });
     }
   });
-
-  const handleRemoveSelected = () => {
-    if (selectedWineIds.length === 0) {
-      toast({
-        title: "No Wines Selected",
-        description: "Please select at least one wine to remove.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    removeWinesMutation.mutate();
-  };
-
-  const resetProcess = () => {
-    setFile(null);
-    setPreview(null);
-    setMatchedWines([]);
-    setSelectedWineIds([]);
-  };
-
+  
   return (
-    <div className="p-4">
-      {!preview && (
-        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg mb-6">
-          <p className="text-gray-500 mb-4">Upload a photo of wine label(s) to find and remove from your cellar</p>
-          
-          <div className="flex space-x-4">
+    <div className="flex flex-col space-y-4">
+      {/* Image selection area */}
+      {!imagePreview && (
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex space-x-2">
             <Button 
               onClick={handleCameraCapture}
-              className="bg-burgundy-600 hover:bg-burgundy-700"
+              disabled={isCapturing}
+              className="w-1/2"
             >
               <Camera className="mr-2 h-4 w-4" />
               Take Photo
             </Button>
-            
             <Button 
-              onClick={() => document.getElementById('file-upload')?.click()}
-              variant="outline"
-              className="border-burgundy-300 text-burgundy-700"
+              onClick={() => document.getElementById('label-upload')?.click()}
+              className="w-1/2"
             >
               <Upload className="mr-2 h-4 w-4" />
               Upload Image
             </Button>
-            
-            <input
-              id="file-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
           </div>
+          <input
+            id="label-upload"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
       )}
       
-      {preview && (
-        <div className="mb-6">
+      {/* Image preview and analysis area */}
+      {imagePreview && (
+        <div className="flex flex-col space-y-4">
           <div className="relative">
             <img 
-              src={preview} 
-              alt="Wine label preview" 
-              className="max-h-64 rounded-lg mx-auto"
+              src={imagePreview} 
+              alt="Wine Label" 
+              className="w-full h-auto rounded-md border border-border"
             />
             <Button
-              variant="outline"
-              size="sm"
-              className="absolute top-2 right-2 bg-white opacity-80 hover:opacity-100"
-              onClick={resetProcess}
+              variant="ghost"
+              size="icon"
+              className="absolute top-1 right-1 bg-background/80 rounded-full h-8 w-8"
+              onClick={clearSelection}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
           
-          {matchedWines.length === 0 && !isAnalyzing && (
-            <div className="mt-4 flex justify-center">
-              <Button 
-                onClick={() => analyzeLabelMutation.mutate()}
-                className="bg-burgundy-600 hover:bg-burgundy-700"
-                disabled={isAnalyzing}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>Analyze Label</>
-                )}
-              </Button>
-            </div>
+          {matchedWines.length === 0 && (
+            <Button
+              onClick={() => analyzeWineMutation.mutate()}
+              disabled={analyzeWineMutation.isPending || matchedWines.length > 0}
+              className="w-full font-serif"
+            >
+              {analyzeWineMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing Wine Label...
+                </>
+              ) : (
+                "Find Matching Wines"
+              )}
+            </Button>
           )}
         </div>
       )}
       
-      {isAnalyzing && (
-        <div className="flex flex-col items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-burgundy-600 mb-4" />
-          <p className="text-gray-600">Analyzing wine label and searching your cellar...</p>
-        </div>
-      )}
-      
+      {/* Matched wines list */}
       {matchedWines.length > 0 && (
-        <div>
-          <h3 className="font-medium text-lg mb-3">Matched Wines in Your Cellar</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Select the wines you want to remove. You can select multiple bottles if they match.
-          </p>
+        <div className="space-y-4">
+          <h3 className="text-lg font-serif font-medium">Matched Wines</h3>
           
-          <div className="space-y-3 mb-6">
-            {matchedWines.map(wine => (
-              <WineMatchCard
-                key={wine.id}
-                wine={wine}
-                isSelected={selectedWineIds.includes(wine.id)}
-                onToggleSelect={() => toggleWineSelection(wine.id)}
-              />
-            ))}
-          </div>
+          <ScrollArea className="max-h-[300px] pr-3">
+            <div className="space-y-3">
+              {matchedWines.map((wine) => (
+                <div 
+                  key={wine.id} 
+                  className="flex items-start p-3 border border-border rounded-lg bg-card"
+                >
+                  <Checkbox 
+                    checked={selectedWineIds.has(wine.id)}
+                    onCheckedChange={() => toggleWineSelection(wine.id)}
+                    className="mt-1 mr-3"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <WineGlassIcon type={wine.type} className="h-5 w-5 mr-2" />
+                      <h4 className="font-medium line-clamp-2">
+                        {wine.vintage} {wine.producer} {wine.name}
+                      </h4>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {wine.region}{wine.subregion ? `, ${wine.subregion}` : ""}
+                    </div>
+                    <div className="text-sm mt-1">
+                      <span className="font-medium">In Cellar:</span> {wine.quantity} {wine.quantity === 1 ? 'bottle' : 'bottles'}
+                    </div>
+                    {wine.purchasePrice && (
+                      <div className="text-sm">
+                        <span className="font-medium">Price:</span> {formatPrice(wine.purchasePrice)}
+                      </div>
+                    )}
+                    {(wine.drinkingWindowStart || wine.drinkingWindowEnd) && (
+                      <div className="text-sm">
+                        <span className="font-medium">Drinking Window:</span> {parseDrinkingWindow(wine)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
           
-          <div className="mt-4 mb-6">
-            <label htmlFor="consumption-notes" className="block text-sm font-medium text-gray-700 mb-1">
-              Consumption Notes (Optional)
-            </label>
+          <div className="space-y-3">
             <Textarea
-              id="consumption-notes"
-              placeholder="Add notes about these wines (e.g., occasion, tasting notes, who you shared them with)"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[100px]"
+              placeholder="Add notes about why you're removing these wines (optional)"
+              value={removalNotes}
+              onChange={(e) => setRemovalNotes(e.target.value)}
+              className="min-h-[80px]"
             />
-          </div>
-          
-          <div className="flex justify-end">
+            
             <Button
+              onClick={() => removeWinesMutation.mutate()}
+              disabled={selectedWineIds.size === 0 || removeWinesMutation.isPending}
+              className="w-full font-serif"
               variant="destructive"
-              onClick={handleRemoveSelected}
-              disabled={removeWinesMutation.isPending || selectedWineIds.length === 0}
             >
               {removeWinesMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Removing...
+                  Removing Wines...
                 </>
               ) : (
                 <>
                   <Trash className="mr-2 h-4 w-4" />
-                  Remove Selected ({selectedWineIds.length})
+                  Remove {selectedWineIds.size} {selectedWineIds.size === 1 ? 'Wine' : 'Wines'}
                 </>
               )}
             </Button>

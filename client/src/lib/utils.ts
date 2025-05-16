@@ -1,83 +1,108 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, parseISO } from "date-fns";
 
+/**
+ * Combines multiple class values into a single string
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Format date with fallback for null/undefined
-export function formatDate(date: Date | string | null | undefined, formatStr: string = "MMM d, yyyy"): string {
-  if (!date) return "N/A";
+/**
+ * Format a number as a price with a dollar sign
+ */
+export function formatPrice(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '';
   
-  try {
-    const dateObj = typeof date === "string" ? parseISO(date) : date;
-    return format(dateObj, formatStr);
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Invalid date";
-  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
-// Format price with currency symbol
-export function formatPrice(price: number | null | undefined, currency: string = "$"): string {
-  if (price === null || price === undefined) return "N/A";
-  return `${currency}${price.toFixed(2)}`;
+/**
+ * Format a date string as MonthName Day, Year
+ */
+export function formatDate(dateString: string | Date | null | undefined): string {
+  if (!dateString) return '';
+  
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric', 
+    year: 'numeric'
+  }).format(date);
 }
 
-// Get wine type icon color class
-export function getWineTypeColorClass(type: string): string {
-  switch (type.toLowerCase()) {
-    case 'red':
-      return 'wine-glass-red';
-    case 'white':
-      return 'wine-glass-white';
-    case 'rose':
-    case 'rosé':
-      return 'wine-glass-rose';
-    case 'sparkling':
-    case 'champagne':
-      return 'wine-glass-sparkling';
-    default:
-      return 'text-gray-400';
-  }
+/**
+ * Truncate text to a maximum length
+ */
+export function truncateText(text: string, maxLength: number): string {
+  if (!text || text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
 }
 
-// Get readable name from snake_case or camelCase
-export function getReadableName(name: string): string {
-  // Replace underscores and hyphens with spaces
-  let readable = name.replace(/[_-]/g, ' ');
+/**
+ * Convert a string to title case
+ */
+export function toTitleCase(text: string): string {
+  if (!text) return '';
   
-  // Handle camelCase
-  readable = readable.replace(/([a-z])([A-Z])/g, '$1 $2');
-  
-  // Capitalize first letter of each word
-  return readable
+  return text
+    .toLowerCase()
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
-// Parse drinking window from string or date
-export function parseDrinkingWindow(
-  start: Date | string | null | undefined,
-  end: Date | string | null | undefined
-): string {
-  if (!start && !end) return "Not specified";
+/**
+ * Normalize a wine type to a standard format
+ */
+export function normalizeWineType(type: string | null | undefined): string {
+  if (!type) return 'Red';
   
-  const startDate = start ? new Date(start).getFullYear() : "Now";
-  const endDate = end ? new Date(end).getFullYear() : "Unknown";
+  const normalizedType = type.toLowerCase().trim();
   
-  return `${startDate} - ${endDate}`;
+  if (normalizedType.includes('red')) return 'Red';
+  if (normalizedType.includes('white')) return 'White';
+  if (normalizedType.includes('rose') || normalizedType.includes('rosé')) return 'Rosé';
+  if (normalizedType.includes('sparkling') || normalizedType.includes('champagne')) return 'Sparkling';
+  if (normalizedType.includes('dessert') || normalizedType.includes('sweet')) return 'Dessert';
+  if (normalizedType.includes('fortified') || normalizedType.includes('port')) return 'Fortified';
+  
+  return 'Red'; // Default to red
 }
 
-// Sum values in an array
-export function sumArray(arr: number[]): number {
-  return arr.reduce((sum, value) => sum + value, 0);
+/**
+ * Generate a display name for a wine
+ */
+export function getWineDisplayName(wine: any): string {
+  const parts = [];
+  
+  if (wine.vintage) parts.push(wine.vintage);
+  if (wine.producer) parts.push(wine.producer);
+  if (wine.name) parts.push(wine.name);
+  
+  return parts.join(' ');
 }
 
-// Calculate percentage
-export function calculatePercentage(value: number, total: number): number {
-  if (total === 0) return 0;
-  return Math.round((value / total) * 100);
+/**
+ * Get a CSS color class based on wine type
+ */
+export function getWineTypeColorClass(type: string | null | undefined): string {
+  if (!type) return 'text-red-800';
+  
+  const normalizedType = type.toLowerCase().trim();
+  
+  if (normalizedType.includes('red')) return 'text-red-800';
+  if (normalizedType.includes('white')) return 'text-amber-600';
+  if (normalizedType.includes('rose') || normalizedType.includes('rosé')) return 'text-pink-500';
+  if (normalizedType.includes('sparkling') || normalizedType.includes('champagne')) return 'text-yellow-500';
+  if (normalizedType.includes('dessert') || normalizedType.includes('sweet')) return 'text-amber-900';
+  if (normalizedType.includes('fortified') || normalizedType.includes('port')) return 'text-purple-900';
+  
+  return 'text-red-800'; // Default to red
 }
