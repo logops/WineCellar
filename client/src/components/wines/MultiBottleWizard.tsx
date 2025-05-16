@@ -611,7 +611,7 @@ export function MultiBottleWizard({
                   <Pencil className="mr-1 h-4 w-4" />
                   Edit
                 </Button>
-                {onEnhanceWithAI && (
+                {onEnhanceWithAI && currentBottle && currentBottle.producer && (
                   <Button
                     onClick={() => onEnhanceWithAI(currentBottle)}
                     disabled={isEnhancingWithAI}
@@ -633,14 +633,16 @@ export function MultiBottleWizard({
                   </Button>
                 )}
               </div>
-              <Button 
-                onClick={handleProcessBottle}
-                className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
-                size="sm"
-              >
-                Add to Queue
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
+              <div>
+                <Button 
+                  onClick={handleProcessBottle}
+                  className="bg-burgundy-600 hover:bg-burgundy-700 text-white"
+                  size="sm"
+                >
+                  Add to Queue
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
             </>
           ) : (
             // Edit mode buttons
