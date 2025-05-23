@@ -5,6 +5,7 @@ import { InsertWine, Wine } from '@shared/schema';
 import { db } from './db';
 import { storage } from './storage';
 import { identifySpreadsheetColumns } from './anthropic';
+import { verifyWineInformation } from './wineVerification';
 import Anthropic from '@anthropic-ai/sdk';
 import { anthropic } from './anthropic';
 import { 
@@ -60,6 +61,25 @@ export interface ProcessedWine {
   storageLocation?: string;
   producerVerified?: boolean;
   originalProducer?: string;
+  wineVerification?: {
+    originalInput: string;
+    matches: Array<{
+      fullName: string;
+      producer: string;
+      vintage: number;
+      name: string;
+      region: string;
+      subregion?: string;
+      country: string;
+      grapeVarieties: string;
+      type: string;
+      confidence: number;
+      source: string;
+    }>;
+    isExactMatch: boolean;
+    needsUserSelection: boolean;
+    selectedMatch?: any;
+  };
   aiDrinkingWindowRecommendation?: {
     start?: string;
     end?: string;
@@ -555,6 +575,33 @@ export function identifyColumnMappings(data: any[]): FieldMapping[] {
   }
   
   return mappings;
+}
+
+/**
+ * Verify wine information during import
+ */
+async function verifyWineInImport(mappedData: Partial<InsertWine>): Promise<any> {
+  try {
+    // Create wine input string from mapped data
+    const parts = [];
+    if (mappedData.vintage && mappedData.vintage > 0) parts.push(mappedData.vintage);
+    if (mappedData.producer) parts.push(mappedData.producer);
+    if (mappedData.name) parts.push(mappedData.name);
+    
+    const wineInput = parts.join(' ').trim();
+    
+    if (!wineInput || wineInput.length < 5) {
+      return null; // Skip verification for incomplete wine data
+    }
+    
+    console.log(`Verifying wine: ${wineInput}`);
+    const verificationResult = await verifyWineInformation(wineInput);
+    
+    return verificationResult;
+  } catch (error) {
+    console.error('Wine verification error during import:', error);
+    return null;
+  }
 }
 
 /**
