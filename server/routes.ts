@@ -14,7 +14,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation, handleWineInformationLookup } from './anthropic';
-import { handleWineVerification, handleBatchWineVerification } from './wineVerification';
+
 import { analyzeWineLabelForRemoval } from './labelMatching';
 import { 
   processSpreadsheetFile, 
@@ -367,9 +367,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Wine verification routes
-  app.post('/api/wines/verify', isAuthenticated, handleWineVerification);
-  app.post('/api/wines/verify-batch', isAuthenticated, handleBatchWineVerification);
+
+
 
   // Consumption routes
   app.get('/api/consumptions', isAuthenticated, async (req: Request, res: Response) => {

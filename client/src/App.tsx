@@ -16,7 +16,7 @@ import Recommendations from "@/pages/Recommendations";
 import Import from "@/pages/Import";
 import RemoveByLabelPage from "@/pages/RemoveByLabelPage";
 import SimpleRemoveByLabel from "@/pages/SimpleRemoveByLabel";
-import WineVerificationTestPage from "@/pages/WineVerificationTestPage";
+
 import AuthPage from "@/pages/auth-page";
 import { useState } from "react";
 import MobileMenu from "@/components/layout/MobileMenu";
@@ -51,7 +51,7 @@ function App() {
                   <ProtectedRoute path="/recommendations" component={Recommendations} />
                   <ProtectedRoute path="/import" component={Import} />
                   <ProtectedRoute path="/remove-by-label" component={RemoveByLabelPage} />
-                  <ProtectedRoute path="/wine-verification-test" component={WineVerificationTestPage} />
+
                   <Route path="/auth" component={AuthPage} />
                   <Route component={NotFound} />
                 </Switch>
