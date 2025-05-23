@@ -5,6 +5,7 @@ import { InsertWine, Wine } from '@shared/schema';
 import { db } from './db';
 import { storage } from './storage';
 import { identifySpreadsheetColumns } from './anthropic';
+import { findSmartWineMatches } from './smartWineMatching';
 import Anthropic from '@anthropic-ai/sdk';
 import { anthropic } from './anthropic';
 import { 
@@ -60,6 +61,22 @@ export interface ProcessedWine {
   storageLocation?: string;
   producerVerified?: boolean;
   originalProducer?: string;
+  lwinMatches?: {
+    query: string;
+    exactMatch: boolean;
+    matches: Array<{
+      producer: string;
+      wineName: string;
+      vintage?: number;
+      region?: string;
+      country?: string;
+      type?: string;
+      confidence: number;
+      source: string;
+    }>;
+    needsUserSelection: boolean;
+    selectedMatch?: any;
+  };
 
   aiDrinkingWindowRecommendation?: {
     start?: string;
