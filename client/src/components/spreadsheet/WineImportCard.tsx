@@ -44,25 +44,7 @@ interface WineData {
   storageLocation?: string;
   producerVerified?: boolean;
   originalProducer?: string;
-  wineVerification?: {
-    originalInput: string;
-    matches: Array<{
-      fullName: string;
-      producer: string;
-      vintage: number;
-      name: string;
-      region: string;
-      subregion?: string;
-      country: string;
-      grapeVarieties: string;
-      type: string;
-      confidence: number;
-      source: string;
-    }>;
-    isExactMatch: boolean;
-    needsUserSelection: boolean;
-    selectedMatch?: any;
-  };
+
   aiDrinkingWindowRecommendation?: {
     start?: string;
     end?: string;
