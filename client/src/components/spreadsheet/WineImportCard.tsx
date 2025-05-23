@@ -91,7 +91,7 @@ interface WineImportCardProps {
   onSelect?: (rowIndex: number) => void;
 }
 
-export function WineImportCard({ 
+export default function WineImportCard({ 
   wine, 
   onApprove, 
   onReject, 
