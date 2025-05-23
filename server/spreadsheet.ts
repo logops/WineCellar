@@ -1280,7 +1280,9 @@ export async function processBatch(
     if (mappedData.producer && (mappedData.name || mappedData.grapeVarieties)) {
       try {
         const query = `${mappedData.vintage || ''} ${mappedData.producer} ${mappedData.name || mappedData.grapeVarieties}`.trim();
+        console.log('🍷 Searching LWIN database for:', query);
         const matches = await findSmartWineMatches(query, 3);
+        console.log('🔍 LWIN search results:', matches.length, 'matches found');
         
         if (matches.length > 0) {
           const exactMatch = matches.length === 1 && matches[0].confidence > 0.9;
