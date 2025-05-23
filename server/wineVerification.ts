@@ -71,8 +71,16 @@ If you find an exact match with 100% confidence, set isExactMatch to true and ne
 
     const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
     
-    // Parse the JSON response
-    const verificationData = JSON.parse(responseText);
+    // Parse the JSON response - handle markdown formatting
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    }
+    if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    const verificationData = JSON.parse(cleanedResponse);
     
     return {
       originalInput: wineInput,

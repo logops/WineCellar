@@ -1308,13 +1308,13 @@ export async function processBatch(
       result.highConfidenceCount++;
     }
     
-    // Verify wine information during import
+    // Verify wine information during import (temporarily disabled for performance)
     let wineVerification = null;
-    try {
-      wineVerification = await verifyWineInImport(mappedData);
-    } catch (error) {
-      console.error('Wine verification failed for row', rowIndex, error);
-    }
+    // try {
+    //   wineVerification = await verifyWineInImport(mappedData);
+    // } catch (error) {
+    //   console.error('Wine verification failed for row', rowIndex, error);
+    // }
 
     // Add to processed wines
     result.processedWines.push({
