@@ -1157,6 +1157,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Smart wine matching endpoint using LWIN database
   app.post('/api/wines/smart-match', isAuthenticated, handleWineMatchingRequest);
+  
+  // Test endpoint for wine matching (GET request for easy browser testing)
+  app.get('/api/test-wine-match/:query', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const query = decodeURIComponent(req.params.query);
+      const { findSmartWineMatches } = await import('./smartWineMatching');
+      const matches = await findSmartWineMatches(query, 3);
+      res.json({
+        query,
+        matchCount: matches.length,
+        matches: matches
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Unknown error',
+        query: req.params.query
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
