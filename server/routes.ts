@@ -1098,11 +1098,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process the batch with AI column mapping if requested
       const useAiColumnMapping = req.body.useAiColumnMapping === 'true';
       
+      // Smart batching: limit to 10 wines at a time to prevent crashes
+      const smartBatchSize = Math.min(batchSize, 10);
+      console.log(`Processing batch of ${smartBatchSize} wines (requested: ${batchSize})`);
+      
       const result = await processBatchFromFile(fileBuffer, {
         userId: req.user.id,
         useAiDrinkingWindows,
         startRow: batchIndex,
-        batchSize,
+        batchSize: smartBatchSize,
         fieldMappings,
         useAiColumnMapping,
         sheetIndex // Include selected sheet index if provided

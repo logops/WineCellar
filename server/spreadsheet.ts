@@ -1282,6 +1282,10 @@ export async function processBatch(
       try {
         const query = `${mappedData.vintage || ''} ${mappedData.producer || ''} ${mappedData.name || row.wine || mappedData.grapeVarieties || ''}`.trim();
         console.log('🍷 Searching LWIN database for:', query);
+        
+        // Add small delay to prevent database overload
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const matches = await findSmartWineMatches(query, 3);
         console.log('🔍 LWIN search results:', matches.length, 'matches found');
         
