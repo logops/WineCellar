@@ -29,6 +29,14 @@ function initializeLWINWorkbook() {
     lwinHeaders = headerRow || [];
     
     console.log('LWIN workbook initialized for smart matching');
+    console.log('LWIN headers found:', lwinHeaders.slice(0, 10)); // Show first 10 headers
+    
+    // Quick sample to verify data
+    const worksheet = lwinWorkbook.Sheets[lwinWorkbook.SheetNames[0]];
+    const sampleData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    console.log('LWIN database has', sampleData.length, 'total rows');
+    console.log('Sample row 1:', sampleData[1]);
+    console.log('Sample row 2:', sampleData[2]);
   }
 }
 
