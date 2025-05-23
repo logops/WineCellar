@@ -44,6 +44,22 @@ interface WineData {
   storageLocation?: string;
   producerVerified?: boolean;
   originalProducer?: string;
+  lwinMatches?: {
+    query: string;
+    exactMatch: boolean;
+    matches: Array<{
+      producer: string;
+      wineName: string;
+      vintage?: number;
+      region?: string;
+      country?: string;
+      type?: string;
+      confidence: number;
+      source: string;
+    }>;
+    needsUserSelection: boolean;
+    selectedMatch?: any;
+  };
 
   aiDrinkingWindowRecommendation?: {
     start?: string;
@@ -202,6 +218,51 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="pt-2">
+        {/* LWIN Database Matches */}
+        {wine.lwinMatches && wine.lwinMatches.matches.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center">
+              <Check className="h-4 w-4 mr-1" />
+              {wine.lwinMatches.exactMatch ? 'Exact Match Found' : `${wine.lwinMatches.matches.length} Similar Wines Found`} in Database
+            </h4>
+            <p className="text-xs text-blue-600 mb-3">
+              Searched for: "{wine.lwinMatches.query}"
+            </p>
+            <div className="space-y-2">
+              {wine.lwinMatches.matches.map((match, index) => (
+                <div 
+                  key={index}
+                  className="p-2 bg-white border border-blue-200 rounded cursor-pointer hover:bg-blue-50 transition-colors"
+                  onClick={() => {
+                    // TODO: Handle match selection
+                    console.log('Selected match:', match);
+                  }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-gray-900">
+                        {match.vintage && `${match.vintage} `}{match.producer} {match.wineName}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {match.region && `${match.region}${match.country ? `, ${match.country}` : ''}`}
+                        {match.type && ` • ${match.type}`}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs ml-2">
+                      {Math.round(match.confidence * 100)}% match
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {wine.lwinMatches.needsUserSelection && (
+              <p className="text-xs text-blue-600 mt-2 italic">
+                Click on the correct wine above to use its verified information
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Auto-identification Alerts */}
         {wine.missingRequiredFields.includes('not_wine') && (
           <div className="bg-red-50 text-red-600 p-2 mb-4 rounded border border-red-200 text-sm">
