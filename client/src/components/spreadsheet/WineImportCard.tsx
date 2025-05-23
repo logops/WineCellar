@@ -44,6 +44,25 @@ interface WineData {
   storageLocation?: string;
   producerVerified?: boolean;
   originalProducer?: string;
+  wineVerification?: {
+    originalInput: string;
+    matches: Array<{
+      fullName: string;
+      producer: string;
+      vintage: number;
+      name: string;
+      region: string;
+      subregion?: string;
+      country: string;
+      grapeVarieties: string;
+      type: string;
+      confidence: number;
+      source: string;
+    }>;
+    isExactMatch: boolean;
+    needsUserSelection: boolean;
+    selectedMatch?: any;
+  };
   aiDrinkingWindowRecommendation?: {
     start?: string;
     end?: string;
@@ -206,6 +225,116 @@ const WineImportCard: React.FC<WineImportCardProps> = ({
           <div className="bg-red-50 text-red-600 p-2 mb-4 rounded border border-red-200 text-sm">
             <AlertCircle className="h-4 w-4 inline-block mr-1" />
             This appears to be a non-wine beverage and may not belong in your collection.
+          </div>
+        )}
+        
+        {/* Wine Verification Results */}
+        {wine.wineVerification && wine.wineVerification.needsUserSelection && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h4 className="text-sm font-medium text-blue-800 mb-2">
+              Wine Verification - Multiple matches found
+            </h4>
+            <p className="text-xs text-blue-600 mb-3">
+              We found multiple wines matching "{wine.wineVerification.originalInput}". Please select the correct one:
+            </p>
+            <div className="space-y-2">
+              {wine.wineVerification.matches.map((match, index) => (
+                <div key={index} className="border border-blue-200 rounded p-2 bg-white hover:bg-blue-50 cursor-pointer">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{match.fullName}</p>
+                      <p className="text-xs text-gray-600">
+                        {match.producer} • {match.region}, {match.country}
+                      </p>
+                      {match.grapeVarieties && (
+                        <p className="text-xs text-gray-500">{match.grapeVarieties}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="text-xs">
+                        {Math.round(match.confidence * 100)}% match
+                      </Badge>
+                      <p className="text-xs text-gray-400 mt-1">{match.source}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="mt-2 w-full text-xs"
+                    onClick={() => {
+                      // Apply this match to the wine data
+                      if (setAllProcessedWines) {
+                        const updatedWine = {
+                          ...wine,
+                          mappedData: {
+                            ...wine.mappedData,
+                            producer: match.producer,
+                            name: match.name,
+                            vintage: match.vintage,
+                            region: match.region,
+                            subregion: match.subregion,
+                            grapeVarieties: match.grapeVarieties,
+                            type: match.type
+                          },
+                          wineVerification: {
+                            ...wine.wineVerification,
+                            selectedMatch: match,
+                            needsUserSelection: false
+                          }
+                        };
+                        
+                        const updatedWines = allProcessedWines.map(w => 
+                          w.rowIndex === wine.rowIndex ? updatedWine : w
+                        );
+                        setAllProcessedWines(updatedWines);
+                      }
+                    }}
+                  >
+                    Use This Wine
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="text-xs text-blue-600"
+                onClick={() => {
+                  // Keep original data - user says their input was correct
+                  if (setAllProcessedWines) {
+                    const updatedWine = {
+                      ...wine,
+                      wineVerification: {
+                        ...wine.wineVerification,
+                        needsUserSelection: false,
+                        selectedMatch: null
+                      }
+                    };
+                    
+                    const updatedWines = allProcessedWines.map(w => 
+                      w.rowIndex === wine.rowIndex ? updatedWine : w
+                    );
+                    setAllProcessedWines(updatedWines);
+                  }
+                }}
+              >
+                Keep My Original Entry
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Exact Match Confirmation */}
+        {wine.wineVerification && wine.wineVerification.isExactMatch && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center">
+              <Check className="h-4 w-4 text-green-600 mr-2" />
+              <span className="text-sm font-medium text-green-800">Wine Verified</span>
+            </div>
+            <p className="text-xs text-green-600 mt-1">
+              "{wine.wineVerification.originalInput}" was successfully verified against wine databases.
+            </p>
           </div>
         )}
         
