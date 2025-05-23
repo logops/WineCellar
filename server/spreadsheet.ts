@@ -1275,6 +1275,36 @@ export async function processBatch(
       missingRequiredFields.length > 0 ||
       isPotentialDuplicate;
     
+    // Check for LWIN matches
+    let lwinMatches;
+    if (mappedData.producer && (mappedData.name || mappedData.grapeVarieties)) {
+      try {
+        const query = `${mappedData.vintage || ''} ${mappedData.producer} ${mappedData.name || mappedData.grapeVarieties}`.trim();
+        const matches = await findSmartWineMatches(query, 3);
+        
+        if (matches.length > 0) {
+          const exactMatch = matches.length === 1 && matches[0].confidence > 0.9;
+          lwinMatches = {
+            query,
+            exactMatch,
+            matches: matches.map(match => ({
+              producer: match.producer,
+              wineName: match.wineName,
+              vintage: match.vintage,
+              region: match.region,
+              country: match.country,
+              type: match.type,
+              confidence: match.confidence,
+              source: 'LWIN'
+            })),
+            needsUserSelection: !exactMatch && matches.length > 1
+          };
+        }
+      } catch (error) {
+        console.warn('LWIN matching failed for wine:', error);
+      }
+    }
+
     if (needsVerification) {
       result.needsVerificationCount++;
     } else {
@@ -1291,7 +1321,8 @@ export async function processBatch(
       isPotentialDuplicate,
       duplicateId,
       needsVerification,
-      storageLocation
+      storageLocation,
+      lwinMatches
     });
     
     result.processedRows++;
