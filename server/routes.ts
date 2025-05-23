@@ -16,6 +16,7 @@ import { setupAuth } from "./auth";
 import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation, handleWineInformationLookup } from './anthropic';
 
 import { analyzeWineLabelForRemoval } from './labelMatching';
+import { findWineMatches, findExactWineMatch } from './lwinDatabase';
 import { 
   processSpreadsheetFile, 
   processBatchFromFile, 
