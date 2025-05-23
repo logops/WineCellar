@@ -32,7 +32,6 @@ function initializeLWINWorkbook() {
     console.log('LWIN headers found:', lwinHeaders.slice(0, 10)); // Show first 10 headers
     
     // Quick sample to verify data
-    const worksheet = lwinWorkbook.Sheets[lwinWorkbook.SheetNames[0]];
     const sampleData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
     console.log('LWIN database has', sampleData.length, 'total rows');
     console.log('Sample row 1:', sampleData[1]);
@@ -219,6 +218,22 @@ export async function findSmartWineMatches(searchQuery: string, limit: number = 
       }
     }
     
+    // If no matches found, return the user's original input so they can edit it
+    if (matches.length === 0) {
+      console.log('No LWIN matches found for:', searchQuery, '- returning user input for editing');
+      const parsed = parseWineInput(searchQuery);
+      return [{
+        producer: parsed.producer || '',
+        wineName: parsed.wineName || '',
+        vintage: parsed.vintage,
+        region: '',
+        country: '',
+        type: '',
+        confidence: 0,
+        source: 'user_input'
+      }];
+    }
+    
     // Sort by confidence and return top matches
     return matches
       .sort((a, b) => b.confidence - a.confidence)
@@ -226,7 +241,18 @@ export async function findSmartWineMatches(searchQuery: string, limit: number = 
       
   } catch (error) {
     console.error('Error in smart wine matching:', error);
-    return [];
+    // Even on error, return parsed user input
+    const parsed = parseWineInput(searchQuery);
+    return [{
+      producer: parsed.producer || '',
+      wineName: parsed.wineName || '',
+      vintage: parsed.vintage,
+      region: '',
+      country: '',
+      type: '',
+      confidence: 0,
+      source: 'user_input'
+    }];
   }
 }
 
