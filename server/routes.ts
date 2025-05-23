@@ -16,7 +16,7 @@ import { setupAuth } from "./auth";
 import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation, handleWineInformationLookup } from './anthropic';
 
 import { analyzeWineLabelForRemoval } from './labelMatching';
-import { findWineMatches } from './wineMatching';
+import { handleWineMatchingRequest } from './smartWineMatching';
 import { 
   processSpreadsheetFile, 
   processBatchFromFile, 
@@ -1154,6 +1154,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Smart wine matching endpoint using LWIN database
+  app.post('/api/wines/smart-match', isAuthenticated, handleWineMatchingRequest);
 
   const httpServer = createServer(app);
   return httpServer;
