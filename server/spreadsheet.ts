@@ -1277,7 +1277,7 @@ export async function processBatch(
     
     // Check for LWIN matches
     let lwinMatches;
-    if (mappedData.producer && (mappedData.name || mappedData.grapeVarieties)) {
+    if (mappedData.name || mappedData.producer || mappedData.grapeVarieties) {
       try {
         const query = `${mappedData.vintage || ''} ${mappedData.producer} ${mappedData.name || mappedData.grapeVarieties}`.trim();
         console.log('🍷 Searching LWIN database for:', query);
