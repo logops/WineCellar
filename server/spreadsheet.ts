@@ -1308,6 +1308,14 @@ export async function processBatch(
       result.highConfidenceCount++;
     }
     
+    // Verify wine information during import
+    let wineVerification = null;
+    try {
+      wineVerification = await verifyWineInImport(mappedData);
+    } catch (error) {
+      console.error('Wine verification failed for row', rowIndex, error);
+    }
+
     // Add to processed wines
     result.processedWines.push({
       rowIndex,
@@ -1318,7 +1326,8 @@ export async function processBatch(
       isPotentialDuplicate,
       duplicateId,
       needsVerification,
-      storageLocation
+      storageLocation,
+      wineVerification
     });
     
     result.processedRows++;
