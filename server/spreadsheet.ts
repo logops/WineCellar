@@ -1275,11 +1275,12 @@ export async function processBatch(
       missingRequiredFields.length > 0 ||
       isPotentialDuplicate;
     
-    // Check for LWIN matches
+    // Check for LWIN matches - search with any available wine information
     let lwinMatches;
-    if (mappedData.name || mappedData.producer || mappedData.grapeVarieties) {
+    const wineInfo = mappedData.name || mappedData.producer || mappedData.grapeVarieties || row.wine;
+    if (wineInfo) {
       try {
-        const query = `${mappedData.vintage || ''} ${mappedData.producer} ${mappedData.name || mappedData.grapeVarieties}`.trim();
+        const query = `${mappedData.vintage || ''} ${mappedData.producer || ''} ${mappedData.name || row.wine || mappedData.grapeVarieties || ''}`.trim();
         console.log('🍷 Searching LWIN database for:', query);
         const matches = await findSmartWineMatches(query, 3);
         console.log('🔍 LWIN search results:', matches.length, 'matches found');
