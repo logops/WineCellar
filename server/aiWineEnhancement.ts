@@ -61,10 +61,12 @@ ${wineDescription}
 Today's date is ${new Date().toISOString().split('T')[0]}.
 
 For grape varieties:
+- FIRST: Check the wine name carefully - if it mentions specific grapes (e.g., "Cabernet Sauvignon", "Pinot Noir"), those grapes MUST be included in your response
 - List ONLY the actual grape varietal names themselves, separated by commas
 - For wines from classic regions (like Bordeaux, Valpolicella, Champagne), list the specific grape varieties they typically contain
 - Do NOT use qualifiers, percentages, or uncertainty markers
 - Simply list the grape names themselves, comma-separated
+- CRITICAL: Your grape varieties must be logically consistent with the wine name - never contradict what's explicitly stated in the wine name
 
 Respond only with JSON as specified. Use numeric values for years, not strings.
 For any fields where you're uncertain, provide your best estimate based on similar wines.
