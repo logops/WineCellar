@@ -106,6 +106,8 @@ export default function WineImportCard({
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [aiRecommendationDialogOpen, setAiRecommendationDialogOpen] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [aiEnhancement, setAiEnhancement] = useState(null);
 
   const getConfidenceColor = (confidence: string) => {
     switch (confidence) {
@@ -515,23 +517,68 @@ export default function WineImportCard({
             <Button 
               onClick={async () => {
                 try {
-                  // Here we would call the AI enhancement API
-                  toast({
-                    title: "Enhancing wine with AI...",
-                    description: "Please provide your Anthropic API key to enable AI wine enhancement.",
+                  setIsEnhancing(true);
+                  
+                  const response = await fetch('/api/enhance-wine', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(wine.mappedData),
                   });
+
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to enhance wine');
+                  }
+
+                  const enhancement = await response.json();
+                  
+                  // Apply AI enhancements to the wine data
+                  const enhancedWine = {
+                    ...wine,
+                    mappedData: {
+                      ...wine.mappedData,
+                      drinkingWindowStart: enhancement.drinkingWindow.start,
+                      drinkingWindowEnd: enhancement.drinkingWindow.end,
+                      grapeVarieties: enhancement.wineInfo.grapeVarieties || wine.mappedData.grapeVarieties,
+                      region: enhancement.wineInfo.region || wine.mappedData.region,
+                      subregion: enhancement.wineInfo.subregion || wine.mappedData.subregion,
+                      notes: enhancement.additionalInfo.tastingNotes + '\n\nCellaring: ' + enhancement.additionalInfo.cellaring + '\n\nFood Pairings: ' + enhancement.additionalInfo.foodPairings,
+                    },
+                    aiEnhancement: enhancement
+                  };
+
+                  onApprove(enhancedWine);
                   setAiRecommendationDialogOpen(false);
+                  
+                  toast({
+                    title: "AI enhancements applied",
+                    description: "Wine has been enhanced with AI recommendations and added to your collection.",
+                  });
                 } catch (error) {
+                  console.error('Enhancement error:', error);
                   toast({
                     title: "Enhancement failed",
-                    description: "Unable to enhance wine. Please check your API configuration.",
+                    description: error.message,
                     variant: "destructive",
                   });
+                } finally {
+                  setIsEnhancing(false);
                 }
               }}
-              className="bg-green-600 hover:bg-green-700"
+              disabled={isEnhancing}
+              className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
             >
-              Apply Enhancements & Import
+              {isEnhancing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Enhancing...
+                </>
+              ) : (
+                "Apply Enhancements & Import"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

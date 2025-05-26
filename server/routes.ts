@@ -14,6 +14,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { handleWineLabelAnalysis, handleWineRecommendations, generateDrinkingWindowRecommendation, handleWineInformationLookup } from './anthropic';
+import { enhanceWineWithAI } from './aiWineEnhancement';
 
 import { analyzeWineLabelForRemoval } from './labelMatching';
 
@@ -735,6 +736,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error('Error bulk creating producers:', err);
       res.status(500).json({ message: 'Failed to bulk create producers' });
+    }
+  });
+
+  // AI wine enhancement route
+  app.post('/api/enhance-wine', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const wineData = req.body;
+      
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(400).json({ 
+          message: 'AI enhancement requires an Anthropic API key. Please configure your API key to enable this feature.' 
+        });
+      }
+
+      const enhancement = await enhanceWineWithAI(wineData);
+      res.json(enhancement);
+    } catch (err) {
+      console.error('Error enhancing wine:', err);
+      res.status(500).json({ 
+        message: 'Failed to enhance wine with AI. Please check your API configuration.' 
+      });
     }
   });
 
