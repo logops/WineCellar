@@ -51,7 +51,10 @@ For wines from classic regions with known blends:
 - For Valpolicella: List the actual grape varieties (e.g., "Corvina, Corvinone, Rondinella")
 - For Champagne: List the actual grape varieties (e.g., "Chardonnay, Pinot Noir, Pinot Meunier")
 
-For region and subregion, provide only definitive information without qualifying words.
+For region and subregion, enhance with more specific information when you know the producer's exact location:
+- If you know the specific appellation or sub-region for this producer, provide that instead of broader regional designations
+- For example: "Napa Valley" instead of "North Coast", "Pomerol" instead of "Bordeaux", "Barolo" instead of "Piedmont"
+- Only provide definitive information without qualifying words like "likely" or "probably"
 
 ${wineDescription}
 
