@@ -107,7 +107,7 @@ export default function WineImportCard({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [aiRecommendationDialogOpen, setAiRecommendationDialogOpen] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [aiEnhancement, setAiEnhancement] = useState(null);
+  const [aiEnhancement, setAiEnhancement] = useState<any>(null);
 
   const getConfidenceColor = (confidence: string) => {
     switch (confidence) {
@@ -322,11 +322,52 @@ export default function WineImportCard({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setAiRecommendationDialogOpen(true)}
-              className="h-8 text-purple-600 border-purple-300 hover:bg-purple-50"
+              onClick={async () => {
+                setAiRecommendationDialogOpen(true);
+                setIsEnhancing(true);
+                try {
+                  const response = await fetch('/api/enhance-wine', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(wine.mappedData),
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to enhance wine');
+                  }
+
+                  const enhancement = await response.json();
+                  setAiEnhancement(enhancement);
+                } catch (error: any) {
+                  console.error('Enhancement error:', error);
+                  toast({
+                    title: "Enhancement failed",
+                    description: error.message,
+                    variant: "destructive",
+                  });
+                  setAiRecommendationDialogOpen(false);
+                } finally {
+                  setIsEnhancing(false);
+                }
+              }}
+              disabled={isEnhancing}
+              className="h-8 text-purple-600 border-purple-300 hover:bg-purple-50 disabled:opacity-50"
             >
-              <Grape className="h-4 w-4 mr-1" />
-              Enhance with AI
+              {isEnhancing ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600 mr-1"></div>
+                  Enhancing...
+                </>
+              ) : (
+                <>
+                  <Grape className="h-4 w-4 mr-1" />
+                  Enhance with AI
+                </>
+              )}
             </Button>
           </div>
 
@@ -400,8 +441,16 @@ export default function WineImportCard({
           </DialogHeader>
           
           <div className="space-y-6 mt-6">
+            {/* Loading State */}
+            {isEnhancing && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Master Sommelier analyzing wine...</p>
+              </div>
+            )}
+
             {/* Recommended Drinking Window Section */}
-            {wine.aiDrinkingWindowRecommendation && (
+            {aiEnhancement?.drinkingWindow && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-lg font-medium text-gray-900">Recommended Drinking Window</h3>
@@ -414,100 +463,104 @@ export default function WineImportCard({
                 </div>
                 
                 <div className="text-2xl font-semibold text-gray-900 mb-3">
-                  {wine.aiDrinkingWindowRecommendation.start} - {wine.aiDrinkingWindowRecommendation.end}
+                  {aiEnhancement.drinkingWindow.start} - {aiEnhancement.drinkingWindow.end}
                 </div>
                 
                 <p className="text-gray-700 leading-relaxed">
-                  {wine.aiDrinkingWindowRecommendation.reasoning}
+                  {aiEnhancement.drinkingWindow.reasoning}
                 </p>
                 
                 <div className="mt-3">
                   <Badge 
                     variant="outline" 
                     className={`${
-                      wine.aiDrinkingWindowRecommendation.confidence === 'high' 
+                      aiEnhancement.drinkingWindow.confidence === 'high' 
                         ? 'border-green-300 text-green-700 bg-green-50' 
-                        : wine.aiDrinkingWindowRecommendation.confidence === 'medium'
+                        : aiEnhancement.drinkingWindow.confidence === 'medium'
                         ? 'border-yellow-300 text-yellow-700 bg-yellow-50'
                         : 'border-red-300 text-red-700 bg-red-50'
                     }`}
                   >
-                    {wine.aiDrinkingWindowRecommendation.confidence} confidence
+                    {aiEnhancement.drinkingWindow.confidence} confidence
                   </Badge>
                 </div>
               </div>
             )}
 
             {/* Wine Information Section */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-medium text-gray-900">Wine Information</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-green-600">Will update</span>
-                  <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
-                    <Check className="w-3 h-3 text-green-600" />
+            {aiEnhancement?.wineInfo && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-medium text-gray-900">Wine Information</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-green-600">Will update</span>
+                    <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
+                      <Check className="w-3 h-3 text-green-600" />
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6">
-                <div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <div className="border-l-4 border-green-400 pl-3">
+                      <h4 className="font-medium text-gray-900 mb-1">Grape Varieties:</h4>
+                      <p className="text-gray-700">{aiEnhancement.wineInfo.grapeVarieties || wine.mappedData.grapeVarieties || 'Not specified'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="border-l-4 border-green-400 pl-3">
+                      <h4 className="font-medium text-gray-900 mb-1">Region:</h4>
+                      <p className="text-gray-700">{aiEnhancement.wineInfo.region || wine.mappedData.region || 'Not specified'}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
                   <div className="border-l-4 border-green-400 pl-3">
-                    <h4 className="font-medium text-gray-900 mb-1">Grape Varieties:</h4>
-                    <p className="text-gray-700">{wine.mappedData.grapeVarieties || 'Will be enhanced with AI analysis'}</p>
-                  </div>
-                </div>
-                <div>
-                  <div className="border-l-4 border-green-400 pl-3">
-                    <h4 className="font-medium text-gray-900 mb-1">Region:</h4>
-                    <p className="text-gray-700">{wine.mappedData.region || 'Will be enhanced with AI analysis'}</p>
+                    <h4 className="font-medium text-gray-900 mb-1">Sub-region:</h4>
+                    <p className="text-gray-700">{aiEnhancement.wineInfo.subregion || wine.mappedData.subregion || 'Not specified'}</p>
                   </div>
                 </div>
               </div>
-              
-              <div className="mt-4">
-                <div className="border-l-4 border-green-400 pl-3">
-                  <h4 className="font-medium text-gray-900 mb-1">Sub-region:</h4>
-                  <p className="text-gray-700">{wine.mappedData.subregion || 'Will be enhanced with AI analysis'}</p>
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Additional Information Section */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-green-600">Will update</span>
-                  <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
-                    <Check className="w-3 h-3 text-green-600" />
+            {aiEnhancement?.additionalInfo && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-green-600">Will update</span>
+                    <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
+                      <Check className="w-3 h-3 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="border-l-4 border-green-400 pl-3">
+                    <h4 className="font-medium text-gray-900 mb-1">Tasting Notes:</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {aiEnhancement.additionalInfo.tastingNotes}
+                    </p>
+                  </div>
+
+                  <div className="border-l-4 border-green-400 pl-3">
+                    <h4 className="font-medium text-gray-900 mb-1">Cellaring:</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {aiEnhancement.additionalInfo.cellaring}
+                    </p>
+                  </div>
+
+                  <div className="border-l-4 border-green-400 pl-3">
+                    <h4 className="font-medium text-gray-900 mb-1">Food Pairings:</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {aiEnhancement.additionalInfo.foodPairings}
+                    </p>
                   </div>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                <div className="border-l-4 border-green-400 pl-3">
-                  <h4 className="font-medium text-gray-900 mb-1">Tasting Notes:</h4>
-                  <p className="text-gray-700 leading-relaxed">
-                    Enhanced tasting notes will be generated based on AI analysis of the producer, vintage, region, and wine characteristics.
-                  </p>
-                </div>
-
-                <div className="border-l-4 border-green-400 pl-3">
-                  <h4 className="font-medium text-gray-900 mb-1">Cellaring:</h4>
-                  <p className="text-gray-700 leading-relaxed">
-                    Optimal storage conditions and cellaring recommendations will be provided based on wine type and structure.
-                  </p>
-                </div>
-
-                <div className="border-l-4 border-green-400 pl-3">
-                  <h4 className="font-medium text-gray-900 mb-1">Food Pairings:</h4>
-                  <p className="text-gray-700 leading-relaxed">
-                    Curated food pairing suggestions will be generated based on wine style, flavor profile, and regional cuisine traditions.
-                  </p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
           
           <DialogFooter className="mt-6">

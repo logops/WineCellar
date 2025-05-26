@@ -36,7 +36,7 @@ Wine Details:
 - Country: ${wineData.country || 'Unknown'}
 `.trim();
 
-  const prompt = `As a world-class sommelier and wine expert, analyze this wine and provide comprehensive information:
+  const prompt = `As a Master Sommelier with decades of experience in wine evaluation and cellar management, analyze this wine and provide comprehensive information:
 
 ${wineDescription}
 
@@ -79,7 +79,18 @@ Ensure all recommendations are specific to this producer, vintage, and region. B
       throw new Error('Unexpected response format from Anthropic API');
     }
 
-    const analysis = JSON.parse(content.text);
+    // Remove markdown code blocks if present
+    let jsonText = content.text.trim();
+    // Handle various markdown formats
+    jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?\s*```\s*$/, '');
+    // Find the first { and last } to extract just the JSON
+    const firstBrace = jsonText.indexOf('{');
+    const lastBrace = jsonText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+    }
+    
+    const analysis = JSON.parse(jsonText);
     return analysis;
   } catch (error) {
     console.error('Error enhancing wine with AI:', error);
