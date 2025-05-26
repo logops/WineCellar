@@ -12,6 +12,7 @@ import { apiRequest, uploadFile, queryClient } from '@/lib/queryClient';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Types for the sheet information we'll receive from the backend
@@ -746,12 +747,14 @@ const SpreadsheetImport: React.FC = () => {
                 />
               </div>
               
-              <div>
+              <div className="md:col-span-2">
                 <Label htmlFor="notes">Notes</Label>
-                <Input
+                <Textarea
                   id="notes"
+                  placeholder="Add any notes about this wine..."
                   defaultValue={editingWine.mappedData.notes || ''}
                   onChange={(e) => handleEditFieldChange('notes', e.target.value)}
+                  className="h-20"
                 />
               </div>
             </div>
