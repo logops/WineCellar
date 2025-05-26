@@ -111,59 +111,105 @@ class LWINMatcher {
     const vintageMatch = searchQuery.match(/\b(19|20)\d{2}\b/);
     const userVintage = vintageMatch ? parseInt(vintageMatch[0]) : null;
     
-    // Extract producer terms (everything except vintage and common wine words)
-    const wineWords = ['red', 'white', 'blend', 'reserve', 'estate', 'vineyard', 'cab', 'cabernet', 'merlot', 'chardonnay'];
-    const producerTerms = searchTerms.filter(term => 
-      !term.match(/\b(19|20)\d{2}\b/) && 
-      !wineWords.includes(term) &&
-      term.length > 2
-    );
+    // Common wine abbreviations and variations
+    const commonAbbreviations = {
+      'cab': ['cabernet', 'cabernet sauvignon'],
+      'sauv': ['sauvignon'],
+      'chard': ['chardonnay'],
+      'pinot': ['pinot noir', 'pinot grigio', 'pinot gris'],
+      'merlot': ['merlot'],
+      'syrah': ['syrah', 'shiraz'],
+      'rmw': ['robert mondavi'],
+      'rmv': ['robert mondavi'],
+      'op': ['opus one'],
+      'screaming': ['screaming eagle'],
+      'harlan': ['harlan estate'],
+      'bond': ['bond estates'],
+      'stag': ["stag's leap"],
+      'cakebread': ['cakebread cellars'],
+      'caymus': ['caymus vineyards'],
+      'silver': ['silver oak'],
+      'jordan': ['jordan vineyard'],
+      'duckhorn': ['duckhorn vineyards']
+    };
+    
+    // Expand abbreviations in search terms
+    const expandedTerms = [];
+    for (const term of searchTerms) {
+      expandedTerms.push(term);
+      if (commonAbbreviations[term]) {
+        expandedTerms.push(...commonAbbreviations[term]);
+      }
+    }
     
     const matches = [];
     
     for (const wine of this.wines) {
       let score = 0;
-      let producerMatch = false;
-      let wineNameMatch = false;
+      let producerMatches = 0;
+      let wineNameMatches = 0;
+      let exactMatches = 0;
       
-      // Step 1: Find producer matches (fuzzy matching for abbreviations)
       const producerLower = wine.producer.toLowerCase();
-      for (const term of producerTerms) {
-        if (producerLower.includes(term) || term.includes(producerLower.split(' ')[0])) {
-          score += 0.5;
-          producerMatch = true;
-          break;
-        }
-      }
+      const wineNameLower = wine.wineName.toLowerCase();
+      const fullWineText = `${producerLower} ${wineNameLower}`.toLowerCase();
       
-      // Step 2: If we found a producer, look for wine name matches
-      if (producerMatch) {
-        const wineNameLower = wine.wineName.toLowerCase();
-        for (const term of searchTerms) {
-          if (term.length > 2 && wineNameLower.includes(term)) {
-            score += 0.3;
-            wineNameMatch = true;
+      // Multi-level matching strategy
+      for (const term of expandedTerms) {
+        if (term.length < 2) continue;
+        
+        // Exact producer name match (highest score)
+        if (producerLower === term || producerLower.includes(term)) {
+          score += 0.4;
+          producerMatches++;
+          if (producerLower === term) exactMatches++;
+        }
+        
+        // Producer word match (partial)
+        const producerWords = producerLower.split(' ');
+        for (const word of producerWords) {
+          if (word === term || (word.length > 3 && word.includes(term)) || (term.length > 3 && term.includes(word))) {
+            score += 0.25;
+            producerMatches++;
           }
         }
         
-        // Step 3: Boost score for complete matches
-        if (wineNameMatch) {
-          score += 0.2; // Bonus for both producer and wine name
+        // Wine name matching
+        if (wineNameLower.includes(term)) {
+          score += 0.2;
+          wineNameMatches++;
+          if (wineNameLower === term) exactMatches++;
         }
         
-        // Only include matches with both producer and reasonable confidence
-        if (score >= 0.4) {
-          matches.push({
-            producer: wine.producer,
-            wineName: wine.wineName,
-            vintage: userVintage || wine.vintage, // Preserve user's vintage
-            region: wine.region,
-            country: wine.country,
-            type: wine.type,
-            confidence: Math.min(score, 1.0),
-            source: 'LWIN'
-          });
+        // Vineyard/estate matching
+        const vineyardWords = ['vineyard', 'estate', 'winery', 'cellars', 'valley'];
+        if (vineyardWords.some(vw => term.includes(vw) && wineNameLower.includes(term))) {
+          score += 0.15;
+          wineNameMatches++;
         }
+      }
+      
+      // Boost scores for multiple matches
+      if (producerMatches >= 1 && wineNameMatches >= 1) {
+        score += 0.2; // Bonus for matching both producer and wine
+      }
+      
+      if (exactMatches >= 1) {
+        score += 0.15; // Bonus for exact matches
+      }
+      
+      // Flexible threshold - include any wine with reasonable matches
+      if (score >= 0.3 || (producerMatches >= 1 && score >= 0.2)) {
+        matches.push({
+          producer: wine.producer,
+          wineName: wine.wineName,
+          vintage: userVintage || wine.vintage,
+          region: wine.region,
+          country: wine.country,
+          type: wine.type,
+          confidence: Math.min(score, 1.0),
+          source: 'LWIN'
+        });
       }
     }
     
