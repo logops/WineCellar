@@ -12,30 +12,50 @@ interface WineMatch {
   source: string;
 }
 
-let lwinWorkbook: XLSX.WorkBook | null = null;
+let lwinData: any[] | null = null;
 let lwinHeaders: string[] = [];
+let isLoading = false;
 
 /**
- * Initialize LWIN workbook (loads once, searches many times)
+ * Initialize LWIN database (loads once, caches in memory)
  */
-function initializeLWINWorkbook() {
-  if (!lwinWorkbook) {
-    console.log('Loading LWIN workbook for wine matching...');
-    lwinWorkbook = XLSX.readFile('attached_assets/LWINdatabase.xlsx');
-    const worksheet = lwinWorkbook.Sheets[lwinWorkbook.SheetNames[0]];
+async function initializeLWINDatabase() {
+  if (lwinData || isLoading) {
+    return; // Already loaded or loading
+  }
+  
+  isLoading = true;
+  
+  try {
+    console.log('Loading LWIN database for wine matching...');
+    
+    // Add small delay to prevent file system overload
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const workbook = XLSX.readFile('attached_assets/LWINdatabase.xlsx');
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     
     // Get headers
-    const headerRow = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0] as string[];
-    lwinHeaders = headerRow || [];
+    const allData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    lwinHeaders = (allData[0] as string[]) || [];
     
-    console.log('LWIN workbook initialized for smart matching');
-    console.log('LWIN headers found:', lwinHeaders.slice(0, 10)); // Show first 10 headers
+    // Cache the data (excluding header row)
+    lwinData = allData.slice(1);
     
-    // Quick sample to verify data
-    const sampleData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    console.log('LWIN database has', sampleData.length, 'total rows');
-    console.log('Sample row 1:', sampleData[1]);
-    console.log('Sample row 2:', sampleData[2]);
+    console.log('LWIN database loaded successfully');
+    console.log('Headers:', lwinHeaders.slice(0, 5));
+    console.log('Total wine records:', lwinData.length);
+    
+    // Quick verification
+    if (lwinData.length > 0) {
+      console.log('Sample record:', lwinData[0]);
+    }
+    
+  } catch (error) {
+    console.error('Error loading LWIN database:', error);
+    lwinData = []; // Set to empty array on error
+  } finally {
+    isLoading = false;
   }
 }
 
