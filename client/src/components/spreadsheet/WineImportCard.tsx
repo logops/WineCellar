@@ -3,6 +3,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { 
   Dialog, 
   DialogContent, 
@@ -91,6 +92,66 @@ interface WineImportCardProps {
   onSelect?: (rowIndex: number) => void;
 }
 
+interface EditableFieldProps {
+  value: string | number | undefined;
+  onSave: (value: string) => void;
+  type?: 'text' | 'number';
+  placeholder?: string;
+  className?: string;
+}
+
+function EditableField({ value, onSave, type = 'text', placeholder = 'Click to edit', className = '' }: EditableFieldProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value?.toString() || '');
+
+  const handleSave = () => {
+    onSave(editValue);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(value?.toString() || '');
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-1">
+        <Input
+          type={type}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSave}
+          className="h-6 text-xs px-2"
+          autoFocus
+        />
+      </div>
+    );
+  }
+
+  return (
+    <span 
+      className={`cursor-pointer hover:bg-gray-100 hover:text-gray-900 rounded px-1 transition-colors ${className}`}
+      onClick={() => {
+        setEditValue(value?.toString() || '');
+        setIsEditing(true);
+      }}
+      title="Click to edit"
+    >
+      {value || placeholder}
+    </span>
+  );
+}
+
 export default function WineImportCard({ 
   wine, 
   onApprove, 
@@ -103,6 +164,32 @@ export default function WineImportCard({
   isSelected = false,
   onSelect
 }: WineImportCardProps) {
+  
+  // Local state for tracking edits
+  const [localWine, setLocalWine] = useState<WineData>(wine);
+  
+  // Update field function
+  const updateField = (field: keyof WineData['mappedData'], value: string) => {
+    const updatedWine = {
+      ...localWine,
+      mappedData: {
+        ...localWine.mappedData,
+        [field]: field === 'vintage' || field === 'quantity' || field === 'purchasePrice' || field === 'currentValue' || field === 'rating' 
+          ? (value === '' ? undefined : Number(value))
+          : value === '' ? undefined : value
+      }
+    };
+    
+    setLocalWine(updatedWine);
+    
+    // Update the parent component's state if available
+    if (setAllProcessedWines && allProcessedWines) {
+      const updatedWines = allProcessedWines.map(w => 
+        w.rowIndex === wine.rowIndex ? updatedWine : w
+      );
+      setAllProcessedWines(updatedWines);
+    }
+  };
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [aiRecommendationDialogOpen, setAiRecommendationDialogOpen] = useState(false);
@@ -154,13 +241,38 @@ export default function WineImportCard({
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
               )}
-              <h3 className="text-lg font-semibold text-gray-900">
-                {formatVintage(wine.mappedData.vintage)} {wine.mappedData.producer} {wine.mappedData.name}
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <EditableField 
+                  value={localWine.mappedData.vintage}
+                  onSave={(value) => updateField('vintage', value)}
+                  type="number"
+                  placeholder="NV"
+                />
+                <EditableField 
+                  value={localWine.mappedData.producer}
+                  onSave={(value) => updateField('producer', value)}
+                  placeholder="Producer"
+                />
+                <EditableField 
+                  value={localWine.mappedData.name}
+                  onSave={(value) => updateField('name', value)}
+                  placeholder="Wine Name"
+                />
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {wine.mappedData.type} • {wine.mappedData.region}
+              <span className="text-sm text-muted-foreground flex items-center gap-2">
+                <EditableField 
+                  value={localWine.mappedData.type}
+                  onSave={(value) => updateField('type', value)}
+                  placeholder="Type"
+                />
+                •
+                <EditableField 
+                  value={localWine.mappedData.region}
+                  onSave={(value) => updateField('region', value)}
+                  placeholder="Region"
+                />
               </span>
             </div>
           </div>
@@ -199,19 +311,39 @@ export default function WineImportCard({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Grape(s):</span>
-                <span className="text-right">{wine.mappedData.grapeVarieties || 'Unknown'}</span>
+                <EditableField 
+                  value={localWine.mappedData.grapeVarieties}
+                  onSave={(value) => updateField('grapeVarieties', value)}
+                  placeholder="Unknown"
+                  className="text-right"
+                />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Vineyard:</span>
-                <span className="text-right">{wine.mappedData.vineyard || 'Unknown'}</span>
+                <EditableField 
+                  value={localWine.mappedData.vineyard}
+                  onSave={(value) => updateField('vineyard', value)}
+                  placeholder="Unknown"
+                  className="text-right"
+                />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subregion:</span>
-                <span className="text-right">{wine.mappedData.subregion || 'Unknown'}</span>
+                <EditableField 
+                  value={localWine.mappedData.subregion}
+                  onSave={(value) => updateField('subregion', value)}
+                  placeholder="Unknown"
+                  className="text-right"
+                />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Bottle Size:</span>
-                <span className="text-right">{wine.mappedData.bottleSize || '750ml'}</span>
+                <EditableField 
+                  value={localWine.mappedData.bottleSize}
+                  onSave={(value) => updateField('bottleSize', value)}
+                  placeholder="750ml"
+                  className="text-right"
+                />
               </div>
             </div>
           </div>
@@ -222,19 +354,41 @@ export default function WineImportCard({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Quantity:</span>
-                <span className="text-right">{wine.mappedData.quantity || 1}</span>
+                <EditableField 
+                  value={localWine.mappedData.quantity}
+                  onSave={(value) => updateField('quantity', value)}
+                  type="number"
+                  placeholder="1"
+                  className="text-right"
+                />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Price:</span>
-                <span className="text-right">{formatPrice(wine.mappedData.purchasePrice) || 'Not set'}</span>
+                <EditableField 
+                  value={localWine.mappedData.purchasePrice}
+                  onSave={(value) => updateField('purchasePrice', value)}
+                  type="number"
+                  placeholder="Not set"
+                  className="text-right"
+                />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Date:</span>
-                <span className="text-right">{wine.mappedData.purchaseDate ? formatDate(wine.mappedData.purchaseDate) : 'Not set'}</span>
+                <EditableField 
+                  value={localWine.mappedData.purchaseDate}
+                  onSave={(value) => updateField('purchaseDate', value)}
+                  placeholder="Not set"
+                  className="text-right"
+                />
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Location:</span>
-                <span className="text-right">{wine.mappedData.storageLocation || 'Unknown'}</span>
+                <span className="text-muted-foreground">Storage:</span>
+                <EditableField 
+                  value={localWine.mappedData.storageLocation}
+                  onSave={(value) => updateField('storageLocation', value)}
+                  placeholder="Main Cellar"
+                  className="text-right"
+                />
               </div>
             </div>
           </div>
