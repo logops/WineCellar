@@ -140,14 +140,22 @@ function parseWineInput(searchQuery: string) {
  */
 export async function findSmartWineMatches(searchQuery: string, limit: number = 3): Promise<WineMatch[]> {
   try {
-    initializeLWINWorkbook();
+    await initializeLWINDatabase();
     
-    if (!lwinWorkbook) {
-      return [];
+    if (!lwinData || lwinData.length === 0) {
+      console.log('LWIN database not available, returning parsed user input');
+      const parsed = parseWineInput(searchQuery);
+      return [{
+        producer: parsed.producer || '',
+        wineName: parsed.wineName || '',
+        vintage: parsed.vintage,
+        region: '',
+        country: '',
+        type: '',
+        confidence: 0,
+        source: 'user_input'
+      }];
     }
-
-    const worksheet = lwinWorkbook.Sheets[lwinWorkbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
     
     // Parse the user input into structured components
     const parsedInput = parseWineInput(searchQuery);
@@ -155,9 +163,9 @@ export async function findSmartWineMatches(searchQuery: string, limit: number = 
     
     const matches: WineMatch[] = [];
     
-    // Search through rows (skip header)
-    for (let i = 1; i < Math.min(data.length, 10000); i++) { // Limit search for performance
-      const row = data[i] as any[];
+    // Search through cached data (much faster than Excel file access)
+    for (let i = 0; i < Math.min(lwinData.length, 10000); i++) { // Limit search for performance
+      const row = lwinData[i] as any[];
       const wine: any = {};
       
       // Map row data
