@@ -236,8 +236,9 @@ export default function WineImportCard({
                       {match.vintage && `${match.vintage} `}{match.producer} {match.wineName}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {match.region && `${match.region}`}{match.country && ` • ${match.country}`}
-                      {match.type && ` • ${match.type}`}
+                      {match.type && `${match.type}`}
+                      {match.region && ` • ${match.region}`}
+                      {match.country && ` • ${match.country}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -259,6 +260,7 @@ export default function WineImportCard({
                               vintage: match.vintage || wine.mappedData.vintage,
                               region: match.region || wine.mappedData.region,
                               type: match.type || wine.mappedData.type,
+                              grapeVarieties: match.type || wine.mappedData.grapeVarieties, // Populate grape variety from database
                             },
                             confidence: 'high' as const,
                           };
