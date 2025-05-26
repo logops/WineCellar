@@ -5,7 +5,7 @@ import { InsertWine, Wine } from '@shared/schema';
 import { db } from './db';
 import { storage } from './storage';
 import { identifySpreadsheetColumns } from './anthropic';
-import { findSmartWineMatches } from './smartWineMatching';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { anthropic } from './anthropic';
 import { 
