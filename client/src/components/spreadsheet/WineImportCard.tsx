@@ -546,13 +546,6 @@ export default function WineImportCard({
                   </div>
 
                   <div className="border-l-4 border-green-400 pl-3">
-                    <h4 className="font-medium text-gray-900 mb-1">Cellaring:</h4>
-                    <p className="text-gray-700 leading-relaxed">
-                      {aiEnhancement.additionalInfo.cellaring}
-                    </p>
-                  </div>
-
-                  <div className="border-l-4 border-green-400 pl-3">
                     <h4 className="font-medium text-gray-900 mb-1">Food Pairings:</h4>
                     <p className="text-gray-700 leading-relaxed">
                       {aiEnhancement.additionalInfo.foodPairings}

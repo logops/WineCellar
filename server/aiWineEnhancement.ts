@@ -19,7 +19,6 @@ export interface WineEnhancementData {
   };
   additionalInfo: {
     tastingNotes: string;
-    cellaring: string;
     foodPairings: string;
   };
 }
@@ -36,35 +35,36 @@ Wine Details:
 - Country: ${wineData.country || 'Unknown'}
 `.trim();
 
-  const prompt = `As a Master Sommelier, analyze this SPECIFIC wine (not generic wine types) and provide exact information about THIS wine:
+  const prompt = `As a Master Sommelier, analyze this SPECIFIC wine and return EXACT database-ready information:
 
 ${wineDescription}
 
-Research this exact producer, vintage, and wine. Do not give generic advice about wine categories. Return structured data for database storage:
+You must research this exact producer and wine. Return ONLY the JSON format below with NO SENTENCES in grape varieties, region, or subregion fields:
 
 {
   "drinkingWindow": {
     "start": "YYYY",
     "end": "YYYY", 
     "confidence": "high|medium|low",
-    "reasoning": "Specific analysis of THIS wine's current state and aging trajectory based on this exact producer's style, this vintage's characteristics, and this wine's specific attributes."
+    "reasoning": "Specific analysis of THIS exact wine's aging trajectory based on this producer's known style and this vintage."
   },
   "wineInfo": {
-    "grapeVarieties": "Exact grape varieties as comma-separated list (e.g. 'Cabernet Sauvignon, Merlot, Cabernet Franc')",
-    "region": "Specific region name only (e.g. 'Rioja' not 'Rioja, Spain')",
-    "subregion": "Exact sub-region/appellation only (e.g. 'Rioja Alta' not 'Likely Rioja Alta')"
+    "grapeVarieties": "ONLY comma-separated grape names: Tempranillo, Graciano, Mazuelo",
+    "region": "ONLY region name: Rioja",
+    "subregion": "ONLY sub-region name: Rioja Alta"
   },
   "additionalInfo": {
-    "tastingNotes": "Professional tasting notes for THIS specific wine based on the producer's known style, this vintage's characteristics, and typical profile of this exact bottling.",
-    "foodPairings": "Specific food pairing recommendations that complement this wine's exact characteristics and style."
+    "tastingNotes": "Professional tasting notes for this specific wine and vintage.",
+    "foodPairings": "Specific food pairings for this wine's profile."
   }
 }
 
-IMPORTANT: 
-- Research the exact producer and their specific winemaking style
-- Consider this exact vintage's conditions and characteristics  
-- Provide definitive data, not speculation with words like "likely" or "probably"
-- Return clean strings suitable for database storage and filtering`;
+CRITICAL RULES:
+- grapeVarieties: ONLY grape names separated by commas, NO percentages, NO sentences
+- region: ONLY the region name, NO country, NO descriptive text  
+- subregion: ONLY the sub-region name, NO speculation words like "likely"
+- Research the EXACT producer - do not give generic wine category advice
+- This is for database storage - clean strings only`;
 
   try {
     const response = await anthropic.messages.create({
