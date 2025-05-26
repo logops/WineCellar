@@ -316,6 +316,16 @@ export default function WineImportCard({
               <Edit className="h-4 w-4 mr-1" />
               Edit
             </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAiRecommendationDialogOpen(true)}
+              className="h-8 text-purple-600 border-purple-300 hover:bg-purple-50"
+            >
+              <Grape className="h-4 w-4 mr-1" />
+              Enhance with AI
+            </Button>
           </div>
 
           <div className="flex gap-2">
@@ -373,6 +383,156 @@ export default function WineImportCard({
           </div>
           <DialogFooter>
             <Button onClick={() => setDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Enhancement Dialog */}
+      <Dialog open={aiRecommendationDialogOpen} onOpenChange={setAiRecommendationDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-gray-900">AI Wine Analysis</DialogTitle>
+            <p className="text-gray-600 mt-2">
+              AI has analyzed your wine and found the following information. Fields highlighted in green will be updated with the enhanced data. Would you like to apply these enhancements?
+            </p>
+          </DialogHeader>
+          
+          <div className="space-y-6 mt-6">
+            {/* Recommended Drinking Window Section */}
+            {wine.aiDrinkingWindowRecommendation && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-medium text-gray-900">Recommended Drinking Window</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-green-600">Will update</span>
+                    <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
+                      <Check className="w-3 h-3 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-2xl font-semibold text-gray-900 mb-3">
+                  {wine.aiDrinkingWindowRecommendation.start} - {wine.aiDrinkingWindowRecommendation.end}
+                </div>
+                
+                <p className="text-gray-700 leading-relaxed">
+                  {wine.aiDrinkingWindowRecommendation.reasoning}
+                </p>
+                
+                <div className="mt-3">
+                  <Badge 
+                    variant="outline" 
+                    className={`${
+                      wine.aiDrinkingWindowRecommendation.confidence === 'high' 
+                        ? 'border-green-300 text-green-700 bg-green-50' 
+                        : wine.aiDrinkingWindowRecommendation.confidence === 'medium'
+                        ? 'border-yellow-300 text-yellow-700 bg-yellow-50'
+                        : 'border-red-300 text-red-700 bg-red-50'
+                    }`}
+                  >
+                    {wine.aiDrinkingWindowRecommendation.confidence} confidence
+                  </Badge>
+                </div>
+              </div>
+            )}
+
+            {/* Wine Information Section */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-medium text-gray-900">Wine Information</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-green-600">Will update</span>
+                  <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <div className="border-l-4 border-green-400 pl-3">
+                    <h4 className="font-medium text-gray-900 mb-1">Grape Varieties:</h4>
+                    <p className="text-gray-700">{wine.mappedData.grapeVarieties || 'Will be enhanced with AI analysis'}</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-l-4 border-green-400 pl-3">
+                    <h4 className="font-medium text-gray-900 mb-1">Region:</h4>
+                    <p className="text-gray-700">{wine.mappedData.region || 'Will be enhanced with AI analysis'}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <div className="border-l-4 border-green-400 pl-3">
+                  <h4 className="font-medium text-gray-900 mb-1">Sub-region:</h4>
+                  <p className="text-gray-700">{wine.mappedData.subregion || 'Will be enhanced with AI analysis'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Information Section */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-green-600">Will update</span>
+                  <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="border-l-4 border-green-400 pl-3">
+                  <h4 className="font-medium text-gray-900 mb-1">Tasting Notes:</h4>
+                  <p className="text-gray-700 leading-relaxed">
+                    Enhanced tasting notes will be generated based on AI analysis of the producer, vintage, region, and wine characteristics.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-green-400 pl-3">
+                  <h4 className="font-medium text-gray-900 mb-1">Cellaring:</h4>
+                  <p className="text-gray-700 leading-relaxed">
+                    Optimal storage conditions and cellaring recommendations will be provided based on wine type and structure.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-green-400 pl-3">
+                  <h4 className="font-medium text-gray-900 mb-1">Food Pairings:</h4>
+                  <p className="text-gray-700 leading-relaxed">
+                    Curated food pairing suggestions will be generated based on wine style, flavor profile, and regional cuisine traditions.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setAiRecommendationDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                try {
+                  // Here we would call the AI enhancement API
+                  toast({
+                    title: "Enhancing wine with AI...",
+                    description: "Please provide your Anthropic API key to enable AI wine enhancement.",
+                  });
+                  setAiRecommendationDialogOpen(false);
+                } catch (error) {
+                  toast({
+                    title: "Enhancement failed",
+                    description: "Unable to enhance wine. Please check your API configuration.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Apply Enhancements & Import
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
