@@ -241,23 +241,28 @@ export default function WineImportCard({
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
               )}
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <EditableField 
-                  value={localWine.mappedData.vintage}
-                  onSave={(value) => updateField('vintage', value)}
-                  type="number"
-                  placeholder="NV"
-                />
-                <EditableField 
-                  value={localWine.mappedData.producer}
-                  onSave={(value) => updateField('producer', value)}
-                  placeholder="Producer"
-                />
-                <EditableField 
-                  value={localWine.mappedData.name}
-                  onSave={(value) => updateField('name', value)}
-                  placeholder="Wine Name"
-                />
+              <h3 className="text-lg font-semibold text-gray-900">
+                <span className="inline-flex items-baseline gap-1 flex-wrap">
+                  <EditableField 
+                    value={localWine.mappedData.vintage}
+                    onSave={(value) => updateField('vintage', value)}
+                    type="number"
+                    placeholder="NV"
+                    className="inline"
+                  />
+                  <EditableField 
+                    value={localWine.mappedData.producer}
+                    onSave={(value) => updateField('producer', value)}
+                    placeholder="Producer"
+                    className="inline"
+                  />
+                  <EditableField 
+                    value={localWine.mappedData.name}
+                    onSave={(value) => updateField('name', value)}
+                    placeholder="Wine Name"
+                    className="inline"
+                  />
+                </span>
               </h3>
             </div>
             <div className="flex items-center gap-2">
