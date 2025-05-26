@@ -162,65 +162,111 @@ export default function WineImportCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="space-y-2">
-            {wine.mappedData.type && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Type:</span>
-                <span className="col-span-4">{wine.mappedData.type}</span>
-              </div>
-            )}
-            {wine.mappedData.grapeVarieties && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Grapes:</span>
-                <span className="col-span-4">{wine.mappedData.grapeVarieties}</span>
-              </div>
-            )}
-            {wine.mappedData.quantity && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Quantity:</span>
-                <span className="col-span-4">{wine.mappedData.quantity}</span>
-              </div>
-            )}
-            {wine.mappedData.storageLocation && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Location:</span>
-                <span className="col-span-4">{wine.mappedData.storageLocation}</span>
-              </div>
-            )}
+        {/* Auto-identified section */}
+        {wine.mappedData.region && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Auto-identified:</span>
+            <Badge variant="secondary" className="text-xs">
+              {wine.mappedData.region}
+            </Badge>
           </div>
+        )}
 
-          <div className="space-y-2">
-            {wine.mappedData.purchasePrice && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Paid:</span>
-                <span className="col-span-4">{formatPrice(wine.mappedData.purchasePrice)}</span>
+        {/* Wine Details Section */}
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Wine Details</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Grape(s):</span>
+                <span>{wine.mappedData.grapeVarieties || 'Unknown'}</span>
               </div>
-            )}
-            {wine.mappedData.currentValue && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Value:</span>
-                <span className="col-span-4">{formatPrice(wine.mappedData.currentValue)}</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Vineyard:</span>
+                <span>{wine.mappedData.vineyard || 'Unknown'}</span>
               </div>
-            )}
-            {wine.mappedData.purchaseDate && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Purchased:</span>
-                <span className="col-span-4">{formatDate(wine.mappedData.purchaseDate)}</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subregion:</span>
+                <span>{wine.mappedData.subregion || 'Unknown'}</span>
               </div>
-            )}
-            {wine.mappedData.drinkingWindowStart && wine.mappedData.drinkingWindowEnd && (
-              <div className="grid grid-cols-6 gap-1">
-                <span className="text-muted-foreground col-span-2">Drink:</span>
-                <span className="col-span-4">
-                  {wine.mappedData.drinkingWindowStart} - {wine.mappedData.drinkingWindowEnd}
-                </span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Bottle Size:</span>
+                <span>{wine.mappedData.bottleSize || '750ml'}</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Quantity:</span>
+                <span>{wine.mappedData.quantity || 1}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Price:</span>
+                <span>{formatPrice(wine.mappedData.purchasePrice) || 'Not set'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Date:</span>
+                <span>{wine.mappedData.purchaseDate ? formatDate(wine.mappedData.purchaseDate) : 'Not set'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Location:</span>
+                <span>{wine.mappedData.storageLocation || 'Unknown'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Drinking Window Section */}
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Drinking Window</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Current:</span>
+              <span>
+                {wine.mappedData.drinkingWindowStart && wine.mappedData.drinkingWindowEnd
+                  ? `${wine.mappedData.drinkingWindowStart} - ${wine.mappedData.drinkingWindowEnd}`
+                  : 'Not set - Not set'
+                }
+              </span>
+            </div>
+            {wine.aiDrinkingWindowRecommendation && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">AI Suggested:</span>
+                <div className="flex items-center gap-2">
+                  <span>
+                    {wine.aiDrinkingWindowRecommendation.start} - {wine.aiDrinkingWindowRecommendation.end}
+                  </span>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${
+                      wine.aiDrinkingWindowRecommendation.confidence === 'high' 
+                        ? 'border-green-300 text-green-700' 
+                        : wine.aiDrinkingWindowRecommendation.confidence === 'medium'
+                        ? 'border-yellow-300 text-yellow-700'
+                        : 'border-red-300 text-red-700'
+                    }`}
+                  >
+                    {wine.aiDrinkingWindowRecommendation.confidence}
+                  </Badge>
+                </div>
               </div>
             )}
           </div>
         </div>
 
 
+
+        {/* Verification Notice */}
+        {wine.needsVerification && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-800">Needs verification</span>
+            </div>
+            <p className="text-sm text-amber-700 mt-1">
+              This wine information needs manual verification before import.
+            </p>
+          </div>
+        )}
 
         {wine.missingRequiredFields.length > 0 && (
           <div className="mt-4 p-2 bg-red-50 border border-red-200 rounded-md">
@@ -274,10 +320,10 @@ export default function WineImportCard({
               variant="default"
               size="sm"
               onClick={() => onApprove(wine)}
-              className="h-8"
+              className="h-8 bg-green-600 hover:bg-green-700"
             >
               <Check className="h-4 w-4 mr-1" />
-              Add to Collection
+              Import as is
             </Button>
           </div>
         </div>
