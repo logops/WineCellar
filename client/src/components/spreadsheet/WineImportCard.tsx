@@ -220,68 +220,7 @@ export default function WineImportCard({
           </div>
         </div>
 
-        {wine.lwinMatches && wine.lwinMatches.matches.length > 0 && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-blue-800">LWIN Database Matches</h4>
-              <span className="text-xs text-blue-600">
-                {wine.lwinMatches.matches.length} match{wine.lwinMatches.matches.length !== 1 ? 'es' : ''} found
-              </span>
-            </div>
-            <div className="space-y-2">
-              {wine.lwinMatches.matches.slice(0, 3).map((match, index) => (
-                <div key={index} className="flex justify-between items-center p-2 bg-white rounded border">
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      {match.vintage && `${match.vintage} `}{match.producer} {match.wineName}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {match.type && `${match.type}`}
-                      {match.region && ` • ${match.region}`}
-                      {match.country && ` • ${match.country}`}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                      {Math.round(match.confidence * 100)}% match
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-6 text-xs"
-                      onClick={() => {
-                        if (allProcessedWines && setAllProcessedWines) {
-                          const updatedWine = {
-                            ...wine,
-                            mappedData: {
-                              ...wine.mappedData,
-                              producer: match.producer,
-                              name: match.wineName,
-                              vintage: match.vintage || wine.mappedData.vintage,
-                              region: match.region || wine.mappedData.region,
-                              type: match.type || wine.mappedData.type,
-                              grapeVarieties: match.type || wine.mappedData.grapeVarieties, // Populate grape variety from database
-                            },
-                            confidence: 'high' as const,
-                          };
-                          
-                          const wineIndex = allProcessedWines.findIndex((w) => w.rowIndex === wine.rowIndex);
-                          if (wineIndex !== -1) {
-                            const newWines = [...allProcessedWines];
-                            newWines[wineIndex] = updatedWine;
-                            setAllProcessedWines(newWines);
-                          }
-                        }
-                      }}
-                    >
-                      Use This
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         {wine.missingRequiredFields.length > 0 && (
           <div className="mt-4 p-2 bg-red-50 border border-red-200 rounded-md">

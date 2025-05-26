@@ -1275,40 +1275,7 @@ export async function processBatch(
       missingRequiredFields.length > 0 ||
       isPotentialDuplicate;
     
-    // Check for LWIN matches - search with any available wine information
-    let lwinMatches;
-    const wineInfo = mappedData.name || mappedData.producer || mappedData.grapeVarieties || row.wine;
-    if (wineInfo) {
-      try {
-        const query = `${mappedData.vintage || ''} ${mappedData.producer || ''} ${mappedData.name || row.wine || mappedData.grapeVarieties || ''}`.trim();
-        console.log('🍷 Searching LWIN database for:', query);
-        
-        const { lwinMatcher } = await import('./lwinMatcher');
-        const matches = await lwinMatcher.findMatches(query, 3);
-        console.log('🔍 LWIN search results:', matches.length, 'matches found');
-        
-        if (matches.length > 0) {
-          const exactMatch = matches.length === 1 && matches[0].confidence > 0.9;
-          lwinMatches = {
-            query,
-            exactMatch,
-            matches: matches.map(match => ({
-              producer: match.producer,
-              wineName: match.wineName,
-              vintage: match.vintage,
-              region: match.region,
-              country: match.country,
-              type: match.type,
-              confidence: match.confidence,
-              source: 'LWIN'
-            })),
-            needsUserSelection: !exactMatch && matches.length > 1
-          };
-        }
-      } catch (error) {
-        console.warn('LWIN matching failed for wine:', error);
-      }
-    }
+    // Simple user input processing - rely on user data
 
     if (needsVerification) {
       result.needsVerificationCount++;
