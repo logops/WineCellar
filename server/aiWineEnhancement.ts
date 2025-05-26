@@ -35,36 +35,50 @@ Wine Details:
 - Country: ${wineData.country || 'Unknown'}
 `.trim();
 
-  const prompt = `As a Master Sommelier, analyze this SPECIFIC wine and return EXACT database-ready information:
+  const prompt = `You are a wine expert assistant. Based on the wine details provided, analyze the wine and recommend an appropriate drinking window (start year and end year). 
+Additionally, identify grape varieties, region, and other key information if they weren't provided.
+
+FORMAT REQUIREMENTS FOR GRAPE VARIETIES:
+For the "grapeVarieties" field, list ONLY the grape variety names themselves, separated by commas.
+Do not include any of the following in your grape varieties response:
+- Percentages or proportions
+- Qualifiers like "primarily", "mainly", "predominantly", etc.
+- Words like "blend", "variety", "components", etc.
+- Uncertainty markers like "likely", "possibly", "appears to be", etc.
+
+For wines from classic regions with known blends:
+- For Bordeaux blends: List the actual grape varieties (e.g., "Cabernet Sauvignon, Merlot, Cabernet Franc")
+- For Valpolicella: List the actual grape varieties (e.g., "Corvina, Corvinone, Rondinella")
+- For Champagne: List the actual grape varieties (e.g., "Chardonnay, Pinot Noir, Pinot Meunier")
+
+For region and subregion, provide only definitive information without qualifying words.
 
 ${wineDescription}
 
-You must research this exact producer and wine. Return ONLY the JSON format below with NO SENTENCES in grape varieties, region, or subregion fields:
+Today's date is ${new Date().toISOString().split('T')[0]}.
 
+For grape varieties:
+- List ONLY the actual grape varietal names themselves, separated by commas
+- For wines from classic regions (like Bordeaux, Valpolicella, Champagne), list the specific grape varieties they typically contain
+- Do NOT use qualifiers, percentages, or uncertainty markers
+- Simply list the grape names themselves, comma-separated
+
+Respond only with JSON as specified. Use numeric values for years, not strings.
+For any fields where you're uncertain, provide your best estimate based on similar wines.
+If you have absolutely no information to determine a field, use null for that field.
+
+JSON format:
 {
-  "drinkingWindow": {
-    "start": "YYYY",
-    "end": "YYYY", 
-    "confidence": "high|medium|low",
-    "reasoning": "Specific analysis of THIS exact wine's aging trajectory based on this producer's known style and this vintage."
-  },
-  "wineInfo": {
-    "grapeVarieties": "ONLY comma-separated grape names: Tempranillo, Graciano, Mazuelo",
-    "region": "ONLY region name: Rioja",
-    "subregion": "ONLY sub-region name: Rioja Alta"
-  },
-  "additionalInfo": {
-    "tastingNotes": "Professional tasting notes for this specific wine and vintage.",
-    "foodPairings": "Specific food pairings for this wine's profile."
-  }
-}
-
-CRITICAL RULES:
-- grapeVarieties: ONLY grape names separated by commas, NO percentages, NO sentences
-- region: ONLY the region name, NO country, NO descriptive text  
-- subregion: ONLY the sub-region name, NO speculation words like "likely"
-- Research the EXACT producer - do not give generic wine category advice
-- This is for database storage - clean strings only`;
+  "start": 2025,
+  "end": 2030,
+  "confidence": "high/medium/low",
+  "reasoning": "Brief explanation of your recommendation",
+  "grapeVarieties": "...",
+  "region": "...",
+  "subregion": "...",
+  "notes": "...",
+  "pairings": "..."
+}`;
 
   try {
     const response = await anthropic.messages.create({
@@ -94,7 +108,27 @@ CRITICAL RULES:
       jsonText = jsonText.substring(firstBrace, lastBrace + 1);
     }
     
-    const analysis = JSON.parse(jsonText);
+    const rawAnalysis = JSON.parse(jsonText);
+    
+    // Transform the response to match our interface
+    const analysis: WineEnhancementData = {
+      drinkingWindow: {
+        start: rawAnalysis.start?.toString() || '2025',
+        end: rawAnalysis.end?.toString() || '2030', 
+        confidence: rawAnalysis.confidence || 'medium',
+        reasoning: rawAnalysis.reasoning || 'Analysis based on wine characteristics'
+      },
+      wineInfo: {
+        grapeVarieties: rawAnalysis.grapeVarieties || undefined,
+        region: rawAnalysis.region || undefined,
+        subregion: rawAnalysis.subregion || undefined
+      },
+      additionalInfo: {
+        tastingNotes: rawAnalysis.notes || 'Professional tasting notes for this wine',
+        foodPairings: rawAnalysis.pairings || 'Food pairing suggestions for this wine'
+      }
+    };
+    
     return analysis;
   } catch (error) {
     console.error('Error enhancing wine with AI:', error);
