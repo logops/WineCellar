@@ -246,9 +246,67 @@ export async function findSmartWineMatches(searchQuery: string, limit: number = 
       }
     }
     
-    // If no matches found, return the user's original input so they can edit it
-    if (matches.length === 0) {
-      console.log('No LWIN matches found for:', searchQuery, '- returning user input for editing');
+    // If no good matches found, do aggressive fuzzy matching to find something useful
+    if (matches.length === 0 || matches[0].confidence < 0.3) {
+      console.log('Doing aggressive fuzzy matching for:', searchQuery);
+      
+      // Try broader searches for useful matches
+      const fuzzyMatches = [];
+      const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 2);
+      
+      for (let i = 0; i < Math.min(lwinData.length, 5000); i++) {
+        const row = lwinData[i] as any[];
+        let wine: any = {};
+        
+        // Map row data efficiently
+        lwinHeaders.forEach((header, index) => {
+          const value = row[index];
+          if (value && header) {
+            const h = header.toLowerCase();
+            if (h.includes('producer') || h.includes('winery')) wine.producer = String(value);
+            else if (h.includes('wine') && h.includes('name')) wine.wineName = String(value);
+            else if (h.includes('vintage') || h.includes('year')) {
+              const vintage = parseInt(String(value));
+              if (vintage > 1800 && vintage <= 2030) wine.vintage = vintage;
+            }
+            else if (h.includes('region') && !h.includes('sub')) wine.region = String(value);
+            else if (h.includes('country')) wine.country = String(value);
+            else if (h.includes('type')) wine.type = String(value);
+          }
+        });
+        
+        if (!wine.producer || !wine.wineName) continue;
+        
+        // Check if any search terms match
+        const searchText = `${wine.producer} ${wine.wineName}`.toLowerCase();
+        let termMatches = 0;
+        for (const term of searchTerms) {
+          if (searchText.includes(term)) {
+            termMatches++;
+          }
+        }
+        
+        if (termMatches >= 1) {
+          const confidence = Math.min(0.8, termMatches / searchTerms.length);
+          fuzzyMatches.push({
+            producer: wine.producer,
+            wineName: wine.wineName,
+            vintage: parsedInput.vintage || wine.vintage,
+            region: wine.region || '',
+            country: wine.country || '',
+            type: wine.type || '',
+            confidence,
+            source: 'LWIN_fuzzy'
+          });
+        }
+      }
+      
+      if (fuzzyMatches.length > 0) {
+        const sorted = fuzzyMatches.sort((a, b) => b.confidence - a.confidence);
+        return sorted.slice(0, limit);
+      }
+      
+      // If still no matches, return parsed input
       const parsed = parseWineInput(searchQuery);
       return [{
         producer: parsed.producer || '',
