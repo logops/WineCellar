@@ -143,73 +143,96 @@ export default function WineImportCard({
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              {formatVintage(wine.mappedData.vintage)} {wine.mappedData.producer} {wine.mappedData.name}
-              {wine.isPotentialDuplicate && (
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <div className="flex items-center gap-2 mb-2">
+              {selectable && (
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => onSelect?.(wine.rowIndex)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
               )}
-            </h3>
-            {wine.mappedData.region && (
-              <p className="text-sm text-gray-600 mt-1">{wine.mappedData.region}</p>
-            )}
+              <h3 className="text-lg font-semibold text-gray-900">
+                {formatVintage(wine.mappedData.vintage)} {wine.mappedData.producer} {wine.mappedData.name}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {wine.mappedData.type} • {wine.mappedData.region}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
             <Badge className={getConfidenceColor(wine.confidence)}>
-              {wine.confidence} confidence
+              {wine.confidence.charAt(0).toUpperCase() + wine.confidence.slice(1)} confidence
             </Badge>
+            {wine.isPotentialDuplicate && (
+              <Badge variant="outline" className="text-orange-600 border-orange-300">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Potential duplicate
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {/* Auto-identified section */}
         {wine.mappedData.region && (
-          <div className="flex items-center gap-2">
+          <div>
             <span className="text-xs text-muted-foreground">Auto-identified:</span>
-            <Badge variant="secondary" className="text-xs">
-              {wine.mappedData.region}
-            </Badge>
+            <div className="mt-1">
+              <Badge variant="secondary" className="text-xs text-purple-700 bg-purple-50">
+                Region-{wine.mappedData.region}
+              </Badge>
+            </div>
           </div>
         )}
 
-        {/* Wine Details Section */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">Wine Details</h4>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
+        {/* Two-column layout matching the screenshot */}
+        <div className="grid grid-cols-2 gap-8">
+          {/* Wine Details Section */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Wine Details</h4>
+            <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Grape(s):</span>
-                <span>{wine.mappedData.grapeVarieties || 'Unknown'}</span>
+                <span className="text-right">{wine.mappedData.grapeVarieties || 'Unknown'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Vineyard:</span>
-                <span>{wine.mappedData.vineyard || 'Unknown'}</span>
+                <span className="text-right">{wine.mappedData.vineyard || 'Unknown'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subregion:</span>
-                <span>{wine.mappedData.subregion || 'Unknown'}</span>
+                <span className="text-right">{wine.mappedData.subregion || 'Unknown'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Bottle Size:</span>
-                <span>{wine.mappedData.bottleSize || '750ml'}</span>
+                <span className="text-right">{wine.mappedData.bottleSize || '750ml'}</span>
               </div>
             </div>
-            <div className="space-y-2">
+          </div>
+
+          {/* Purchase Information Section */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Purchase Information</h4>
+            <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Quantity:</span>
-                <span>{wine.mappedData.quantity || 1}</span>
+                <span className="text-right">{wine.mappedData.quantity || 1}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Price:</span>
-                <span>{formatPrice(wine.mappedData.purchasePrice) || 'Not set'}</span>
+                <span className="text-right">{formatPrice(wine.mappedData.purchasePrice) || 'Not set'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Date:</span>
-                <span>{wine.mappedData.purchaseDate ? formatDate(wine.mappedData.purchaseDate) : 'Not set'}</span>
+                <span className="text-right">{wine.mappedData.purchaseDate ? formatDate(wine.mappedData.purchaseDate) : 'Not set'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Location:</span>
-                <span>{wine.mappedData.storageLocation || 'Unknown'}</span>
+                <span className="text-right">{wine.mappedData.storageLocation || 'Unknown'}</span>
               </div>
             </div>
           </div>
@@ -217,7 +240,7 @@ export default function WineImportCard({
 
         {/* Drinking Window Section */}
         <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">Drinking Window</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Drinking Window</h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Current:</span>
@@ -229,7 +252,7 @@ export default function WineImportCard({
               </span>
             </div>
             {wine.aiDrinkingWindowRecommendation && (
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">AI Suggested:</span>
                 <div className="flex items-center gap-2">
                   <span>
@@ -237,16 +260,19 @@ export default function WineImportCard({
                   </span>
                   <Badge 
                     variant="outline" 
-                    className={`text-xs ${
+                    className={`text-xs px-2 py-1 ${
                       wine.aiDrinkingWindowRecommendation.confidence === 'high' 
-                        ? 'border-green-300 text-green-700' 
+                        ? 'border-green-300 text-green-700 bg-green-50' 
                         : wine.aiDrinkingWindowRecommendation.confidence === 'medium'
-                        ? 'border-yellow-300 text-yellow-700'
-                        : 'border-red-300 text-red-700'
+                        ? 'border-yellow-300 text-yellow-700 bg-yellow-50'
+                        : 'border-red-300 text-red-700 bg-red-50'
                     }`}
                   >
                     {wine.aiDrinkingWindowRecommendation.confidence}
                   </Badge>
+                  <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-xs text-gray-600">?</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -258,8 +284,7 @@ export default function WineImportCard({
         {/* Verification Notice */}
         {wine.needsVerification && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <div className="flex items-start gap-2">
               <span className="text-sm font-medium text-amber-800">Needs verification</span>
             </div>
             <p className="text-sm text-amber-700 mt-1">
@@ -269,7 +294,7 @@ export default function WineImportCard({
         )}
 
         {wine.missingRequiredFields.length > 0 && (
-          <div className="mt-4 p-2 bg-red-50 border border-red-200 rounded-md">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
             <h4 className="text-sm font-medium text-red-800 mb-1">Missing required fields:</h4>
             <ul className="list-disc list-inside text-sm text-red-700">
               {wine.missingRequiredFields.map((field) => (
@@ -279,29 +304,17 @@ export default function WineImportCard({
           </div>
         )}
 
-        <Separator />
-
-        <div className="flex justify-between items-center">
+        {/* Button Layout */}
+        <div className="flex justify-between items-center pt-2">
           <div className="flex gap-2">
-            {editable && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(wine)}
-                className="h-8"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
-            )}
-            
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={() => setDialogOpen(true)}
-              className="h-8"
+              onClick={() => onEdit(wine)}
+              className="h-8 text-gray-600 hover:text-gray-800"
             >
-              View Details
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
             </Button>
           </div>
 
@@ -310,7 +323,7 @@ export default function WineImportCard({
               variant="outline"
               size="sm"
               onClick={() => onReject(wine)}
-              className="h-8 text-red-600 hover:text-red-700"
+              className="h-8 text-red-600 border-red-300 hover:bg-red-50"
             >
               <X className="h-4 w-4 mr-1" />
               Skip
@@ -320,7 +333,7 @@ export default function WineImportCard({
               variant="default"
               size="sm"
               onClick={() => onApprove(wine)}
-              className="h-8 bg-green-600 hover:bg-green-700"
+              className="h-8 bg-green-600 hover:bg-green-700 text-white"
             >
               <Check className="h-4 w-4 mr-1" />
               Import as is
