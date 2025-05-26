@@ -1293,8 +1293,7 @@ export async function processBatch(
       isPotentialDuplicate,
       duplicateId,
       needsVerification,
-      storageLocation,
-      lwinMatches
+      storageLocation
     });
     
     result.processedRows++;
