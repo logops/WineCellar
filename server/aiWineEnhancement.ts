@@ -36,31 +36,35 @@ Wine Details:
 - Country: ${wineData.country || 'Unknown'}
 `.trim();
 
-  const prompt = `As a Master Sommelier with decades of experience in wine evaluation and cellar management, analyze this wine and provide comprehensive information:
+  const prompt = `As a Master Sommelier, analyze this SPECIFIC wine (not generic wine types) and provide exact information about THIS wine:
 
 ${wineDescription}
 
-Please provide a detailed analysis in the following JSON format:
+Research this exact producer, vintage, and wine. Do not give generic advice about wine categories. Return structured data for database storage:
+
 {
   "drinkingWindow": {
     "start": "YYYY",
     "end": "YYYY", 
     "confidence": "high|medium|low",
-    "reasoning": "Detailed explanation of why this drinking window is recommended, considering vintage, producer quality, wine style, aging potential, etc."
+    "reasoning": "Specific analysis of THIS wine's current state and aging trajectory based on this exact producer's style, this vintage's characteristics, and this wine's specific attributes."
   },
   "wineInfo": {
-    "grapeVarieties": "Complete grape blend if not provided or enhanced information",
-    "region": "Enhanced or corrected region information",
-    "subregion": "Specific sub-region or appellation"
+    "grapeVarieties": "Exact grape varieties as comma-separated list (e.g. 'Cabernet Sauvignon, Merlot, Cabernet Franc')",
+    "region": "Specific region name only (e.g. 'Rioja' not 'Rioja, Spain')",
+    "subregion": "Exact sub-region/appellation only (e.g. 'Rioja Alta' not 'Likely Rioja Alta')"
   },
   "additionalInfo": {
-    "tastingNotes": "Professional tasting notes describing aroma, flavor profile, structure, and character. Include specific fruit, spice, earth, and oak notes typical of this producer and region.",
-    "cellaring": "Detailed storage recommendations including optimal temperature, humidity, position, and any special considerations for this wine type and quality level.",
-    "foodPairings": "Comprehensive food pairing suggestions including specific dishes, preparation styles, and ingredient combinations that complement this wine's characteristics."
+    "tastingNotes": "Professional tasting notes for THIS specific wine based on the producer's known style, this vintage's characteristics, and typical profile of this exact bottling.",
+    "foodPairings": "Specific food pairing recommendations that complement this wine's exact characteristics and style."
   }
 }
 
-Ensure all recommendations are specific to this producer, vintage, and region. Base your analysis on the wine's likely characteristics given its provenance and style.`;
+IMPORTANT: 
+- Research the exact producer and their specific winemaking style
+- Consider this exact vintage's conditions and characteristics  
+- Provide definitive data, not speculation with words like "likely" or "probably"
+- Return clean strings suitable for database storage and filtering`;
 
   try {
     const response = await anthropic.messages.create({
