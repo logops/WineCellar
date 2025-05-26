@@ -1098,15 +1098,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process the batch with AI column mapping if requested
       const useAiColumnMapping = req.body.useAiColumnMapping === 'true';
       
-      // Efficient processing: handle larger batches for better UX
-      const efficientBatchSize = Math.min(batchSize, 50); // Process up to 50 wines at once
-      console.log(`Processing batch of ${efficientBatchSize} wines (requested: ${batchSize})`);
+      // Handle the ENTIRE batch at once for seamless UX
+      console.log(`Processing complete batch: ${batchSize} wines starting from row ${batchIndex}`);
       
       const result = await processBatchFromFile(fileBuffer, {
         userId: req.user.id,
         useAiDrinkingWindows,
         startRow: batchIndex,
-        batchSize: efficientBatchSize,
+        batchSize: batchSize, // Process the full batch
         fieldMappings,
         useAiColumnMapping,
         sheetIndex // Include selected sheet index if provided

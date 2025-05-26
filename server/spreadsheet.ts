@@ -1283,10 +1283,8 @@ export async function processBatch(
         const query = `${mappedData.vintage || ''} ${mappedData.producer || ''} ${mappedData.name || row.wine || mappedData.grapeVarieties || ''}`.trim();
         console.log('🍷 Searching LWIN database for:', query);
         
-        // Minimal delay for efficient processing
-        await new Promise(resolve => setTimeout(resolve, 20));
-        
-        const matches = await findSmartWineMatches(query, 3);
+        const { lwinMatcher } = await import('./lwinMatcher');
+        const matches = await lwinMatcher.findMatches(query, 3);
         console.log('🔍 LWIN search results:', matches.length, 'matches found');
         
         if (matches.length > 0) {
