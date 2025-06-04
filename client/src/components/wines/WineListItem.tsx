@@ -49,28 +49,23 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         <div className="border border-gray-200 rounded-md shadow-sm hover:shadow-md hover:border-burgundy-200 transition-all duration-200 relative group">
           {/* Compact header - always visible */}
           <div className="flex items-center justify-between p-3">
-            <div className="flex items-center flex-grow cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+            <div className="flex items-center flex-grow cursor-pointer" onClick={() => setShowEditModal(true)}>
               <div className="w-8 h-8 flex-shrink-0 mr-3">
                 <WineGlassIcon type={wine.type} />
               </div>
               <div className="flex-grow min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-grow min-w-0">
-                    <h3 className="font-serif text-sm text-gray-800 font-medium truncate">
-                      {wine.vintage && <span>{wine.vintage} </span>}
-                      {wine.producer}{" "}
-                      {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
-                      {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
-                    </h3>
-                    {wine.rating && (
-                      <span className="text-xs bg-burgundy-100 text-burgundy-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                        {wine.rating}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center ml-2">
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif text-sm text-gray-800 font-medium truncate">
+                    {wine.vintage && <span>{wine.vintage} </span>}
+                    {wine.producer}{" "}
+                    {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
+                    {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
+                  </h3>
+                  {wine.rating && (
+                    <span className="text-xs bg-burgundy-100 text-burgundy-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+                      {wine.rating}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center mt-0.5">
                   <p className="text-gray-500 text-xs">
@@ -89,8 +84,19 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               </div>
             </div>
             
-            {/* Edit button */}
-            <div className="flex items-center">
+            {/* Dropdown and Edit buttons */}
+            <div className="flex items-center space-x-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(!isExpanded);
+                }}
+              >
+                {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
