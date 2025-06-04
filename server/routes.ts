@@ -174,48 +174,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let analysisContent;
         
         if (mimeType === 'application/pdf') {
-          // Extract text from PDF using pdfjs-dist
-          let pdfText;
-          try {
-            const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
-            
-            // Load PDF document
-            const loadingTask = pdfjsLib.getDocument({
-              data: req.file.buffer,
-              verbosity: 0 // Suppress console output
-            });
-            
-            const pdf = await loadingTask.promise;
-            let fullText = '';
-            
-            // Extract text from all pages
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-              const page = await pdf.getPage(pageNum);
-              const textContent = await page.getTextContent();
-              const pageText = textContent.items
-                .map((item: any) => item.str)
-                .join(' ');
-              fullText += pageText + '\n';
-            }
-            
-            pdfText = fullText.trim();
-            console.log('Successfully extracted PDF text, length:', pdfText.length);
-            
-            if (!pdfText || pdfText.length < 10) {
-              throw new Error('PDF appears to be empty or unreadable');
-            }
-          } catch (pdfError) {
-            console.error('PDF parsing error:', pdfError);
-            return res.status(400).json({
-              success: false,
-              message: 'Unable to process PDF file. The PDF may be password-protected, corrupted, or contain only images. Please convert to an image format (PNG, JPG) and try again.'
-            });
-          }
+          // Send PDF directly to Claude - it can read PDFs natively
+          const base64Pdf = req.file.buffer.toString('base64');
           
           analysisContent = [
             {
               type: 'text' as const,
-              text: `${prompt}\n\nPDF Content:\n${pdfText}`
+              text: prompt
+            },
+            {
+              type: 'document' as const,
+              source: {
+                type: 'base64' as const,
+                media_type: 'application/pdf' as const,
+                data: base64Pdf
+              }
             }
           ];
         } else {
