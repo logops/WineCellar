@@ -49,7 +49,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         <div className="border border-gray-200 rounded-md shadow-sm hover:shadow-md hover:border-burgundy-200 transition-all duration-200 relative group">
           {/* Compact header - always visible */}
           <div className="flex items-center justify-between p-3">
-            <div className="flex items-center flex-grow cursor-pointer" onClick={() => setShowEditModal(true)}>
+            <div className="flex items-center flex-grow cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
               <div className="w-8 h-8 flex-shrink-0 mr-3">
                 <WineGlassIcon type={wine.type} />
               </div>
