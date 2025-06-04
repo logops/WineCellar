@@ -17,6 +17,7 @@ import { formatPrice } from "@/lib/utils";
 import { parseDrinkingWindow } from "@/lib/date-utils";
 import { Edit, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface WineListItemProps {
   wine: Wine;
@@ -27,117 +28,121 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formIsDirty, setFormIsDirty] = useState(false);
-  const [notesExpanded, setNotesExpanded] = useState(false);
-
-  // Simple function to handle card click
-  const handleCardClick = () => {
-    setShowEditModal(true);
-    // Form dirty state will be managed by the form component
-  };
-
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   
   // Close handler for the edit dialog
   const handleCloseDialog = () => {
-    // Log the form state to help with debugging
     console.log("Form dirty state:", formIsDirty);
     
     if (formIsDirty) {
-      // Show styled dialog instead of browser confirm
       setShowUnsavedChangesDialog(true);
     } else {
-      // No changes made, close dialog directly
       setShowEditModal(false);
-      if (onUpdate) onUpdate(); // Refresh the wine list when closing
+      if (onUpdate) onUpdate();
     }
   };
-  
-  // Let's simplify this completely - we don't need this function anymore
-  // Each component will handle its own state directly
 
   return (
-    <div 
-      className="border border-gray-200 rounded-md p-6 shadow-sm hover:shadow-md hover:border-burgundy-200 hover:bg-cream-50 transition-all duration-200 cursor-pointer relative group"
-      onClick={handleCardClick}
-    >
-      <div className="absolute top-3 right-3 bg-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <Edit className="h-4 w-4 text-gray-500" />
-      </div>
-      <div className="flex">
-        <div className="w-12 flex-shrink-0 mr-5">
-          <WineGlassIcon type={wine.type} />
-        </div>
-        <div className="flex-grow">
-          <div className="flex flex-col md:flex-row justify-between">
-            <div>
-              <h3 className="font-serif text-lg text-gray-800 font-medium">
-                {wine.vintage && <span>{wine.vintage} </span>}
-                {wine.producer}{" "}
-                {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
-                {wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
-              </h3>
-              <p className="text-gray-500 text-sm mt-1">
-                {wine.grapeVarieties && <span className="mr-1">{wine.grapeVarieties}</span>}
-                {wine.region && <span className="font-medium">{wine.region}</span>}
-                {wine.subregion && <span className="text-gray-400 ml-1">({wine.subregion})</span>}
-              </p>
-              {wine.rating && <p className="text-xs text-gray-400 mt-1">Rating: {wine.rating}/100</p>}
+    <>
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <div className="border border-gray-200 rounded-md shadow-sm hover:shadow-md hover:border-burgundy-200 transition-all duration-200 relative group">
+          {/* Compact header - always visible */}
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center flex-grow cursor-pointer" onClick={() => setShowEditModal(true)}>
+              <div className="w-8 h-8 flex-shrink-0 mr-3">
+                <WineGlassIcon type={wine.type} />
+              </div>
+              <div className="flex-grow min-w-0">
+                <h3 className="font-serif text-base text-gray-800 font-medium truncate">
+                  {wine.vintage && <span>{wine.vintage} </span>}
+                  {wine.producer}{" "}
+                  {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
+                  {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
+                </h3>
+                <p className="text-gray-500 text-xs truncate">
+                  {wine.grapeVarieties && <span className="mr-1">{wine.grapeVarieties}</span>}
+                  {wine.region && <span className="font-medium">{wine.region}</span>}
+                  {wine.subregion && <span className="text-gray-400 ml-1">({wine.subregion})</span>}
+                </p>
+              </div>
+            </div>
+            
+            {/* Quick info and expand button */}
+            <div className="flex items-center space-x-3">
+              <div className="text-xs text-gray-500 hidden sm:block">
+                {wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''}
+              </div>
+              <div className="text-xs text-burgundy-600 font-medium hidden md:block">
+                {wine.drinkingStatus === "drink_now" 
+                  ? "Drink Now" 
+                  : wine.drinkingStatus === "drink_later" 
+                    ? "Drink Later" 
+                    : parseDrinkingWindow(wine)}
+              </div>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => setShowEditModal(true)}
+              >
+                <Edit className="h-4 w-4 text-gray-500" />
+              </Button>
             </div>
           </div>
-          
-          <div className="mt-5 text-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="text-gray-500">Drinking Window</div>
-              <div className="flex items-center">
-                <span className="text-burgundy-600 font-medium mr-3">
-                  {wine.drinkingStatus === "drink_now" 
-                    ? "Drink Now" 
-                    : wine.drinkingStatus === "drink_later" 
-                      ? "Drink Later" 
-                      : parseDrinkingWindow(wine)}
-                </span>
-                <div className="w-16 h-1 bg-burgundy-500 rounded-full"></div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="text-gray-500">
-                {wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''} · {wine.bottleSize}
-              </div>
-              <div className="flex items-center">
-                <span className="text-gray-500 mr-1">Value:</span>
-                <span className="text-burgundy-600 font-medium">{formatPrice(wine.currentValue)}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-gray-500">
-              <div>Storage Location</div>
-              <div>Main Cellar</div>
-            </div>
-            {wine.notes && (
-              <div className="pt-3 mt-3 border-t border-gray-100">
-                <div 
-                  className="flex items-center justify-between cursor-pointer" 
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent opening edit dialog
-                    setNotesExpanded(!notesExpanded);
-                  }}
-                >
-                  <div className="text-gray-500 mb-1">Notes</div>
-                  <div className="text-gray-400">
-                    {notesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+
+          {/* Expandable details */}
+          <CollapsibleContent>
+            <div className="px-4 pb-4 border-t border-gray-100">
+              <div className="mt-3 text-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-gray-500">Drinking Window</div>
+                  <div className="flex items-center">
+                    <span className="text-burgundy-600 font-medium mr-3">
+                      {wine.drinkingStatus === "drink_now" 
+                        ? "Drink Now" 
+                        : wine.drinkingStatus === "drink_later" 
+                          ? "Drink Later" 
+                          : parseDrinkingWindow(wine)}
+                    </span>
+                    <div className="w-16 h-1 bg-burgundy-500 rounded-full"></div>
                   </div>
                 </div>
-                {notesExpanded ? (
-                  <div className="text-gray-600 text-sm italic">{wine.notes}</div>
-                ) : (
-                  <div className="text-gray-600 text-sm italic line-clamp-1">{wine.notes}</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-gray-500">
+                    {wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''} · {wine.bottleSize}
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-500 mr-1">Value:</span>
+                    <span className="text-burgundy-600 font-medium">{formatPrice(wine.currentValue)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-gray-500">
+                  <div>Storage Location</div>
+                  <div>{wine.storageLocation || 'Main Cellar'}</div>
+                </div>
+                {wine.rating && (
+                  <div className="flex items-center justify-between text-gray-500">
+                    <div>Rating</div>
+                    <div>{wine.rating}/100</div>
+                  </div>
+                )}
+                {wine.notes && (
+                  <div className="pt-3 mt-3 border-t border-gray-100">
+                    <div className="text-gray-500 mb-2">Notes</div>
+                    <div className="text-gray-600 text-sm italic">{wine.notes}</div>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          </CollapsibleContent>
         </div>
-      </div>
-
-      {/* Import the new ConfirmDialog component */}
+      </Collapsible>
       {showUnsavedChangesDialog && (
         <div id="force-render-dialog">
           <AlertDialog 
@@ -223,7 +228,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
             <DialogHeader>
               <DialogTitle>
                 Edit {wine.vintage && `${wine.vintage} `}{wine.producer} {wine.vineyard && `${wine.vineyard} `}
-                {wine.name ? wine.name : wine.grapeVarieties && wine.grapeVarieties.split(",")[0].trim()}
+                {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
               </DialogTitle>
               <DialogDescription className="text-gray-500 text-sm mt-1">
                 Edit details of this wine and save changes to update your collection
@@ -269,6 +274,6 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
