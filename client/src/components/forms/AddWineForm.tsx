@@ -287,11 +287,11 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         credentials: 'include'
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to parse receipt');
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to parse receipt');
+      }
       setParsedReceiptWines(data.wines || []);
       
       if (data.wines && data.wines.length > 0) {
