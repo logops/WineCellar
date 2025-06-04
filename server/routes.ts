@@ -131,7 +131,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const mimeType = req.file.mimetype;
         
         if (mimeType === 'application/pdf') {
-          throw new Error('PDF receipts are not yet supported. Please convert to an image format (PNG, JPG) and try again.');
+          return res.status(400).json({
+            success: false,
+            message: 'PDF receipts are not yet supported. Please convert to an image format (PNG, JPG) and try again.'
+          });
         }
 
         // Convert image buffer to base64 for AI analysis
@@ -278,8 +281,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 drinkingWindowStart: aiEnhancement.drinkingWindow.start,
                 drinkingWindowEnd: aiEnhancement.drinkingWindow.end,
                 notes: wine.notes ? 
-                  `${wine.notes}\n\nAI Analysis:\n${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}` :
-                  `AI Analysis:\n${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}`,
+                  `${wine.notes}\n\n${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}` :
+                  `${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}`,
                 aiEnhanced: true
               };
             } catch (aiError) {
@@ -376,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             wineId: id,
             userId: req.user.id,
             quantity: quantity,
-            consumptionDate: now,
+            consumptionDate: now.toISOString(),
             notes: notes || undefined
           });
         } catch (error) {
