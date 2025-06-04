@@ -128,9 +128,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log('Processing receipt upload:', req.file.originalname);
         
-        // Convert buffer to base64 for AI analysis
-        const base64Image = req.file.buffer.toString('base64');
         const mimeType = req.file.mimetype;
+        
+        if (mimeType === 'application/pdf') {
+          throw new Error('PDF receipts are not yet supported. Please convert to an image format (PNG, JPG) and try again.');
+        }
+
+        // Convert image buffer to base64 for AI analysis
+        const base64Image = req.file.buffer.toString('base64');
         
         // Use Anthropic to analyze the receipt directly
         const Anthropic = (await import('@anthropic-ai/sdk')).default;

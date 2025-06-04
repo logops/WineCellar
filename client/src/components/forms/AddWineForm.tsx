@@ -138,6 +138,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [isParsingReceipt, setIsParsingReceipt] = useState(false);
   const [parsedReceiptWines, setParsedReceiptWines] = useState<any[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [currentReceiptWineIndex, setCurrentReceiptWineIndex] = useState(0);
+  const [isProcessingReceiptWine, setIsProcessingReceiptWine] = useState(false);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -355,8 +357,10 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     }
   };
 
-  // Function to add wine from parsed receipt
-  const addWineFromReceipt = (receiptWine: any) => {
+  // Function to add wine from parsed receipt (similar to label capture flow)
+  const addWineFromReceipt = (receiptWine: any, wineIndex?: number) => {
+    setIsProcessingReceiptWine(true);
+    
     // Handle drinking window if provided by AI enhancement
     let drinkingWindowStart = null;
     let drinkingWindowEnd = null;
@@ -384,8 +388,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       bottleSize: receiptWine.bottleSize || '750ml',
       storageLocation: 'Main Cellar',
       drinkingStatus: drinkingStatus,
-      drinkingWindowStartYear: drinkingWindowStart,
-      drinkingWindowEndYear: drinkingWindowEnd,
+      drinkingWindowStartYear: drinkingWindowStart ?? undefined,
+      drinkingWindowEndYear: drinkingWindowEnd ?? undefined,
       notes: receiptWine.notes || ''
     });
     
@@ -394,8 +398,14 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       setDrinkingWindowType('custom');
     }
     
+    // Store the current wine index for multi-wine processing
+    if (typeof wineIndex === 'number') {
+      setCurrentReceiptWineIndex(wineIndex);
+    }
+    
     setEntryMethod("manual");
     setShowReceiptUpload(false);
+    setIsProcessingReceiptWine(false);
     
     const description = receiptWine.aiEnhanced 
       ? "Wine information loaded with AI enhancements. Review the details before saving."
