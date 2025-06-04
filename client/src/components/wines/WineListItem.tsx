@@ -61,6 +61,17 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                     {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
                     {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
                   </h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0 ml-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsExpanded(!isExpanded);
+                    }}
+                  >
+                    {isExpanded ? <ChevronUp className="h-3 w-3 text-gray-400" /> : <ChevronDown className="h-3 w-3 text-gray-400" />}
+                  </Button>
                   {wine.rating && (
                     <span className="text-xs bg-burgundy-100 text-burgundy-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
                       {wine.rating}
@@ -84,19 +95,8 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
               </div>
             </div>
             
-            {/* Dropdown and Edit buttons */}
-            <div className="flex items-center space-x-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 w-8 p-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsExpanded(!isExpanded);
-                }}
-              >
-                {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-              </Button>
+            {/* Edit button */}
+            <div className="flex items-center">
               <Button 
                 variant="ghost" 
                 size="sm" 
