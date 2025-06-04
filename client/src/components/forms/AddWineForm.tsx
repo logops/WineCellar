@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, Wine, Loader2, Sparkles } from "lucide-react";
+import { CalendarIcon, Wine, Loader2, Sparkles, Upload, Receipt } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -132,6 +132,11 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   // Track which fields were enhanced and show visual feedback
   const [enhancedFields, setEnhancedFields] = useState<string[]>([]);
   const [showEnhancedFields, setShowEnhancedFields] = useState(false);
+  // Receipt upload functionality
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isParsingReceipt, setIsParsingReceipt] = useState(false);
+  const [parsedReceiptWines, setParsedReceiptWines] = useState<any[]>([]);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -263,6 +268,86 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     
     return () => subscription.unsubscribe();
   }, [form, defaultValues, onFormChange]);
+
+  // Function to handle receipt upload and parsing
+  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setReceiptFile(file);
+    setIsParsingReceipt(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('receipt', file);
+
+      const response = await fetch('/api/parse-receipt', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to parse receipt');
+      }
+
+      const data = await response.json();
+      setParsedReceiptWines(data.wines || []);
+      
+      if (data.wines && data.wines.length > 0) {
+        toast({
+          title: "Receipt Parsed",
+          description: `Found ${data.wines.length} wine${data.wines.length !== 1 ? 's' : ''} in the receipt.`,
+        });
+        setShowReceiptUpload(true);
+      } else {
+        toast({
+          title: "No Wines Found",
+          description: "No wine items were found in this receipt.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Receipt parsing error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to parse receipt. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingReceipt(false);
+    }
+  };
+
+  // Function to add wine from parsed receipt
+  const addWineFromReceipt = (receiptWine: any) => {
+    form.reset({
+      name: receiptWine.name || '',
+      producer: receiptWine.producer || '',
+      vintage: receiptWine.vintage || '',
+      type: receiptWine.type || 'Red',
+      grapeVarieties: receiptWine.grapeVarieties || '',
+      region: receiptWine.region || '',
+      subregion: receiptWine.subregion || '',
+      vineyard: receiptWine.vineyard || '',
+      quantity: receiptWine.quantity || 1,
+      purchasePrice: receiptWine.price || '',
+      purchaseDate: receiptWine.purchaseDate || format(new Date(), "yyyy-MM-dd"),
+      purchaseLocation: receiptWine.purchaseLocation || '',
+      bottleSize: receiptWine.bottleSize || '750ml',
+      storageLocation: 'Main Cellar',
+      drinkingStatus: 'drink_later',
+      notes: receiptWine.notes || ''
+    });
+    
+    setEntryMethod("receipt");
+    setShowReceiptUpload(false);
+    
+    toast({
+      title: "Wine Information Loaded",
+      description: "Review and modify the wine details before saving.",
+    });
+  };
 
   // Function to handle consumption of wine
   async function handleDrinkWine() {
@@ -1052,9 +1137,10 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       {/* Close button removed in favor of click-outside functionality */}
       
       <Tabs defaultValue="manual" value={entryMethod} onValueChange={setEntryMethod} className="mb-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="manual">Manual Entry</TabsTrigger>
           <TabsTrigger value="label">Capture Label</TabsTrigger>
+          <TabsTrigger value="receipt">Upload Receipt</TabsTrigger>
         </TabsList>
         <TabsContent value="manual">
           <Form {...form}>
@@ -2027,6 +2113,87 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
               detectMultipleBottles={true}
               existingWines={existingWines}
             />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="receipt">
+          <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+            <Receipt className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Upload Wine Receipt</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Upload a receipt or invoice from a winery to automatically extract wine information.
+              We'll identify wine items and filter out non-wine purchases like tasting fees.
+            </p>
+            
+            <div className="space-y-4">
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleReceiptUpload}
+                className="hidden"
+                id="receipt-upload"
+                disabled={isParsingReceipt}
+              />
+              <label
+                htmlFor="receipt-upload"
+                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-burgundy-600 hover:bg-burgundy-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-burgundy-500 cursor-pointer ${
+                  isParsingReceipt ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isParsingReceipt ? (
+                  <>
+                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
+                    Parsing Receipt...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="-ml-1 mr-2 h-5 w-5" />
+                    Choose Receipt File
+                  </>
+                )}
+              </label>
+              
+              {receiptFile && (
+                <p className="text-sm text-gray-600">
+                  Selected: {receiptFile.name}
+                </p>
+              )}
+            </div>
+            
+            {/* Display parsed wines */}
+            {parsedReceiptWines.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <h4 className="text-md font-medium text-gray-900">Found Wines in Receipt:</h4>
+                <div className="space-y-2">
+                  {parsedReceiptWines.map((wine, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-cream-50 border border-cream-200 rounded-md"
+                    >
+                      <div className="text-left">
+                        <p className="font-medium text-gray-900">
+                          {wine.vintage} {wine.producer} {wine.name}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Qty: {wine.quantity} | ${wine.price} | {wine.type}
+                        </p>
+                        {wine.region && (
+                          <p className="text-xs text-gray-500">{wine.region}</p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => addWineFromReceipt(wine)}
+                        className="bg-burgundy-600 hover:bg-burgundy-700"
+                      >
+                        Add This Wine
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
