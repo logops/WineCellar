@@ -123,222 +123,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         if (!req.file) {
-          return res.status(400).json({ error: 'No receipt file uploaded' });
+          return res.status(400).json({ 
+            success: false, 
+            message: 'No receipt file uploaded' 
+          });
         }
-
-        console.log('Processing receipt upload:', req.file.originalname);
-        
-        const prompt = `
-        Analyze this wine purchase receipt/invoice and extract all wine-related items. 
-
-        IMPORTANT INSTRUCTIONS:
-        1. ONLY extract items that are actual wines (bottles of wine)
-        2. EXCLUDE non-wine items such as:
-           - Tasting fees (like "WC Comp Library", "Tasting Fee", etc.)
-           - Merchandise (glasses, corkscrews, etc.)
-           - Food items
-           - Shipping charges
-           - Service fees
-           - Gift cards
-        
-        For each wine item found, extract:
-        - Wine name (without vintage year)
-        - Producer/Winery name
-        - Vintage year
-        - Wine type (Red, White, Rosé, Sparkling, Dessert, Fortified)
-        - Quantity purchased
-        - Price per bottle or total price
-        - Region (if mentioned)
-        - Subregion (if mentioned)
-        - Grape varieties (if mentioned)
-        - Bottle size (if mentioned, default to 750ml)
-        
-        Return the results as a JSON array. If no wines are found, return an empty array.
-        
-        Example format:
-        [
-          {
-            "name": "Cabernet Sauvignon",
-            "producer": "Sunbasket",
-            "vintage": "2018",
-            "type": "Red",
-            "quantity": 1,
-            "price": "225.00",
-            "region": "Napa Valley",
-            "bottleSize": "750ml"
-          }
-        ]
-        `;
-        
-        const mimeType = req.file.mimetype;
-        let analysisContent;
-        
-        if (mimeType === 'application/pdf') {
-          // Send PDF directly to Claude - it can read PDFs natively
-          const base64Pdf = req.file.buffer.toString('base64');
-          
-          analysisContent = [
-            {
-              type: 'text' as const,
-              text: prompt
-            },
-            {
-              type: 'document' as const,
-              source: {
-                type: 'base64' as const,
-                media_type: 'application/pdf' as const,
-                data: base64Pdf
-              }
-            }
-          ];
-        } else {
-          // Convert image buffer to base64 for AI analysis
-          const base64Image = req.file.buffer.toString('base64');
-          
-          analysisContent = [
-            {
-              type: 'text' as const,
-              text: prompt
-            },
-            {
-              type: 'image' as const,
-              source: {
-                type: 'base64' as const,
-                media_type: mimeType as any,
-                data: base64Image
-              }
-            }
-          ];
-        }
-        
-        // Use Anthropic to analyze the receipt directly
-        const Anthropic = (await import('@anthropic-ai/sdk')).default;
-        const anthropic = new Anthropic({
-          apiKey: process.env.ANTHROPIC_API_KEY,
-        });
-
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 2000,
-          messages: [
-            {
-              role: 'user',
-              content: analysisContent
-            }
-          ]
-        });
-
-        const content = response.content[0];
-        if (content.type !== 'text') {
-          throw new Error('Unexpected response type from Anthropic');
-        }
-
-        // Extract JSON from the response
-        const jsonMatch = content.text.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) {
-          console.log('No JSON array found in response:', content.text);
-          throw new Error('No wines found in receipt');
-        }
-
-        const parsedWines = JSON.parse(jsonMatch[0]);
-        
-        // Clean and process the data using existing wine matching logic
-        const rawWines = parsedWines.map((wine: any) => ({
-          name: wine.name || '',
-          producer: wine.producer || '',
-          vintage: wine.vintage || '',
-          type: wine.type || 'Red',
-          quantity: parseInt(String(wine.quantity)) || 1,
-          price: String(wine.price || ''),
-          region: wine.region || '',
-          subregion: wine.subregion || '',
-          grapeVarieties: wine.grapeVarieties || '',
-          vineyard: wine.vineyard || '',
-          bottleSize: wine.bottleSize || '750ml',
-          purchaseLocation: wine.purchaseLocation || '',
-          purchaseDate: wine.purchaseDate || new Date().toISOString().split('T')[0],
-          notes: wine.notes || ''
-        }));
 
         // Get existing wines for duplicate detection
         const existingWines = await dbStorage.getWinesByUserId(req.user!.id);
-        
-        // Process each wine through the same enhancement logic used for other imports
-        const processedWines = await Promise.all(rawWines.map(async (wine: any) => {
-          try {
-            // Check for duplicates using the same logic as spreadsheet imports
-            const isDuplicate = existingWines.some((existingWine: any) => {
-              const nameMatch = existingWine.name?.toLowerCase().includes(wine.name.toLowerCase()) ||
-                               wine.name.toLowerCase().includes(existingWine.name?.toLowerCase() || '');
-              const producerMatch = existingWine.producer?.toLowerCase() === wine.producer.toLowerCase();
-              const vintageMatch = existingWine.vintage === parseInt(wine.vintage);
-              
-              return nameMatch && producerMatch && vintageMatch;
-            });
 
-            // Use the same AI enhancement system as other imports
-            let enhancedWine = wine;
-            try {
-              const aiEnhancement = await enhanceWineWithAI({
-                producer: wine.producer,
-                wineName: wine.name,
-                vintage: wine.vintage,
-                region: wine.region,
-                grapeVarieties: wine.grapeVarieties,
-                wineType: wine.type,
-                country: wine.region // fallback for country
-              });
+        // Process the receipt using the dedicated processor
+        const { ReceiptProcessor } = await import('./receiptProcessor');
+        const processor = new ReceiptProcessor();
+        const processedWines = await processor.processReceipt(req.file, existingWines);
 
-              enhancedWine = {
-                ...wine,
-                grapeVarieties: aiEnhancement.wineInfo.grapeVarieties || wine.grapeVarieties,
-                region: aiEnhancement.wineInfo.region || wine.region,
-                subregion: aiEnhancement.wineInfo.subregion || wine.subregion,
-                drinkingWindowStart: aiEnhancement.drinkingWindow.start,
-                drinkingWindowEnd: aiEnhancement.drinkingWindow.end,
-                notes: wine.notes ? 
-                  `${wine.notes}\n\n${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}` :
-                  `${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}`,
-                aiEnhanced: true
-              };
-            } catch (aiError) {
-              console.log('AI enhancement failed for receipt wine, using basic data:', aiError);
-            }
-            
-            return {
-              ...enhancedWine,
-              source: 'receipt',
-              matchStatus: isDuplicate ? 'duplicate' : 'new',
-              confidence: 'medium',
-              isDuplicate
-            };
-          } catch (error) {
-            console.error('Error processing receipt wine:', error);
-            return {
-              ...wine,
-              source: 'receipt',
-              matchStatus: 'new',
-              confidence: 'low',
-              isDuplicate: false
-            };
-          }
-        }));
-
-        const cleanedWines = processedWines;
-        
-        console.log('Parsed wines from receipt:', cleanedWines.length);
-        
         res.json({
           success: true,
-          wines: cleanedWines,
-          message: `Found ${cleanedWines.length} wine${cleanedWines.length !== 1 ? 's' : ''} in receipt`
+          wines: processedWines,
+          message: `Found ${processedWines.length} wine${processedWines.length !== 1 ? 's' : ''} in receipt`
         });
-        
+
       } catch (error) {
         console.error('Receipt parsing error:', error);
         res.status(500).json({ 
-          error: 'Failed to parse receipt',
-          message: error instanceof Error ? error.message : 'Unknown error occurred'
+          success: false,
+          message: error instanceof Error ? error.message : 'Failed to parse receipt'
         });
       }
     }
