@@ -49,7 +49,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
         <div className="border border-gray-200 rounded-md shadow-sm hover:shadow-md hover:border-burgundy-200 transition-all duration-200 relative group">
           {/* Compact header - always visible */}
           <div className="flex items-center justify-between p-3">
-            <div className="flex items-center flex-grow cursor-pointer" onClick={() => setShowEditModal(true)}>
+            <div className="flex items-center flex-grow cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
               <div className="w-8 h-8 flex-shrink-0 mr-3">
                 <WineGlassIcon type={wine.type} />
               </div>
@@ -68,11 +68,9 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                       </span>
                     )}
                   </div>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-2 flex-shrink-0">
-                      {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    </Button>
-                  </CollapsibleTrigger>
+                  <div className="flex items-center ml-2">
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  </div>
                 </div>
                 <div className="flex items-center mt-0.5">
                   <p className="text-gray-500 text-xs">
@@ -97,7 +95,10 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                 variant="ghost" 
                 size="sm" 
                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => setShowEditModal(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowEditModal(true);
+                }}
               >
                 <Edit className="h-4 w-4 text-gray-500" />
               </Button>
@@ -151,6 +152,7 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
           </CollapsibleContent>
         </div>
       </Collapsible>
+
       {showUnsavedChangesDialog && (
         <div id="force-render-dialog">
           <AlertDialog 
