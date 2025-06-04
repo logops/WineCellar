@@ -311,7 +311,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       console.error('Receipt parsing error:', error);
       toast({
         title: "Error",
-        description: "Failed to parse receipt. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to parse receipt. Please try again.",
         variant: "destructive",
       });
     } finally {
