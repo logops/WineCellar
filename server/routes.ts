@@ -81,6 +81,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+
+  // Receipt upload multer configuration
+  const receiptUpload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: function(req, file, cb) {
+      // Accept images and PDFs for receipts
+      const acceptedMimeTypes = [
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf'
+      ];
+      
+      console.log('Receipt upload file type:', file.mimetype);
+      
+      if (acceptedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(null, false);
+        console.error('Invalid receipt file type. Only images and PDFs are accepted.');
+      }
+    }
+  });
   // Set up authentication
   setupAuth(app);
   
@@ -92,6 +118,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
   
+  // Receipt parsing endpoint
+  app.post('/api/parse-receipt', isAuthenticated, receiptUpload.single('receipt'), 
+    async (req: Request, res: Response) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ error: 'No receipt file uploaded' });
+        }
+
+        console.log('Processing receipt upload:', req.file.originalname);
+        
+        // Convert buffer to base64 for AI analysis
+        const base64Image = req.file.buffer.toString('base64');
+        const mimeType = req.file.mimetype;
+        
+        // Use Anthropic to analyze the receipt
+        const { parseWineReceipt } = await import('./receiptParser');
+        const parsedWines = await parseWineReceipt(base64Image, mimeType);
+        
+        console.log('Parsed wines from receipt:', parsedWines.length);
+        
+        res.json({
+          success: true,
+          wines: parsedWines,
+          message: `Found ${parsedWines.length} wine${parsedWines.length !== 1 ? 's' : ''} in receipt`
+        });
+        
+      } catch (error) {
+        console.error('Receipt parsing error:', error);
+        res.status(500).json({ 
+          error: 'Failed to parse receipt',
+          message: error instanceof Error ? error.message : 'Unknown error occurred'
+        });
+      }
+    }
+  );
+
   // Wine label removal endpoints
   app.post('/api/analyze-for-removal', isAuthenticated, multer({ storage: multer.memoryStorage() }).single('image'), 
     async (req: Request, res: Response) => {
