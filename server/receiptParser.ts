@@ -21,7 +21,7 @@ interface ParsedWine {
   notes?: string;
 }
 
-export async function parseWineReceipt(base64Image: string, mimeType: string): Promise<ParsedWine[]> {
+async function parseWineReceipt(base64Image: string, mimeType: string): Promise<ParsedWine[]> {
   try {
     const prompt = `
     Analyze this wine purchase receipt/invoice and extract all wine-related items. 
@@ -128,3 +128,5 @@ export async function parseWineReceipt(base64Image: string, mimeType: string): P
     throw new Error('Failed to analyze receipt');
   }
 }
+
+export { parseWineReceipt };
