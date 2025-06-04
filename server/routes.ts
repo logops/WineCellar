@@ -128,24 +128,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log('Processing receipt upload:', req.file.originalname);
         
-        const mimeType = req.file.mimetype;
-        
-        if (mimeType === 'application/pdf') {
-          return res.status(400).json({
-            success: false,
-            message: 'PDF receipts are not yet supported. Please convert to an image format (PNG, JPG) and try again.'
-          });
-        }
-
-        // Convert image buffer to base64 for AI analysis
-        const base64Image = req.file.buffer.toString('base64');
-        
-        // Use Anthropic to analyze the receipt directly
-        const Anthropic = (await import('@anthropic-ai/sdk')).default;
-        const anthropic = new Anthropic({
-          apiKey: process.env.ANTHROPIC_API_KEY,
-        });
-
         const prompt = `
         Analyze this wine purchase receipt/invoice and extract all wine-related items. 
 
@@ -187,6 +169,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         ]
         `;
+        
+        const mimeType = req.file.mimetype;
+        let analysisContent;
+        
+        if (mimeType === 'application/pdf') {
+          // Extract text from PDF
+          const pdfParse = (await import('pdf-parse')).default;
+          const pdfData = await pdfParse(req.file.buffer);
+          const pdfText = pdfData.text;
+          
+          analysisContent = [
+            {
+              type: 'text' as const,
+              text: `${prompt}\n\nPDF Content:\n${pdfText}`
+            }
+          ];
+        } else {
+          // Convert image buffer to base64 for AI analysis
+          const base64Image = req.file.buffer.toString('base64');
+          
+          analysisContent = [
+            {
+              type: 'text' as const,
+              text: prompt
+            },
+            {
+              type: 'image' as const,
+              source: {
+                type: 'base64' as const,
+                media_type: mimeType as any,
+                data: base64Image
+              }
+            }
+          ];
+        }
+        
+        // Use Anthropic to analyze the receipt directly
+        const Anthropic = (await import('@anthropic-ai/sdk')).default;
+        const anthropic = new Anthropic({
+          apiKey: process.env.ANTHROPIC_API_KEY,
+        });
 
         const response = await anthropic.messages.create({
           model: 'claude-sonnet-4-20250514',
@@ -194,20 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           messages: [
             {
               role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: prompt
-                },
-                {
-                  type: 'image',
-                  source: {
-                    type: 'base64',
-                    media_type: mimeType as any,
-                    data: base64Image
-                  }
-                }
-              ]
+              content: analysisContent
             }
           ]
         });
