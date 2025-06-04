@@ -979,13 +979,47 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       queryClient.invalidateQueries({ queryKey: ['/api/wines', 'in_cellar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       
-      // Call success callback if provided
+      // Handle multi-wine receipt flow (similar to label capture)
+      if (parsedReceiptWines.length > 0 && currentReceiptWineIndex < parsedReceiptWines.length) {
+        // Remove the current wine from the receipt list
+        const remainingWines = parsedReceiptWines.filter((_, index) => index !== currentReceiptWineIndex);
+        setParsedReceiptWines(remainingWines);
+        
+        if (remainingWines.length > 0) {
+          // Reset current index and show receipt upload interface with remaining wines
+          setCurrentReceiptWineIndex(0);
+          setShowReceiptUpload(true);
+          setEntryMethod("receipt");
+          
+          // Reset form for next wine
+          form.reset();
+          
+          toast({
+            title: "Wine Added Successfully",
+            description: `${remainingWines.length} more wine${remainingWines.length !== 1 ? 's' : ''} remaining from this receipt.`,
+          });
+          
+          return; // Don't call onSuccess yet, continue with remaining wines
+        } else {
+          // All wines from receipt have been processed
+          setParsedReceiptWines([]);
+          setCurrentReceiptWineIndex(0);
+          setShowReceiptUpload(false);
+          
+          toast({
+            title: "All Wines Added",
+            description: "All wines from the receipt have been successfully added to your cellar.",
+          });
+        }
+      }
+      
+      // Call success callback if provided (only when done with all wines)
       if (onSuccess) {
         onSuccess();
       }
 
-      // Reset form if creating new wine
-      if (!wine) {
+      // Reset form if creating new wine and not in multi-wine flow
+      if (!wine && parsedReceiptWines.length === 0) {
         form.reset();
       }
     } catch (error) {
@@ -2298,7 +2332,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                         <Button
                           type="button"
                           size="sm"
-                          onClick={() => addWineFromReceipt(wine)}
+                          onClick={() => addWineFromReceipt(wine, index)}
                           className="bg-burgundy-600 hover:bg-burgundy-700 ml-4"
                         >
                           {wine.isDuplicate ? 'Add Anyway' : 'Add This Wine'}

@@ -376,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             wineId: id,
             userId: req.user.id,
             quantity: quantity,
-            date: now,
+            consumptionDate: now,
             notes: notes || undefined
           });
         } catch (error) {
