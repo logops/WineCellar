@@ -48,38 +48,47 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <div className="border border-gray-200 rounded-md shadow-sm hover:shadow-md hover:border-burgundy-200 transition-all duration-200 relative group">
           {/* Compact header - always visible */}
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-3">
             <div className="flex items-center flex-grow cursor-pointer" onClick={() => setShowEditModal(true)}>
               <div className="w-8 h-8 flex-shrink-0 mr-3">
                 <WineGlassIcon type={wine.type} />
               </div>
               <div className="flex-grow min-w-0">
-                <h3 className="font-serif text-base text-gray-800 font-medium truncate">
-                  {wine.vintage && <span>{wine.vintage} </span>}
-                  {wine.producer}{" "}
-                  {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
-                  {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
-                </h3>
-                <p className="text-gray-500 text-xs truncate">
-                  {wine.grapeVarieties && <span className="mr-1">{wine.grapeVarieties}</span>}
-                  {wine.region && <span className="font-medium">{wine.region}</span>}
-                  {wine.subregion && <span className="text-gray-400 ml-1">({wine.subregion})</span>}
-                </p>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif text-sm text-gray-800 font-medium truncate">
+                    {wine.vintage && <span>{wine.vintage} </span>}
+                    {wine.producer}{" "}
+                    {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
+                    {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
+                  </h3>
+                  {wine.rating && (
+                    <span className="text-xs bg-burgundy-100 text-burgundy-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+                      {wine.rating}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between mt-0.5">
+                  <p className="text-gray-500 text-xs truncate">
+                    {wine.grapeVarieties && <span className="mr-1">{wine.grapeVarieties}</span>}
+                    {wine.region && <span className="font-medium">{wine.region}</span>}
+                    {wine.subregion && <span className="text-gray-400 ml-1">({wine.subregion})</span>}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+                    <span>{wine.quantity} btl</span>
+                    <span className="text-burgundy-600 font-medium">
+                      {wine.drinkingStatus === "drink_now" 
+                        ? "Now" 
+                        : wine.drinkingStatus === "drink_later" 
+                          ? "Later" 
+                          : parseDrinkingWindow(wine)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
             
-            {/* Quick info and expand button */}
-            <div className="flex items-center space-x-3">
-              <div className="text-xs text-gray-500 hidden sm:block">
-                {wine.quantity} bottle{wine.quantity !== 1 ? 's' : ''}
-              </div>
-              <div className="text-xs text-burgundy-600 font-medium hidden md:block">
-                {wine.drinkingStatus === "drink_now" 
-                  ? "Drink Now" 
-                  : wine.drinkingStatus === "drink_later" 
-                    ? "Drink Later" 
-                    : parseDrinkingWindow(wine)}
-              </div>
+            {/* Expand and edit buttons */}
+            <div className="flex items-center space-x-2">
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
