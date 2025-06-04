@@ -174,22 +174,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let analysisContent;
         
         if (mimeType === 'application/pdf') {
-          // Extract text from PDF
+          // Extract text from PDF using pdfjs-dist
           let pdfText;
           try {
-            // Use dynamic import to avoid loading issues
-            const { default: pdfParse } = await import('pdf-parse');
-            const pdfData = await pdfParse(req.file.buffer, {
-              // Add options to prevent file system access
-              max: 0 // No limit on pages
+            const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
+            
+            // Load PDF document
+            const loadingTask = pdfjsLib.getDocument({
+              data: req.file.buffer,
+              verbosity: 0 // Suppress console output
             });
-            pdfText = pdfData.text;
+            
+            const pdf = await loadingTask.promise;
+            let fullText = '';
+            
+            // Extract text from all pages
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              const page = await pdf.getPage(pageNum);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items
+                .map((item: any) => item.str)
+                .join(' ');
+              fullText += pageText + '\n';
+            }
+            
+            pdfText = fullText.trim();
             console.log('Successfully extracted PDF text, length:', pdfText.length);
+            
+            if (!pdfText || pdfText.length < 10) {
+              throw new Error('PDF appears to be empty or unreadable');
+            }
           } catch (pdfError) {
             console.error('PDF parsing error:', pdfError);
             return res.status(400).json({
               success: false,
-              message: 'Unable to process PDF file. Please convert to an image format (PNG, JPG) and try again.'
+              message: 'Unable to process PDF file. The PDF may be password-protected, corrupted, or contain only images. Please convert to an image format (PNG, JPG) and try again.'
             });
           }
           
