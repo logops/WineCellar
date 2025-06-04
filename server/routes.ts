@@ -218,8 +218,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const parsedWines = JSON.parse(jsonMatch[0]);
         
-        // Clean the data
-        const cleanedWines = parsedWines.map((wine: any) => ({
+        // Clean and process the data using existing wine matching logic
+        const rawWines = parsedWines.map((wine: any) => ({
           name: wine.name || '',
           producer: wine.producer || '',
           vintage: wine.vintage || '',
@@ -232,9 +232,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
           vineyard: wine.vineyard || '',
           bottleSize: wine.bottleSize || '750ml',
           purchaseLocation: wine.purchaseLocation || '',
-          purchaseDate: wine.purchaseDate || '',
+          purchaseDate: wine.purchaseDate || new Date().toISOString().split('T')[0],
           notes: wine.notes || ''
         }));
+
+        // Get existing wines for duplicate detection
+        const existingWines = await dbStorage.getWinesByUserId(req.user!.id);
+        
+        // Process each wine through the same enhancement logic used for other imports
+        const processedWines = await Promise.all(rawWines.map(async (wine: any) => {
+          try {
+            // Check for duplicates using the same logic as spreadsheet imports
+            const isDuplicate = existingWines.some((existingWine: any) => {
+              const nameMatch = existingWine.name?.toLowerCase().includes(wine.name.toLowerCase()) ||
+                               wine.name.toLowerCase().includes(existingWine.name?.toLowerCase() || '');
+              const producerMatch = existingWine.producer?.toLowerCase() === wine.producer.toLowerCase();
+              const vintageMatch = existingWine.vintage === parseInt(wine.vintage);
+              
+              return nameMatch && producerMatch && vintageMatch;
+            });
+
+            // Use the same AI enhancement system as other imports
+            let enhancedWine = wine;
+            try {
+              const aiEnhancement = await enhanceWineWithAI({
+                producer: wine.producer,
+                wineName: wine.name,
+                vintage: wine.vintage,
+                region: wine.region,
+                grapeVarieties: wine.grapeVarieties,
+                wineType: wine.type,
+                country: wine.region // fallback for country
+              });
+
+              enhancedWine = {
+                ...wine,
+                grapeVarieties: aiEnhancement.wineInfo.grapeVarieties || wine.grapeVarieties,
+                region: aiEnhancement.wineInfo.region || wine.region,
+                subregion: aiEnhancement.wineInfo.subregion || wine.subregion,
+                drinkingWindowStart: aiEnhancement.drinkingWindow.start,
+                drinkingWindowEnd: aiEnhancement.drinkingWindow.end,
+                notes: wine.notes ? 
+                  `${wine.notes}\n\nAI Analysis:\n${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}` :
+                  `AI Analysis:\n${aiEnhancement.additionalInfo.tastingNotes}\n\nFood Pairings: ${aiEnhancement.additionalInfo.foodPairings}`,
+                aiEnhanced: true
+              };
+            } catch (aiError) {
+              console.log('AI enhancement failed for receipt wine, using basic data:', aiError);
+            }
+            
+            return {
+              ...enhancedWine,
+              source: 'receipt',
+              matchStatus: isDuplicate ? 'duplicate' : 'new',
+              confidence: 'medium',
+              isDuplicate
+            };
+          } catch (error) {
+            console.error('Error processing receipt wine:', error);
+            return {
+              ...wine,
+              source: 'receipt',
+              matchStatus: 'new',
+              confidence: 'low',
+              isDuplicate: false
+            };
+          }
+        }));
+
+        const cleanedWines = processedWines;
         
         console.log('Parsed wines from receipt:', cleanedWines.length);
         

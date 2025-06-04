@@ -357,31 +357,53 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
 
   // Function to add wine from parsed receipt
   const addWineFromReceipt = (receiptWine: any) => {
+    // Handle drinking window if provided by AI enhancement
+    let drinkingWindowStart = null;
+    let drinkingWindowEnd = null;
+    let drinkingStatus = 'drink_later';
+    
+    if (receiptWine.drinkingWindowStart && receiptWine.drinkingWindowEnd) {
+      drinkingWindowStart = parseInt(receiptWine.drinkingWindowStart);
+      drinkingWindowEnd = parseInt(receiptWine.drinkingWindowEnd);
+      drinkingStatus = 'custom';
+    }
+
     form.reset({
       name: receiptWine.name || '',
       producer: receiptWine.producer || '',
       vintage: receiptWine.vintage || '',
-      type: receiptWine.type || 'Red',
+      type: receiptWine.type?.toLowerCase() || 'red',
       grapeVarieties: receiptWine.grapeVarieties || '',
       region: receiptWine.region || '',
       subregion: receiptWine.subregion || '',
       vineyard: receiptWine.vineyard || '',
-      quantity: receiptWine.quantity || 1,
+      quantity: receiptWine.isDuplicate ? receiptWine.quantity + 1 : receiptWine.quantity || 1,
       purchasePrice: receiptWine.price || '',
       purchaseDate: receiptWine.purchaseDate || format(new Date(), "yyyy-MM-dd"),
       purchaseLocation: receiptWine.purchaseLocation || '',
       bottleSize: receiptWine.bottleSize || '750ml',
       storageLocation: 'Main Cellar',
-      drinkingStatus: 'drink_later',
+      drinkingStatus: drinkingStatus,
+      drinkingWindowStartYear: drinkingWindowStart,
+      drinkingWindowEndYear: drinkingWindowEnd,
       notes: receiptWine.notes || ''
     });
     
-    setEntryMethod("receipt");
+    // Set drinking window type if AI provided recommendations
+    if (drinkingWindowStart && drinkingWindowEnd) {
+      setDrinkingWindowType('custom');
+    }
+    
+    setEntryMethod("manual");
     setShowReceiptUpload(false);
+    
+    const description = receiptWine.aiEnhanced 
+      ? "Wine information loaded with AI enhancements. Review the details before saving."
+      : "Wine information loaded from receipt. Review and modify the details before saving.";
     
     toast({
       title: "Wine Information Loaded",
-      description: "Review and modify the wine details before saving.",
+      description: description,
     });
   };
 
@@ -2220,27 +2242,58 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                   {parsedReceiptWines.map((wine, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-cream-50 border border-cream-200 rounded-md"
+                      className={`p-4 border rounded-md ${
+                        wine.isDuplicate 
+                          ? 'bg-yellow-50 border-yellow-200' 
+                          : 'bg-cream-50 border-cream-200'
+                      }`}
                     >
-                      <div className="text-left">
-                        <p className="font-medium text-gray-900">
-                          {wine.vintage} {wine.producer} {wine.name}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Qty: {wine.quantity} | ${wine.price} | {wine.type}
-                        </p>
-                        {wine.region && (
-                          <p className="text-xs text-gray-500">{wine.region}</p>
-                        )}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <p className="font-medium text-gray-900">
+                              {wine.vintage} {wine.producer} {wine.name}
+                            </p>
+                            {wine.isDuplicate && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Duplicate
+                              </span>
+                            )}
+                            {wine.aiEnhanced && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                AI Enhanced
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p>Qty: {wine.quantity} | ${wine.price} | {wine.type}</p>
+                            {wine.region && <p>Region: {wine.region}</p>}
+                            {wine.grapeVarieties && <p>Varieties: {wine.grapeVarieties}</p>}
+                            {wine.drinkingWindowStart && wine.drinkingWindowEnd && (
+                              <p className="text-burgundy-600">
+                                Drink: {wine.drinkingWindowStart} - {wine.drinkingWindowEnd}
+                              </p>
+                            )}
+                          </div>
+                          
+                          {wine.matchStatus === 'duplicate' && (
+                            <p className="text-xs text-yellow-700 mt-2">
+                              This wine appears to already exist in your cellar. Adding will increase quantity.
+                            </p>
+                          )}
+                        </div>
+                        
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addWineFromReceipt(wine)}
+                          className="bg-burgundy-600 hover:bg-burgundy-700 ml-4"
+                        >
+                          {wine.isDuplicate ? 'Add Anyway' : 'Add This Wine'}
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => addWineFromReceipt(wine)}
-                        className="bg-burgundy-600 hover:bg-burgundy-700"
-                      >
-                        Add This Wine
-                      </Button>
                     </div>
                   ))}
                 </div>
