@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const mimeType = req.file.mimetype;
         
         // Use Anthropic to analyze the receipt
-        const { parseWineReceipt } = await import('./receiptParser');
+        const { parseWineReceipt } = require('./receiptParser');
         const parsedWines = await parseWineReceipt(base64Image, mimeType);
         
         console.log('Parsed wines from receipt:', parsedWines.length);

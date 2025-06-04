@@ -137,6 +137,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [isParsingReceipt, setIsParsingReceipt] = useState(false);
   const [parsedReceiptWines, setParsedReceiptWines] = useState<any[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   // Fetch wines for duplicate detection in multi-bottle recognition
   const { data: existingWines = [] } = useQuery({
@@ -207,7 +208,7 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         if (wineName) {
           // Only extract grape varieties if the field is currently empty
           const currentGrapes = currentValues.grapeVarieties;
-          if (!currentGrapes || currentGrapes.trim() === '') {
+          if (!currentGrapes || (typeof currentGrapes === 'string' && currentGrapes.trim() === '')) {
             const extractedGrapes = extractGrapeVarieties(wineName);
             if (extractedGrapes) {
               form.setValue('grapeVarieties', extractedGrapes, { shouldDirty: true });
@@ -269,11 +270,8 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
     return () => subscription.unsubscribe();
   }, [form, defaultValues, onFormChange]);
 
-  // Function to handle receipt upload and parsing
-  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  // Function to handle receipt file processing
+  const processReceiptFile = async (file: File) => {
     setReceiptFile(file);
     setIsParsingReceipt(true);
 
@@ -316,6 +314,44 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
       });
     } finally {
       setIsParsingReceipt(false);
+    }
+  };
+
+  // Function to handle receipt upload from input
+  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await processReceiptFile(file);
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => 
+      file.type.startsWith('image/') || file.type === 'application/pdf'
+    );
+    
+    if (imageFile) {
+      await processReceiptFile(imageFile);
+    } else {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload an image or PDF file.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -2117,7 +2153,16 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
         </TabsContent>
         
         <TabsContent value="receipt">
-          <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+          <div 
+            className={`p-6 border-2 border-dashed rounded-lg text-center transition-colors ${
+              isDragOver 
+                ? 'border-burgundy-400 bg-burgundy-50' 
+                : 'border-gray-300'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <Receipt className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Upload Wine Receipt</h3>
             <p className="text-sm text-gray-600 mb-4">
@@ -2134,24 +2179,31 @@ export default function AddWineForm({ wine, onSuccess, onFormChange }: AddWineFo
                 id="receipt-upload"
                 disabled={isParsingReceipt}
               />
-              <label
-                htmlFor="receipt-upload"
-                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-burgundy-600 hover:bg-burgundy-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-burgundy-500 cursor-pointer ${
-                  isParsingReceipt ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {isParsingReceipt ? (
-                  <>
-                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                    Parsing Receipt...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="-ml-1 mr-2 h-5 w-5" />
-                    Choose Receipt File
-                  </>
-                )}
-              </label>
+              
+              <div className="space-y-2">
+                <label
+                  htmlFor="receipt-upload"
+                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-burgundy-600 hover:bg-burgundy-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-burgundy-500 cursor-pointer ${
+                    isParsingReceipt ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isParsingReceipt ? (
+                    <>
+                      <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
+                      Parsing Receipt...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="-ml-1 mr-2 h-5 w-5" />
+                      Choose Receipt File
+                    </>
+                  )}
+                </label>
+                
+                <p className="text-xs text-gray-500">
+                  or drag and drop an image or PDF here
+                </p>
+              </div>
               
               {receiptFile && (
                 <p className="text-sm text-gray-600">
