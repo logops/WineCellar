@@ -175,9 +175,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (mimeType === 'application/pdf') {
           // Extract text from PDF
-          const pdfParse = (await import('pdf-parse')).default;
-          const pdfData = await pdfParse(req.file.buffer);
-          const pdfText = pdfData.text;
+          let pdfText;
+          try {
+            // Use dynamic import to avoid loading issues
+            const { default: pdfParse } = await import('pdf-parse');
+            const pdfData = await pdfParse(req.file.buffer, {
+              // Add options to prevent file system access
+              max: 0 // No limit on pages
+            });
+            pdfText = pdfData.text;
+            console.log('Successfully extracted PDF text, length:', pdfText.length);
+          } catch (pdfError) {
+            console.error('PDF parsing error:', pdfError);
+            return res.status(400).json({
+              success: false,
+              message: 'Unable to process PDF file. Please convert to an image format (PNG, JPG) and try again.'
+            });
+          }
           
           analysisContent = [
             {
