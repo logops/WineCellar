@@ -54,46 +54,45 @@ export default function WineListItem({ wine, onUpdate }: WineListItemProps) {
                 <WineGlassIcon type={wine.type} />
               </div>
               <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-serif text-sm text-gray-800 font-medium truncate">
-                    {wine.vintage && <span>{wine.vintage} </span>}
-                    {wine.producer}{" "}
-                    {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
-                    {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
-                  </h3>
-                  {wine.rating && (
-                    <span className="text-xs bg-burgundy-100 text-burgundy-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                      {wine.rating}
-                    </span>
-                  )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-grow min-w-0">
+                    <h3 className="font-serif text-sm text-gray-800 font-medium truncate">
+                      {wine.vintage && <span>{wine.vintage} </span>}
+                      {wine.producer}{" "}
+                      {wine.vineyard && <span className="text-burgundy-600">{wine.vineyard} </span>}
+                      {wine.name ? wine.name : wine.grapeVarieties ? wine.grapeVarieties.split(",")[0].trim() : ''}
+                    </h3>
+                    {wine.rating && (
+                      <span className="text-xs bg-burgundy-100 text-burgundy-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+                        {wine.rating}
+                      </span>
+                    )}
+                  </div>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-2 flex-shrink-0">
+                      {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </Button>
+                  </CollapsibleTrigger>
                 </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <p className="text-gray-500 text-xs truncate">
+                <div className="flex items-center mt-0.5">
+                  <p className="text-gray-500 text-xs">
                     {wine.grapeVarieties && <span className="mr-1">{wine.grapeVarieties}</span>}
                     {wine.region && <span className="font-medium">{wine.region}</span>}
                     {wine.subregion && <span className="text-gray-400 ml-1">({wine.subregion})</span>}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
-                    <span>{wine.quantity} btl</span>
-                    <span className="text-burgundy-600 font-medium">
-                      {wine.drinkingStatus === "drink_now" 
-                        ? "Now" 
+                    <span className="text-gray-400 ml-2">
+                      ({wine.quantity} btl • {wine.drinkingStatus === "drink_now" 
+                        ? "Drink Now" 
                         : wine.drinkingStatus === "drink_later" 
-                          ? "Later" 
-                          : parseDrinkingWindow(wine)}
+                          ? "Drink Later" 
+                          : parseDrinkingWindow(wine)})
                     </span>
-                  </div>
+                  </p>
                 </div>
               </div>
             </div>
             
-            {/* Expand and edit buttons */}
-            <div className="flex items-center space-x-2">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </Button>
-              </CollapsibleTrigger>
+            {/* Edit button */}
+            <div className="flex items-center">
               <Button 
                 variant="ghost" 
                 size="sm" 
