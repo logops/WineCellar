@@ -307,7 +307,7 @@ export default function WineList({ defaultView = 'card' }: WineListProps) {
           <>
             {viewMode === 'card' ? (
               <div className="p-6 border-t border-gray-100">
-                <div className="grid gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   {currentWines.map((wine) => (
                     <WineListItem key={wine.id} wine={wine} onUpdate={() => refetch()} />
                   ))}

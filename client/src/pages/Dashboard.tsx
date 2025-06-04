@@ -14,10 +14,10 @@ export default function Dashboard() {
     <>
       <TabNavigation tabs={tabs} activeTab="My Cellar" />
       
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row gap-6">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Column - Stats & Actions */}
-          <div className="w-full md:w-1/3">
+          <div className="w-full lg:w-1/4">
             <CollectionStats />
             
             <div className="bg-white rounded-lg shadow-sm p-5 mb-6">
@@ -29,7 +29,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Column - Wine List */}
-          <div className="w-full md:w-2/3">
+          <div className="w-full lg:w-3/4">
             <WineList />
           </div>
         </div>
